@@ -1,0 +1,181 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "../components/ui";
+
+const checkItems = [
+  { icon: "📈", label: "Current 15 picks", sub: "The portfolio updated this period, ready to invest." },
+  { icon: "🔔", label: "Rebalance alerts",  sub: "Email + push every time a stock enters or exits." },
+  { icon: "📋", label: "Full history",      sub: "Every past selection and its performance." },
+  { icon: "📡", label: "Regime indicator",  sub: "Live market regime to contextualize positions." },
+];
+
+const label: React.CSSProperties = {
+  display: "block", fontSize: 12, color: "var(--text-secondary)", marginBottom: 6,
+};
+
+const inputStyle: React.CSSProperties = {
+  width: "100%", boxSizing: "border-box",
+  border: "0.5px solid var(--border-default)",
+  borderRadius: "var(--radius-md)",
+  padding: "11px 14px", fontSize: 14,
+  background: "var(--bg-primary)", color: "var(--text-primary)", outline: "none",
+};
+
+export function Checkout() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${apiUrl}/api/create-checkout-session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const { url } = await res.json();
+      window.location.href = url;
+    } catch (err) {
+      console.error("Checkout error:", err);
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", background: "var(--bg-tertiary)" }}>
+
+      {/* Nav */}
+      <nav style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "0 2rem", height: 56,
+        background: "var(--bg-primary)", borderBottom: "0.5px solid var(--border-subtle)",
+        position: "sticky", top: 0, zIndex: 10,
+      }}>
+        <button
+          onClick={() => navigate("/")}
+          style={{ fontSize: 16, fontWeight: 500, color: "var(--text-primary)", background: "none", border: "none", cursor: "pointer" }}
+        >
+          Quantin
+        </button>
+        <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
+          Secure checkout
+        </span>
+      </nav>
+
+      <main style={{ maxWidth: 760, margin: "0 auto", padding: "3rem 2rem 6rem" }}>
+
+        <p style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-tertiary)", marginBottom: "0.3rem" }}>
+          Quantin
+        </p>
+        <h1 style={{ fontSize: 26, marginBottom: "0.4rem" }}>Get the portfolio</h1>
+        <p style={{ fontSize: 14, color: "var(--text-secondary)", marginBottom: "2.5rem" }}>
+          Cancel anytime. No commitment.
+        </p>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: "2.5rem", alignItems: "start" }}>
+
+          {/* Left — form */}
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: "1.25rem" }}>
+              <label style={label}>Email</label>
+              <input
+                style={inputStyle}
+                type="email"
+                placeholder="you@example.com"
+                required
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+              />
+            </div>
+
+            <p style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: "1.5rem" }}>
+              You'll enter your card details on Stripe's secure page.
+            </p>
+
+            <Button
+              type="submit"
+              size="lg"
+              style={{ width: "100%", justifyContent: "center" }}
+              disabled={loading}
+            >
+              {loading ? "Processing..." : "Subscribe — $25/month"}
+            </Button>
+
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: "0.9rem" }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "var(--text-tertiary)", flexShrink: 0 }}>
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
+                30-day money-back guarantee · Secured by Stripe
+              </span>
+            </div>
+          </form>
+
+          {/* Right — summary */}
+          <div>
+            <div style={{
+              background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)",
+              borderRadius: "var(--radius-lg)", padding: "1.25rem",
+            }}>
+              <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-tertiary)", marginBottom: "1rem" }}>
+                What you get
+              </p>
+
+              {checkItems.map(({ icon, label, sub }) => (
+                <div key={label} style={{ display: "flex", gap: 10, marginBottom: 14, alignItems: "flex-start" }}>
+                  <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>{icon}</span>
+                  <div>
+                    <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 2 }}>{label}</p>
+                    <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0 }}>{sub}</p>
+                  </div>
+                </div>
+              ))}
+
+              <hr style={{ border: "none", borderTop: "0.5px solid var(--border-subtle)", margin: "1.25rem 0" }} />
+
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+                <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>Monthly</span>
+                <span style={{ fontSize: 18, fontWeight: 500, color: "var(--text-primary)" }}>$25</span>
+              </div>
+              <p style={{ fontSize: 12, color: "var(--text-tertiary)", margin: 0 }}>
+                Billed monthly · cancel anytime
+              </p>
+
+              <hr style={{ border: "none", borderTop: "0.5px solid var(--border-subtle)", margin: "1.25rem 0" }} />
+
+              <p style={{ fontSize: 12, color: "var(--text-tertiary)", lineHeight: 1.65, margin: 0 }}>
+                Not happy in the first 30 days? We'll refund you in full, no questions asked.
+              </p>
+            </div>
+
+            {/* Regime badge */}
+            <div style={{
+              display: "flex", alignItems: "center", gap: 10, marginTop: "1rem",
+              padding: "0.9rem 1rem",
+              background: "var(--success-bg)", border: "0.5px solid var(--success-border)",
+              borderRadius: "var(--radius-md)",
+            }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "var(--success-text)", flexShrink: 0 }}>
+                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                <polyline points="17 6 23 6 23 12" />
+              </svg>
+              <div>
+                <p style={{ fontSize: 12, fontWeight: 500, color: "var(--success-text)", margin: 0 }}>
+                  Current regime: Bull, low volatility
+                </p>
+                <p style={{ fontSize: 11, color: "var(--success-text)", opacity: 0.8, margin: 0 }}>
+                  Historically the strongest period for the model
+                </p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  );
+}
