@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Badge, Button, QuantinLogo } from "../components/ui";
+import { supabase } from "../lib/supabase";
 
 const positions = [
   { t: "NVDA", n: "NVIDIA",        s: "Technology",  ret: +28.4, sig: 92, isNew: false },
@@ -79,6 +80,17 @@ export function Dashboard() {
   const navigate = useNavigate();
   const [alerts, setAlerts] = useState(defaultAlerts);
   const toggle = (k: AlertKey) => setAlerts(a => ({ ...a, [k]: !a[k] }));
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) navigate("/signin");
+    });
+  }, [navigate]);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/signin");
+  };
 
   const [showWelcome] = useState(() => {
     return new URLSearchParams(window.location.search).has("session_id");
@@ -210,14 +222,9 @@ export function Dashboard() {
           <Button variant="ghost" size="sm" onClick={() => navigate("/smart-selector")}>
             Smart Selector
           </Button>
-          <div style={{
-            width: 32, height: 32, borderRadius: "50%", cursor: "pointer",
-            background: "var(--bg-secondary)", border: "0.5px solid var(--border-default)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 13, fontWeight: 500, color: "var(--text-secondary)",
-          }}>
-            P
-          </div>
+          <Button variant="ghost" size="sm" onClick={handleSignOut}>
+            Sign out
+          </Button>
         </div>
       </nav>
 

@@ -63,6 +63,9 @@ export function Landing() {
       }}>
         <QuantinLogo iconSize={22} />
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <Button variant="ghost" size="sm" onClick={() => navigate("/signin")}>
+            Sign in
+          </Button>
           <Button variant="ghost" size="sm" onClick={() => navigate("/preview")}>
             See free preview
           </Button>

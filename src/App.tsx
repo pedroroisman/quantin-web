@@ -6,6 +6,8 @@ import { FreePreview }   from "./pages/FreePreview";
 import { Checkout }      from "./pages/Checkout";
 import { Dashboard }     from "./pages/Dashboard";
 import { SmartSelector } from "./pages/SmartSelector";
+import { SignIn }        from "./pages/SignIn";
+import { AuthCallback }  from "./pages/AuthCallback";
 
 export default function App() {
   return (
@@ -16,6 +18,8 @@ export default function App() {
         <Route path="/subscribe"      element={<Checkout />} />
         <Route path="/portfolio"      element={<Dashboard />} />
         <Route path="/smart-selector" element={<SmartSelector />} />
+        <Route path="/signin"         element={<SignIn />} />
+        <Route path="/auth/callback"  element={<AuthCallback />} />
       </Routes>
     </BrowserRouter>
   );
