@@ -95,7 +95,7 @@ export function Dashboard() {
       else navigate("/subscribe");
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (!mounted) return;
       if (event === "SIGNED_OUT") navigate("/signin");
     });
