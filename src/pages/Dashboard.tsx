@@ -82,14 +82,23 @@ export function Dashboard() {
   const [alerts, setAlerts] = useState(defaultAlerts);
   const toggle = (k: AlertKey) => setAlerts(a => ({ ...a, [k]: !a[k] }));
   const [authReady, setAuthReady] = useState(false);
+  const [isSubscriber, setIsSubscriber] = useState<boolean | null>(null);
 
   useEffect(() => {
     let mounted = true;
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!mounted) return;
-      if (session) setAuthReady(true);
-      else navigate("/signin");
+      if (!session?.user?.email) { navigate("/signin"); return; }
+      setAuthReady(true);
+      const { data, error } = await supabase
+        .from("subscribers")
+        .select("id")
+        .eq("email", session.user.email)
+        .maybeSingle();
+      if (!mounted) return;
+      // On RLS error, default to showing portfolio (benefit of doubt for real subscribers)
+      setIsSubscriber(error ? true : !!data);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
@@ -115,7 +124,73 @@ export function Dashboard() {
     window.history.replaceState({}, "", "/portfolio");
   };
 
-  if (!authReady) return null;
+  if (!authReady || isSubscriber === null) return null;
+
+  if (!isSubscriber) return (
+    <div style={{ minHeight: "100vh", background: "var(--bg-tertiary)", display: "flex", flexDirection: "column" }}>
+      <nav style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "0 2rem", height: 56,
+        background: "var(--bg-primary)", borderBottom: "0.5px solid var(--border-subtle)",
+        position: "sticky", top: 0, zIndex: 10,
+      }}>
+        <QuantinLogo iconSize={22} />
+        <Button variant="ghost" size="sm" onClick={handleSignOut}>Sign out</Button>
+      </nav>
+      <main style={{
+        flex: 1, display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
+        padding: "4rem 2rem 6rem", textAlign: "center",
+      }}>
+        <div style={{
+          width: 48, height: 48, borderRadius: "50%",
+          border: "1px solid #c0e0d4",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          marginBottom: "2rem",
+        }}>
+          <div style={{ width: 14, height: 14, background: "#1D9E75", borderRadius: "50%" }} />
+        </div>
+        <p style={{
+          fontFamily: outfit, fontWeight: 300, fontSize: 11,
+          letterSpacing: "0.12em", textTransform: "uppercase",
+          color: "#0F6E56", marginBottom: "0.75rem",
+        }}>
+          Account ready
+        </p>
+        <h1 style={{
+          fontFamily: playfair, fontWeight: 400, fontSize: 36,
+          color: "var(--text-primary)", marginBottom: "0.5rem", lineHeight: 1.15,
+        }}>
+          One step left.
+        </h1>
+        <p style={{
+          fontFamily: outfit, fontWeight: 300, fontSize: 15,
+          color: "var(--text-tertiary)", marginBottom: "2.5rem", maxWidth: 380,
+        }}>
+          Your account is set up. Activate your subscription to access the portfolio and rebalance alerts.
+        </p>
+        <div style={{
+          display: "inline-flex", alignItems: "center", gap: 8, marginBottom: "2.5rem",
+          background: "#f0f8f4", border: "0.5px solid #c0e0d4",
+          borderRadius: 100, padding: "5px 14px",
+        }}>
+          <div style={{ width: 6, height: 6, background: "#1D9E75", borderRadius: "50%" }} />
+          <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "#0F6E56" }}>
+            Bull market, low volatility — historically the strongest regime
+          </span>
+        </div>
+        <Button size="lg" onClick={() => navigate("/subscribe")}>
+          Subscribe — $25/mo
+        </Button>
+        <p style={{
+          fontFamily: outfit, fontWeight: 300, fontSize: 12,
+          color: "var(--text-tertiary)", marginTop: "0.9rem",
+        }}>
+          30-day money-back guarantee
+        </p>
+      </main>
+    </div>
+  );
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-tertiary)" }}>
