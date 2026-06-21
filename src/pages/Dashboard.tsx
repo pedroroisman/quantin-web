@@ -80,11 +80,24 @@ export function Dashboard() {
   const navigate = useNavigate();
   const [alerts, setAlerts] = useState(defaultAlerts);
   const toggle = (k: AlertKey) => setAlerts(a => ({ ...a, [k]: !a[k] }));
+  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) navigate("/signin");
+      if (!mounted) return;
+      if (session) setAuthReady(true);
+      else navigate("/signin");
     });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+      if (session) setAuthReady(true);
+      else if (event === "SIGNED_OUT") navigate("/signin");
+    });
+
+    return () => { mounted = false; subscription.unsubscribe(); };
   }, [navigate]);
 
   const handleSignOut = async () => {
@@ -101,6 +114,8 @@ export function Dashboard() {
     setWelcomeVisible(false);
     window.history.replaceState({}, "", "/portfolio");
   };
+
+  if (!authReady) return null;
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-tertiary)" }}>

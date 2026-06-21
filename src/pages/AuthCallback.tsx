@@ -9,17 +9,36 @@ export function AuthCallback() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    let mounted = true;
+
+    // Listen for successful sign-in (fires after exchangeCodeForSession resolves)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+      if (event === "SIGNED_IN" && session) {
+        subscription.unsubscribe();
+        navigate("/portfolio");
+      }
+    });
+
+    // Exchange the PKCE code from the URL
     const code = new URLSearchParams(window.location.search).get("code");
     if (code) {
       supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
-        if (error) navigate("/signin?error=invalid_link");
-        else navigate("/portfolio");
+        if (error && mounted) {
+          subscription.unsubscribe();
+          navigate("/signin?error=invalid_link");
+        }
       });
     } else {
+      // No code — check if already signed in
       supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!mounted) return;
+        subscription.unsubscribe();
         navigate(session ? "/portfolio" : "/signin");
       });
     }
+
+    return () => { mounted = false; subscription.unsubscribe(); };
   }, [navigate]);
 
   return (
