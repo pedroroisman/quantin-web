@@ -86,16 +86,18 @@ export function Dashboard() {
   useEffect(() => {
     let mounted = true;
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!mounted) return;
-      if (session) setAuthReady(true);
-      else navigate("/signin");
+      if (!session?.user?.email) { navigate("/signin"); return; }
+      const { data } = await supabase.from("subscribers").select("id").eq("email", session.user.email).maybeSingle();
+      if (!mounted) return;
+      if (data) setAuthReady(true);
+      else navigate("/subscribe");
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
-      if (session) setAuthReady(true);
-      else if (event === "SIGNED_OUT") navigate("/signin");
+      if (event === "SIGNED_OUT") navigate("/signin");
     });
 
     return () => { mounted = false; subscription.unsubscribe(); };

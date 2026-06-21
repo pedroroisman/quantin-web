@@ -5,22 +5,29 @@ import { QuantinLogo } from "../components/ui";
 
 const outfit = "'Outfit', sans-serif";
 
+async function routeBySubscription(email: string, navigate: (path: string) => void) {
+  const { data } = await supabase
+    .from("subscribers")
+    .select("id")
+    .eq("email", email)
+    .maybeSingle();
+  navigate(data ? "/portfolio" : "/subscribe");
+}
+
 export function AuthCallback() {
   const navigate = useNavigate();
 
   useEffect(() => {
     let mounted = true;
 
-    // Listen for successful sign-in (fires after exchangeCodeForSession resolves)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
-      if (event === "SIGNED_IN" && session) {
+      if (event === "SIGNED_IN" && session?.user?.email) {
         subscription.unsubscribe();
-        navigate("/portfolio");
+        await routeBySubscription(session.user.email, navigate);
       }
     });
 
-    // Exchange the PKCE code from the URL
     const code = new URLSearchParams(window.location.search).get("code");
     if (code) {
       supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
@@ -30,11 +37,14 @@ export function AuthCallback() {
         }
       });
     } else {
-      // No code — check if already signed in
-      supabase.auth.getSession().then(({ data: { session } }) => {
+      supabase.auth.getSession().then(async ({ data: { session } }) => {
         if (!mounted) return;
         subscription.unsubscribe();
-        navigate(session ? "/portfolio" : "/signin");
+        if (session?.user?.email) {
+          await routeBySubscription(session.user.email, navigate);
+        } else {
+          navigate("/signin");
+        }
       });
     }
 
@@ -43,14 +53,14 @@ export function AuthCallback() {
 
   return (
     <div style={{
-      minHeight: "100vh", background: "#ffffff",
+      minHeight: "100vh", background: "var(--bg-tertiary)",
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
       gap: "1.5rem",
     }}>
       <QuantinLogo iconSize={28} />
       <p style={{
         fontFamily: outfit, fontWeight: 300, fontSize: 14,
-        color: "#888780", letterSpacing: "0.02em",
+        color: "var(--text-tertiary)", letterSpacing: "0.02em",
       }}>
         Signing you in…
       </p>

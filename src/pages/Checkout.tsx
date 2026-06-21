@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, QuantinLogo } from "../components/ui";
+import { supabase } from "../lib/supabase";
 
 const outfit = "'Outfit', sans-serif";
 const playfair = "'Playfair Display', serif";
@@ -25,6 +26,13 @@ export function Checkout() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) { navigate("/signin?mode=signup"); return; }
+      if (session.user.email) setEmail(session.user.email);
+    });
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
