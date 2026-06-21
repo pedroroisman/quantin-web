@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Badge, Button, QuantinLogo } from "../components/ui";
+import { Button, QuantinLogo } from "../components/ui";
 import { supabase } from "../lib/supabase";
 
 const positions = [
