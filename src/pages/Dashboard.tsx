@@ -86,13 +86,10 @@ export function Dashboard() {
   useEffect(() => {
     let mounted = true;
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return;
-      if (!session?.user?.email) { navigate("/signin"); return; }
-      const { data } = await supabase.from("subscribers").select("id").eq("email", session.user.email).maybeSingle();
-      if (!mounted) return;
-      if (data) setAuthReady(true);
-      else navigate("/subscribe");
+      if (session) setAuthReady(true);
+      else navigate("/signin");
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {

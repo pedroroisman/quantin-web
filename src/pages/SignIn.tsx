@@ -6,13 +6,8 @@ import { QuantinLogo } from "../components/ui";
 const outfit = "'Outfit', sans-serif";
 const playfair = "'Playfair Display', serif";
 
-async function routeBySubscription(email: string, navigate: (path: string) => void) {
-  const { data } = await supabase
-    .from("subscribers")
-    .select("id")
-    .eq("email", email)
-    .maybeSingle();
-  navigate(data ? "/portfolio" : "/subscribe");
+function routeAfterSignIn(navigate: (path: string) => void) {
+  navigate("/portfolio");
 }
 
 export function SignIn() {
@@ -27,10 +22,8 @@ export function SignIn() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user?.email) {
-        await routeBySubscription(session.user.email, navigate);
-      }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) routeAfterSignIn(navigate);
     });
   }, [navigate]);
 
@@ -57,13 +50,13 @@ export function SignIn() {
       }
       navigate("/subscribe");
     } else {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         setError("Email or password incorrect.");
         setLoading(false);
         return;
       }
-      await routeBySubscription(data.user.email!, navigate);
+      routeAfterSignIn(navigate);
     }
   };
 
