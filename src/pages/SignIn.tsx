@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 import { QuantinLogo } from "../components/ui";
 
 const outfit = "'Outfit', sans-serif";
+const playfair = "'Playfair Display', serif";
 
 export function SignIn() {
   const navigate = useNavigate();
@@ -30,10 +31,11 @@ export function SignIn() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#ffffff", display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg-tertiary)", display: "flex", flexDirection: "column" }}>
       <nav style={{
-        height: 56, borderBottom: "0.5px solid #eee",
+        height: 56, borderBottom: "0.5px solid var(--border-subtle)",
         display: "flex", alignItems: "center", padding: "0 2rem",
+        background: "var(--bg-primary)", position: "sticky", top: 0, zIndex: 10,
       }}>
         <button
           onClick={() => navigate("/")}
@@ -52,23 +54,22 @@ export function SignIn() {
           <>
             <p style={{
               fontFamily: outfit, fontWeight: 300, fontSize: 11,
-              letterSpacing: "0.1em", textTransform: "uppercase",
-              color: "#888780", marginBottom: "0.9rem",
+              letterSpacing: "0.12em", textTransform: "uppercase",
+              color: "#0F6E56", marginBottom: "0.75rem",
             }}>
               Subscriber access
             </p>
 
             <h1 style={{
-              fontFamily: outfit, fontWeight: 200, fontSize: 38,
-              color: "#1e1e1c", marginBottom: "0.5rem",
-              letterSpacing: "-0.025em", lineHeight: 1.1,
+              fontFamily: playfair, fontWeight: 400, fontSize: 38,
+              color: "var(--text-primary)", marginBottom: "0.5rem", lineHeight: 1.15,
             }}>
               Sign in
             </h1>
 
             <p style={{
               fontFamily: outfit, fontWeight: 300, fontSize: 15,
-              color: "#888780", marginBottom: "2.5rem",
+              color: "var(--text-tertiary)", marginBottom: "2.5rem",
             }}>
               We'll send a link to your inbox — no password needed.
             </p>
@@ -79,8 +80,8 @@ export function SignIn() {
             >
               <label style={{
                 display: "block", fontFamily: outfit, fontWeight: 300,
-                fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase",
-                color: "#888780", marginBottom: 8,
+                fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase",
+                color: "#1D9E75", marginBottom: 8,
               }}>
                 Email
               </label>
@@ -92,10 +93,10 @@ export function SignIn() {
                 onChange={e => setEmail(e.target.value)}
                 style={{
                   width: "100%", boxSizing: "border-box",
-                  border: "0.5px solid #d3d1c7", borderRadius: 8,
+                  border: "0.5px solid var(--border-default)", borderRadius: 8,
                   padding: "12px 14px", fontSize: 15,
-                  fontFamily: outfit, fontWeight: 300, color: "#1e1e1c",
-                  background: "#fff", outline: "none", marginBottom: 12,
+                  fontFamily: outfit, fontWeight: 300, color: "var(--text-primary)",
+                  background: "var(--bg-primary)", outline: "none", marginBottom: 12,
                 }}
               />
               {error && (
@@ -123,12 +124,12 @@ export function SignIn() {
 
             <p style={{
               fontFamily: outfit, fontWeight: 300, fontSize: 12,
-              color: "#b4b2a9", marginTop: "1.5rem",
+              color: "var(--text-tertiary)", marginTop: "1.5rem",
             }}>
               Don't have an account?{" "}
               <span
                 onClick={() => navigate("/subscribe")}
-                style={{ color: "#185FA5", cursor: "pointer" }}
+                style={{ color: "#1D9E75", cursor: "pointer" }}
               >
                 Subscribe — $25/mo
               </span>
@@ -138,29 +139,36 @@ export function SignIn() {
           <>
             <div style={{
               width: 48, height: 48, borderRadius: "50%",
-              border: "1px solid #d4e8f5",
+              border: "1px solid #c0e0d4",
               display: "flex", alignItems: "center", justifyContent: "center",
               marginBottom: "2rem",
             }}>
-              <div style={{ width: 14, height: 14, background: "#0C447C", borderRadius: "50%" }} />
+              <div style={{ width: 14, height: 14, background: "#1D9E75", borderRadius: "50%" }} />
             </div>
 
+            <p style={{
+              fontFamily: outfit, fontWeight: 300, fontSize: 11,
+              letterSpacing: "0.12em", textTransform: "uppercase",
+              color: "#0F6E56", marginBottom: "0.75rem",
+            }}>
+              Link sent
+            </p>
+
             <h1 style={{
-              fontFamily: outfit, fontWeight: 200, fontSize: 38,
-              color: "#1e1e1c", marginBottom: "0.5rem",
-              letterSpacing: "-0.025em",
+              fontFamily: playfair, fontWeight: 400, fontSize: 38,
+              color: "var(--text-primary)", marginBottom: "0.5rem", lineHeight: 1.15,
             }}>
               Check your inbox.
             </h1>
 
             <p style={{
               fontFamily: outfit, fontWeight: 300, fontSize: 15,
-              color: "#888780", marginBottom: "2rem",
+              color: "var(--text-tertiary)", marginBottom: "2rem",
             }}>
-              We sent a sign-in link to <strong style={{ fontWeight: 400, color: "#1e1e1c" }}>{email}</strong>.
+              We sent a sign-in link to <strong style={{ fontWeight: 400, color: "var(--text-primary)" }}>{email}</strong>.
             </p>
 
-            <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "#b4b2a9" }}>
+            <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)" }}>
               The link expires in 1 hour. Check your spam folder if you don't see it.
             </p>
 
@@ -169,7 +177,7 @@ export function SignIn() {
               style={{
                 marginTop: "1.5rem", background: "none", border: "none",
                 fontFamily: outfit, fontWeight: 300, fontSize: 13,
-                color: "#888780", cursor: "pointer", textDecoration: "underline",
+                color: "var(--text-tertiary)", cursor: "pointer", textDecoration: "underline",
               }}
             >
               Use a different email

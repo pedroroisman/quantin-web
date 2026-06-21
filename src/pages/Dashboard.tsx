@@ -75,6 +75,7 @@ const td: React.CSSProperties = {
 const tdL: React.CSSProperties = { ...td, textAlign: "left" as const };
 
 const outfit = "'Outfit', sans-serif";
+const playfair = "'Playfair Display', serif";
 
 export function Dashboard() {
   const navigate = useNavigate();
@@ -144,25 +145,24 @@ export function Dashboard() {
             {/* Confirmation dot */}
             <div style={{
               width: 48, height: 48, borderRadius: "50%",
-              border: "1px solid #d4e8f5",
+              border: "1px solid #c0e0d4",
               display: "flex", alignItems: "center", justifyContent: "center",
               marginBottom: "2rem",
             }}>
-              <div style={{ width: 14, height: 14, background: "#0C447C", borderRadius: "50%" }} />
+              <div style={{ width: 14, height: 14, background: "#1D9E75", borderRadius: "50%" }} />
             </div>
 
             <p style={{
-              fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase",
-              color: "#888780", marginBottom: "0.9rem",
-              fontFamily: outfit, fontWeight: 300,
+              fontFamily: outfit, fontWeight: 300, fontSize: 11,
+              letterSpacing: "0.12em", textTransform: "uppercase",
+              color: "#0F6E56", marginBottom: "0.9rem",
             }}>
               Payment confirmed
             </p>
 
             <h1 style={{
-              fontFamily: outfit, fontWeight: 200, fontSize: 44,
-              color: "#1e1e1c", marginBottom: "0.5rem",
-              letterSpacing: "-0.025em", lineHeight: 1.1,
+              fontFamily: playfair, fontWeight: 400, fontSize: 44,
+              color: "var(--text-primary)", marginBottom: "0.5rem", lineHeight: 1.1,
             }}>
               you're in.
             </h1>
@@ -263,8 +263,8 @@ export function Dashboard() {
           {/* Title + next rebalance */}
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "1.75rem", flexWrap: "wrap", gap: 8 }}>
             <h1 style={{
-              fontFamily: outfit, fontWeight: 200, fontSize: 36,
-              color: "#1e1e1c", margin: 0, letterSpacing: "-0.025em",
+              fontFamily: playfair, fontWeight: 400, fontSize: 32,
+              color: "var(--text-primary)", margin: 0, lineHeight: 1.2,
             }}>
               Active positions
             </h1>
@@ -356,7 +356,7 @@ export function Dashboard() {
         </div>
 
         {/* Alert settings */}
-        <p style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text-tertiary)", marginBottom: "0.75rem" }}>
+        <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1D9E75", marginBottom: "0.75rem" }}>
           Alert settings
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

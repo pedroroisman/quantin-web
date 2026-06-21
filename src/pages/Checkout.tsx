@@ -2,16 +2,15 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, QuantinLogo } from "../components/ui";
 
-const checkItems = [
-  { icon: "📈", label: "Current 15 picks", sub: "The portfolio updated this period, ready to invest." },
-  { icon: "🔔", label: "Rebalance alerts",  sub: "Email + push every time a stock enters or exits." },
-  { icon: "📋", label: "Full history",      sub: "Every past selection and its performance." },
-  { icon: "📡", label: "Regime indicator",  sub: "Live market regime to contextualize positions." },
-];
+const outfit = "'Outfit', sans-serif";
+const playfair = "'Playfair Display', serif";
 
-const label: React.CSSProperties = {
-  display: "block", fontSize: 12, color: "var(--text-secondary)", marginBottom: 6,
-};
+const checkItems = [
+  { label: "Current 15 picks",  sub: "The portfolio updated this period, ready to invest." },
+  { label: "Rebalance alerts",  sub: "Email + push every time a stock enters or exits." },
+  { label: "Full history",      sub: "Every past selection and its performance." },
+  { label: "Regime indicator",  sub: "Live market regime to contextualize positions." },
+];
 
 const inputStyle: React.CSSProperties = {
   width: "100%", boxSizing: "border-box",
@@ -19,6 +18,7 @@ const inputStyle: React.CSSProperties = {
   borderRadius: "var(--radius-md)",
   padding: "11px 14px", fontSize: 14,
   background: "var(--bg-primary)", color: "var(--text-primary)", outline: "none",
+  fontFamily: outfit, fontWeight: 300,
 };
 
 export function Checkout() {
@@ -61,18 +61,27 @@ export function Checkout() {
         >
           <QuantinLogo iconSize={22} />
         </button>
-        <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
+        <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "var(--text-tertiary)" }}>
           Secure checkout
         </span>
       </nav>
 
       <main style={{ maxWidth: 760, margin: "0 auto", padding: "3rem 2rem 6rem" }}>
 
-        <p style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-tertiary)", marginBottom: "0.3rem" }}>
+        <p style={{
+          fontFamily: outfit, fontWeight: 300, fontSize: 11,
+          textTransform: "uppercase", letterSpacing: "0.12em",
+          color: "#0F6E56", marginBottom: "0.4rem",
+        }}>
           Quantin
         </p>
-        <h1 style={{ fontSize: 26, marginBottom: "0.4rem" }}>Get the portfolio</h1>
-        <p style={{ fontSize: 14, color: "var(--text-secondary)", marginBottom: "2.5rem" }}>
+        <h1 style={{
+          fontFamily: playfair, fontWeight: 400, fontSize: 30,
+          color: "var(--text-primary)", marginBottom: "0.4rem", lineHeight: 1.2,
+        }}>
+          Get the portfolio
+        </h1>
+        <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 14, color: "var(--text-tertiary)", marginBottom: "2.5rem" }}>
           Cancel anytime. No commitment.
         </p>
 
@@ -81,7 +90,13 @@ export function Checkout() {
           {/* Left — form */}
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: "1.25rem" }}>
-              <label style={label}>Email</label>
+              <label style={{
+                display: "block", fontFamily: outfit, fontWeight: 300,
+                fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em",
+                color: "#1D9E75", marginBottom: 6,
+              }}>
+                Email
+              </label>
               <input
                 style={inputStyle}
                 type="email"
@@ -92,7 +107,7 @@ export function Checkout() {
               />
             </div>
 
-            <p style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: "1.5rem" }}>
+            <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)", marginBottom: "1.5rem" }}>
               You'll enter your card details on Stripe's secure page.
             </p>
 
@@ -109,7 +124,7 @@ export function Checkout() {
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "var(--text-tertiary)", flexShrink: 0 }}>
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               </svg>
-              <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
+              <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)" }}>
                 30-day money-back guarantee · Secured by Stripe
               </span>
             </div>
@@ -121,16 +136,20 @@ export function Checkout() {
               background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)",
               borderRadius: "var(--radius-lg)", padding: "1.25rem",
             }}>
-              <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-tertiary)", marginBottom: "1rem" }}>
+              <p style={{
+                fontFamily: outfit, fontWeight: 300, fontSize: 10,
+                textTransform: "uppercase", letterSpacing: "0.08em",
+                color: "#1D9E75", marginBottom: "1rem",
+              }}>
                 What you get
               </p>
 
-              {checkItems.map(({ icon, label, sub }) => (
+              {checkItems.map(({ label, sub }) => (
                 <div key={label} style={{ display: "flex", gap: 10, marginBottom: 14, alignItems: "flex-start" }}>
-                  <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>{icon}</span>
+                  <div style={{ width: 5, height: 5, background: "#1D9E75", borderRadius: "50%", flexShrink: 0, marginTop: 5 }} />
                   <div>
-                    <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 2 }}>{label}</p>
-                    <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0 }}>{sub}</p>
+                    <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "var(--text-primary)", marginBottom: 2 }}>{label}</p>
+                    <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)", margin: 0 }}>{sub}</p>
                   </div>
                 </div>
               ))}
@@ -138,36 +157,33 @@ export function Checkout() {
               <hr style={{ border: "none", borderTop: "0.5px solid var(--border-subtle)", margin: "1.25rem 0" }} />
 
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-                <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>Monthly</span>
-                <span style={{ fontSize: 18, fontWeight: 500, color: "var(--text-primary)" }}>$25</span>
+                <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "var(--text-secondary)" }}>Monthly</span>
+                <span style={{ fontFamily: playfair, fontWeight: 400, fontSize: 22, color: "var(--text-primary)" }}>$25</span>
               </div>
-              <p style={{ fontSize: 12, color: "var(--text-tertiary)", margin: 0 }}>
+              <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)", margin: 0 }}>
                 Billed monthly · cancel anytime
               </p>
 
               <hr style={{ border: "none", borderTop: "0.5px solid var(--border-subtle)", margin: "1.25rem 0" }} />
 
-              <p style={{ fontSize: 12, color: "var(--text-tertiary)", lineHeight: 1.65, margin: 0 }}>
+              <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)", lineHeight: 1.65, margin: 0 }}>
                 Not happy in the first 30 days? We'll refund you in full, no questions asked.
               </p>
             </div>
 
-            {/* Regime badge */}
+            {/* Regime pill */}
             <div style={{
-              display: "flex", alignItems: "center", gap: 10, marginTop: "1rem",
-              padding: "0.9rem 1rem",
-              background: "var(--success-bg)", border: "0.5px solid var(--success-border)",
-              borderRadius: "var(--radius-md)",
+              display: "inline-flex", alignItems: "center", gap: 8, marginTop: "1rem",
+              padding: "6px 14px",
+              background: "#f0f8f4", border: "0.5px solid #c0e0d4",
+              borderRadius: 100,
             }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "var(--success-text)", flexShrink: 0 }}>
-                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                <polyline points="17 6 23 6 23 12" />
-              </svg>
+              <div style={{ width: 7, height: 7, background: "#1D9E75", borderRadius: "50%", flexShrink: 0 }} />
               <div>
-                <p style={{ fontSize: 12, fontWeight: 500, color: "var(--success-text)", margin: 0 }}>
+                <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "#0F6E56", margin: 0 }}>
                   Current regime: Bull, low volatility
                 </p>
-                <p style={{ fontSize: 11, color: "var(--success-text)", opacity: 0.8, margin: 0 }}>
+                <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 11, color: "#1D9E75", margin: 0 }}>
                   Historically the strongest period for the model
                 </p>
               </div>

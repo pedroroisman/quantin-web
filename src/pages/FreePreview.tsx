@@ -1,5 +1,8 @@
 import { useNavigate } from "react-router-dom";
-import { Badge, Button, MetricCard, QuantinLogo } from "../components/ui";
+import { Button, QuantinLogo } from "../components/ui";
+
+const outfit = "'Outfit', sans-serif";
+const playfair = "'Playfair Display', serif";
 
 const PREV_PERIOD = "Feb 2026 – Apr 2026";
 
@@ -23,7 +26,6 @@ const picks = [
 
 const periods = ["Oct '25", "Dec '25", "Feb '26", "Apr '26", "Jun '26 ★"];
 
-// Which tickers were selected each period (last column = current, locked)
 const selected: Record<string, string[]> = {
   "Oct '25":  ["NVDA","META","GE","LLY","AMZN","VST","CEG","AAPL","CRWD","MSFT","PGR","ANET","TSLA","COIN","JPM"],
   "Dec '25":  ["NVDA","META","GE","LLY","AMZN","VST","CEG","AAPL","CRWD","MSFT","JPM","ANET","COIN","TSLA","NRG"],
@@ -31,34 +33,24 @@ const selected: Record<string, string[]> = {
   "Apr '26":  ["NVDA","META","GE","LLY","AMZN","VST","CEG","AAPL","CRWD","MSFT","JPM","ANET","PGR","TSLA","COIN"],
 };
 
-const nav: React.CSSProperties = {
-  display: "flex", alignItems: "center", justifyContent: "space-between",
-  padding: "0 2rem", height: 56,
-  background: "var(--bg-primary)", borderBottom: "0.5px solid var(--border-subtle)",
-  position: "sticky", top: 0, zIndex: 10,
-};
-
-const sectionTitle: React.CSSProperties = {
-  fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em",
-  color: "var(--text-tertiary)", marginBottom: "0.75rem",
-};
-
 const th: React.CSSProperties = {
   fontSize: 10, textTransform: "uppercase", letterSpacing: "0.04em",
-  color: "var(--text-tertiary)", fontWeight: 500,
+  color: "var(--text-tertiary)", fontWeight: 400, fontFamily: outfit,
   padding: "0 8px 10px 0", borderBottom: "0.5px solid var(--border-subtle)",
   textAlign: "left" as const,
 };
-
 const thR: React.CSSProperties = { ...th, textAlign: "right" as const };
-
 const td: React.CSSProperties = {
-  padding: "10px 8px 10px 0",
-  borderBottom: "0.5px solid var(--border-subtle)",
+  padding: "10px 8px 10px 0", borderBottom: "0.5px solid var(--border-subtle)",
   fontSize: 13, color: "var(--text-primary)",
 };
-
 const tdR: React.CSSProperties = { ...td, textAlign: "right" as const };
+
+const sectionLabel: React.CSSProperties = {
+  fontFamily: outfit, fontWeight: 300, fontSize: 10,
+  textTransform: "uppercase", letterSpacing: "0.1em",
+  color: "#1D9E75", marginBottom: "0.75rem",
+};
 
 export function FreePreview() {
   const navigate = useNavigate();
@@ -67,7 +59,12 @@ export function FreePreview() {
     <div style={{ minHeight: "100vh", background: "var(--bg-tertiary)" }}>
 
       {/* Nav */}
-      <nav style={nav}>
+      <nav style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "0 2rem", height: 56,
+        background: "var(--bg-primary)", borderBottom: "0.5px solid var(--border-subtle)",
+        position: "sticky", top: 0, zIndex: 10,
+      }}>
         <button
           onClick={() => navigate("/")}
           style={{ background: "none", border: "none", cursor: "pointer", padding: 0, lineHeight: 0 }}
@@ -82,32 +79,65 @@ export function FreePreview() {
       <main style={{ maxWidth: 720, margin: "0 auto", padding: "3rem 2rem 6rem" }}>
 
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: "1.75rem", flexWrap: "wrap" }}>
-          <Badge variant="default">Free preview</Badge>
-          <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: "1rem", flexWrap: "wrap" }}>
+          <span style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            background: "#f0f8f4", border: "0.5px solid #c0e0d4",
+            borderRadius: 100, padding: "3px 10px",
+            fontFamily: outfit, fontWeight: 300, fontSize: 11, color: "#0F6E56",
+          }}>
+            Free preview
+          </span>
+          <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "var(--text-tertiary)" }}>
             Previous period · {PREV_PERIOD}
           </span>
-          <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--text-tertiary)" }}>
+          <span style={{ marginLeft: "auto", fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)" }}>
             Current picks are for subscribers
           </span>
         </div>
 
-        <h1 style={{ fontSize: 26, marginBottom: "0.4rem" }}>Last period's 15 picks</h1>
-        <p style={{ fontSize: 14, lineHeight: 1.65, maxWidth: 520, marginBottom: "2rem" }}>
+        <h1 style={{
+          fontFamily: playfair, fontWeight: 400, fontSize: 28,
+          color: "var(--text-primary)", marginBottom: "0.4rem", lineHeight: 1.2,
+        }}>
+          Last period's 15 picks
+        </h1>
+        <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 14, lineHeight: 1.65, maxWidth: 520, color: "var(--text-secondary)", marginBottom: "2rem" }}>
           These are the stocks the model selected two periods ago. The current portfolio has
           already been updated — subscribers received an alert when it changed.
         </p>
 
         {/* Period metrics */}
-        <p style={sectionTitle}>Portfolio performance · {PREV_PERIOD}</p>
+        <p style={sectionLabel}>Portfolio performance · {PREV_PERIOD}</p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: "2.5rem" }}>
-          <MetricCard label="Portfolio return"    value="+14.2%" valueColor="var(--success-text)" />
-          <MetricCard label="S&P 500 same period" value="+6.1%"  valueColor="var(--text-secondary)" />
-          <MetricCard label="Alpha vs S&P 500"    value="+8.1pp" valueColor="var(--success-text)" />
+          {[
+            { label: "Portfolio return",    val: "+14.2%", green: true },
+            { label: "S&P 500 same period", val: "+6.1%",  green: false },
+            { label: "Alpha vs S&P 500",    val: "+8.1pp", green: true },
+          ].map(({ label, val, green }) => (
+            <div key={label} style={{
+              background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)",
+              borderRadius: "var(--radius-md)", padding: "14px 16px",
+            }}>
+              <div style={{
+                fontFamily: playfair, fontWeight: 400, fontSize: 22,
+                color: green ? "#0F6E56" : "var(--text-secondary)",
+                marginBottom: 4,
+              }}>
+                {val}
+              </div>
+              <div style={{
+                fontFamily: outfit, fontWeight: 300, fontSize: 10,
+                color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em",
+              }}>
+                {label}
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Picks table */}
-        <p style={sectionTitle}>Individual picks · model return vs buy & hold</p>
+        <p style={sectionLabel}>Individual picks · model return vs buy & hold</p>
         <div style={{ background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", borderRadius: "var(--radius-lg)", overflow: "hidden", marginBottom: "2.5rem" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
@@ -134,7 +164,7 @@ export function FreePreview() {
                       <br />
                       <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>{p.n}</span>
                     </td>
-                    <td style={{ ...tdR, color: p.m >= 0 ? "var(--success-text)" : "var(--danger-text)" }}>
+                    <td style={{ ...tdR, color: p.m >= 0 ? "#0F6E56" : "var(--danger-text)" }}>
                       {pos(p.m)}
                     </td>
                     <td style={{ ...tdR, color: "var(--text-secondary)" }}>
@@ -142,9 +172,9 @@ export function FreePreview() {
                     </td>
                     <td style={{ ...tdR, paddingRight: "1.25rem" }}>
                       <span style={{
-                        fontSize: 11, fontWeight: 500, borderRadius: 4, padding: "2px 6px",
-                        background: alpha >= 0 ? "var(--success-bg)" : "var(--danger-bg)",
-                        color: alpha >= 0 ? "var(--success-text)" : "var(--danger-text)",
+                        fontSize: 11, borderRadius: 4, padding: "2px 6px",
+                        background: alpha >= 0 ? "#f0f8f4" : "var(--danger-bg)",
+                        color: alpha >= 0 ? "#0F6E56" : "var(--danger-text)",
                       }}>
                         {alpha >= 0 ? "+" : ""}{alpha.toFixed(1)}%
                       </span>
@@ -157,8 +187,8 @@ export function FreePreview() {
         </div>
 
         {/* Period evolution grid */}
-        <p style={sectionTitle}>How selection evolved · last 5 periods</p>
-        <p style={{ fontSize: 12, color: "var(--text-tertiary)", marginBottom: "1rem" }}>
+        <p style={sectionLabel}>How selection evolved · last 5 periods</p>
+        <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)", marginBottom: "1rem" }}>
           Each column is one 2-month period. Blue = model held this position.
         </p>
         <div style={{ background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", borderRadius: "var(--radius-lg)", padding: "1.25rem", overflowX: "auto", marginBottom: "2.5rem" }}>
@@ -184,9 +214,7 @@ export function FreePreview() {
                     return (
                       <td key={p} style={{ ...td, textAlign: "center", paddingRight: 0 }}>
                         <span style={{
-                          display: "inline-block",
-                          width: 8, height: 8,
-                          borderRadius: "50%",
+                          display: "inline-block", width: 8, height: 8, borderRadius: "50%",
                           background: isCurrent
                             ? "var(--border-default)"
                             : isSelected ? "#185FA5" : "var(--border-subtle)",
@@ -198,7 +226,7 @@ export function FreePreview() {
                 </tr>
               ))}
               <tr>
-                <td colSpan={6} style={{ paddingTop: 12, fontSize: 11, color: "var(--text-tertiary)", borderBottom: "none" }}>
+                <td colSpan={6} style={{ paddingTop: 12, fontFamily: outfit, fontWeight: 300, fontSize: 11, color: "var(--text-tertiary)", borderBottom: "none" }}>
                   ★ Current period — available to subscribers only
                 </td>
               </tr>
@@ -214,10 +242,10 @@ export function FreePreview() {
           gap: "1rem", flexWrap: "wrap",
         }}>
           <div>
-            <p style={{ fontSize: 15, fontWeight: 500, color: "var(--text-primary)", marginBottom: 3 }}>
+            <p style={{ fontFamily: playfair, fontWeight: 400, fontSize: 17, color: "var(--text-primary)", marginBottom: 4 }}>
               Ready to see the current 15?
             </p>
-            <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: 0 }}>
+            <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "var(--text-tertiary)", margin: 0 }}>
               Updated 6 weeks ago · next change in ~6 weeks · alerts included
             </p>
           </div>
@@ -225,7 +253,9 @@ export function FreePreview() {
             <Button size="md" onClick={() => navigate("/subscribe")}>
               Get the portfolio — $25/mo
             </Button>
-            <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>30-day money-back guarantee</span>
+            <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)" }}>
+              30-day money-back guarantee
+            </span>
           </div>
         </div>
 
