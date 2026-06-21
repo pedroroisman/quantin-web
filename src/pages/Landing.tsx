@@ -91,18 +91,11 @@ export function Landing() {
 
           {/* Logo mark — centered */}
           <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
-            <svg width="52" height="43" viewBox="0 0 44 36" fill="none" style={{ display: "block", margin: "0 auto 5px" }}>
+            <svg width="52" height="43" viewBox="0 0 44 36" fill="none" style={{ display: "block", margin: "0 auto" }}>
               <ellipse cx="22" cy="9"    rx="3"   ry="7"   fill="#0C447C"/>
               <ellipse cx="22" cy="20.5" rx="9.5" ry="3"   fill="#378ADD" fillOpacity="0.7"/>
               <ellipse cx="22" cy="27"   rx="15"  ry="2"   fill="#85B7EB" fillOpacity="0.55"/>
             </svg>
-            <span style={{
-              fontFamily: "'Playfair Display', serif", fontWeight: 400,
-              fontSize: 15, letterSpacing: "0.05em",
-              color: "var(--text-secondary)",
-            }}>
-              Quantin
-            </span>
           </div>
 
           {/* Regime pill */}
@@ -127,6 +120,7 @@ export function Landing() {
           </p>
 
           <h1 className="hero-headline" style={{
+            fontFamily: "'Playfair Display', serif", fontWeight: 400,
             fontSize: 36, marginBottom: "0.75rem",
             color: "var(--text-primary)", lineHeight: 1.2,
           }}>
