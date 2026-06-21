@@ -19,12 +19,10 @@ const chartData = [
 ];
 
 const metrics = [
-  { val: "+26.4%", label: "annual return",  sub: "vs +14.5% S&P" },
-  { val: "2.11",   label: "sharpe ratio",   sub: "vs 0.80 S&P" },
-  { val: "−9.9%",  label: "max drawdown",   sub: "vs −33.7% S&P" },
+  { val: "+26.4%", label: "Annual return",  sub: "vs +14.5% S&P 500", valueColor: "var(--success-text)" },
+  { val: "2.11",   label: "Sharpe ratio",   sub: "vs 0.80 S&P 500",   valueColor: "var(--text-primary)" },
+  { val: "−9.9%",  label: "Max drawdown",   sub: "vs −33.7% S&P 500", valueColor: "var(--text-primary)" },
 ];
-
-const outfit = "'Outfit', sans-serif";
 
 function formatY(v: number) {
   return "$" + Math.round(v / 1000) + "k";
@@ -55,12 +53,11 @@ export function Landing() {
       <style>{`
         @media (max-width: 600px) {
           .nav-secondary { display: none !important; }
-          .hero-headline { font-size: 30px !important; }
-          .hero-sub { font-size: 15px !important; }
-          .metric-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 16px !important; }
+          .hero-headline { font-size: 28px !important; }
+          .metric-grid { gap: 10px !important; }
           .metric-val { font-size: 20px !important; }
-          .metric-label { font-size: 8px !important; letter-spacing: 0.04em !important; }
-          .metric-sub { font-size: 9px !important; }
+          .metric-label { font-size: 9px !important; }
+          .metric-sub { display: none !important; }
           .cta-row { flex-direction: column !important; align-items: flex-start !important; }
           .footer-strip { gap: 1rem !important; }
           .chart-legend { flex-direction: column !important; gap: 8px !important; }
@@ -68,38 +65,33 @@ export function Landing() {
         }
       `}</style>
 
-      <div style={{ minHeight: "100vh", background: "#ffffff" }}>
+      <div style={{ minHeight: "100vh", background: "var(--bg-tertiary)" }}>
 
         {/* Nav */}
         <nav style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "0 1.5rem", height: 56,
-          background: "#ffffff", borderBottom: "0.5px solid #eee",
+          padding: "0 2rem", height: 56,
+          background: "var(--bg-primary)", borderBottom: "0.5px solid var(--border-subtle)",
           position: "sticky", top: 0, zIndex: 10,
         }}>
           <QuantinLogo iconSize={22} />
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/signin")}
-              className="nav-secondary">
-              Sign in
-            </Button>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             <span className="nav-secondary" style={{ display: "inline-flex" }}>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/preview")}>
-                Free preview
-              </Button>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/signin")}>Sign in</Button>
             </span>
-            <Button variant="primary" size="sm" onClick={() => navigate("/subscribe")}>
-              Get the portfolio
-            </Button>
+            <span className="nav-secondary" style={{ display: "inline-flex" }}>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/preview")}>See free preview</Button>
+            </span>
+            <Button variant="primary" size="sm" onClick={() => navigate("/subscribe")}>Get the portfolio</Button>
           </div>
         </nav>
 
         {/* Hero */}
-        <main style={{ maxWidth: 680, margin: "0 auto", padding: "4rem 1.5rem 6rem" }}>
+        <main style={{ maxWidth: 720, margin: "0 auto", padding: "4rem 2rem 6rem" }}>
 
-          {/* Logo mark — large display */}
-          <div style={{ marginBottom: "2rem" }}>
-            <svg width="48" height="39" viewBox="0 0 44 36" fill="none">
+          {/* Logo mark */}
+          <div style={{ marginBottom: "1.75rem" }}>
+            <svg width="44" height="36" viewBox="0 0 44 36" fill="none">
               <ellipse cx="22" cy="9"    rx="3"   ry="7"   fill="#0C447C"/>
               <ellipse cx="22" cy="20.5" rx="9.5" ry="3"   fill="#378ADD" fillOpacity="0.7"/>
               <ellipse cx="22" cy="27"   rx="15"  ry="2"   fill="#85B7EB" fillOpacity="0.55"/>
@@ -107,85 +99,97 @@ export function Landing() {
           </div>
 
           {/* Regime pill */}
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 8,
-            background: "#f0f8f4", border: "0.5px solid #c0e0d4",
-            borderRadius: 100, padding: "5px 13px", marginBottom: "1.5rem",
-          }}>
-            <div style={{ width: 7, height: 7, background: "#1D9E75", borderRadius: "50%", flexShrink: 0 }} />
-            <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "#0F6E56" }}>
-              Live · Bull market, low volatility
+          <div style={{ marginBottom: "1.5rem" }}>
+            <span style={{
+              display: "inline-flex", alignItems: "center", gap: 7,
+              background: "rgba(29,158,117,0.08)", border: "0.5px solid rgba(29,158,117,0.3)",
+              borderRadius: 100, padding: "4px 12px",
+            }}>
+              <span style={{ width: 6, height: 6, background: "#1D9E75", borderRadius: "50%", display: "inline-block" }} />
+              <span style={{ fontSize: 12, color: "#0F6E56", letterSpacing: "0.01em" }}>
+                Live · Bull market, low volatility
+              </span>
             </span>
           </div>
 
-          {/* Headline */}
+          <p style={{
+            fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em",
+            color: "var(--text-tertiary)", marginBottom: "0.3rem",
+          }}>
+            Quantitative portfolio
+          </p>
+
           <h1 className="hero-headline" style={{
-            fontFamily: outfit, fontWeight: 200, fontSize: 42,
-            color: "#1e1e1c", marginBottom: "1rem",
-            letterSpacing: "-0.025em", lineHeight: 1.1,
+            fontSize: 36, marginBottom: "0.75rem",
+            color: "var(--text-primary)", lineHeight: 1.2,
           }}>
             Math picks your stocks.<br />You just invest.
           </h1>
 
-          <p className="hero-sub" style={{
-            fontFamily: outfit, fontWeight: 300, fontSize: 17,
-            color: "#888780", lineHeight: 1.65,
-            maxWidth: 480, marginBottom: "2.5rem",
+          <p style={{
+            fontSize: 16, lineHeight: 1.65, maxWidth: 520,
+            color: "var(--text-secondary)", marginBottom: "2.5rem",
           }}>
-            Every two months, Quantin selects the 15 best-performing assets
-            using quantitative models. No opinions. Just data.
+            Every two months, Quantin selects the 15 best-performing assets using
+            quantitative models. No opinions. Just data.
           </p>
 
           {/* Metrics */}
           <div className="metric-grid" style={{
             display: "grid", gridTemplateColumns: "repeat(3, 1fr)",
-            borderTop: "0.5px solid #eee", paddingTop: "1.5rem",
-            marginBottom: "2.5rem", gap: 0,
+            gap: 10, marginBottom: "2rem",
           }}>
-            {metrics.map(({ val, label, sub }, i) => (
-              <div key={label} style={{ paddingRight: i < 2 ? "1.5rem" : 0 }}>
+            {metrics.map(({ val, label, sub, valueColor }) => (
+              <div key={label} style={{
+                background: "var(--bg-primary)",
+                border: "0.5px solid var(--border-subtle)",
+                borderRadius: "var(--radius-md)",
+                padding: "14px 16px",
+              }}>
                 <div className="metric-val" style={{
-                  fontFamily: outfit, fontWeight: 200, fontSize: 28,
-                  color: "#1e1e1c", letterSpacing: "-0.02em", marginBottom: 4,
+                  fontSize: 26, fontWeight: 500, color: valueColor,
+                  marginBottom: 4, letterSpacing: "-0.01em",
                 }}>
                   {val}
                 </div>
                 <div className="metric-label" style={{
-                  fontSize: 10, color: "#888780",
-                  textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2,
+                  fontSize: 11, color: "var(--text-tertiary)",
+                  textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2,
                 }}>
                   {label}
                 </div>
-                <div className="metric-sub" style={{ fontSize: 11, color: "#b4b2a9" }}>{sub}</div>
+                <div className="metric-sub" style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
+                  {sub}
+                </div>
               </div>
             ))}
           </div>
 
           {/* Chart */}
-          <div style={{ width: "100%", height: 200, marginBottom: "0.75rem" }}>
+          <div style={{ width: "100%", height: 220, marginBottom: "0.75rem" }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-                <CartesianGrid stroke="#f0ede8" vertical={false} />
+                <CartesianGrid stroke="var(--border-subtle)" vertical={false} />
                 <XAxis
                   dataKey="period"
-                  tick={{ fontSize: 10, fill: "#888780", fontFamily: outfit }}
+                  tick={{ fontSize: 11, fill: "var(--text-tertiary)" }}
                   axisLine={false} tickLine={false}
                 />
                 <YAxis
                   tickFormatter={formatY}
-                  tick={{ fontSize: 10, fill: "#888780", fontFamily: outfit }}
-                  axisLine={false} tickLine={false} width={38}
+                  tick={{ fontSize: 11, fill: "var(--text-tertiary)" }}
+                  axisLine={false} tickLine={false} width={42}
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Line
                   type="monotone" dataKey="quantin" name="Quantin"
-                  stroke="#0C447C" strokeWidth={2.5} dot={false}
-                  activeDot={{ r: 4, fill: "#0C447C" }}
+                  stroke="#185FA5" strokeWidth={2.5} dot={false}
+                  activeDot={{ r: 4, fill: "#185FA5" }}
                 />
                 <Line
                   type="monotone" dataKey="sp500" name="S&P 500"
-                  stroke="#b4b2a9" strokeWidth={1.5} strokeDasharray="5 4"
-                  dot={false} activeDot={{ r: 4, fill: "#b4b2a9" }}
+                  stroke="#888780" strokeWidth={1.5} strokeDasharray="5 4"
+                  dot={false} activeDot={{ r: 4, fill: "#888780" }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -194,61 +198,44 @@ export function Landing() {
           {/* Chart legend */}
           <div className="chart-legend" style={{
             display: "flex", gap: 18, alignItems: "center",
-            marginBottom: "2.5rem", flexWrap: "wrap",
+            marginBottom: "2rem", flexWrap: "wrap",
           }}>
-            <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#888780" }}>
-              <span style={{ width: 16, height: 2.5, background: "#0C447C", display: "inline-block", borderRadius: 1 }} />
+            <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-secondary)" }}>
+              <span style={{ width: 18, height: 2.5, background: "#185FA5", display: "inline-block", borderRadius: 1 }} />
               Quantin
             </span>
-            <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#888780" }}>
-              <span style={{ width: 16, height: 0, borderTop: "1.5px dashed #b4b2a9", display: "inline-block" }} />
+            <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-secondary)" }}>
+              <span style={{ width: 18, height: 0, borderTop: "1.5px dashed #888780", display: "inline-block" }} />
               S&P 500
             </span>
-            <span className="chart-legend-note" style={{ marginLeft: "auto", fontSize: 11, color: "#b4b2a9" }}>
+            <span className="chart-legend-note" style={{ marginLeft: "auto", fontSize: 11, color: "var(--text-tertiary)" }}>
               $10,000 invested Oct 2017 · walk-forward, no lookahead
             </span>
           </div>
 
           {/* CTA */}
           <div className="cta-row" style={{
-            display: "flex", alignItems: "center", gap: 16,
-            flexWrap: "wrap", marginBottom: "0.75rem",
+            display: "flex", alignItems: "center", gap: 14,
+            flexWrap: "wrap", marginBottom: "0.9rem",
           }}>
-            <button
-              onClick={() => navigate("/subscribe")}
-              style={{
-                background: "#0C447C", color: "#fff", border: "none",
-                borderRadius: 8, padding: "14px 28px",
-                fontFamily: outfit, fontWeight: 300, fontSize: 16,
-                cursor: "pointer", letterSpacing: 0,
-              }}
-            >
+            <Button size="lg" onClick={() => navigate("/subscribe")}>
               Get the portfolio — $25/mo
-            </button>
-            <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "#b4b2a9" }}>
+            </Button>
+            <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
               30-day money-back guarantee
             </span>
           </div>
 
-          <div style={{ display: "flex", gap: 5, alignItems: "center", marginBottom: "3rem" }}>
-            <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "#b4b2a9" }}>
-              Not sure yet?
-            </span>
-            <button
-              onClick={() => navigate("/preview")}
-              style={{
-                background: "none", border: "none", cursor: "pointer",
-                fontFamily: outfit, fontWeight: 300, fontSize: 13,
-                color: "#185FA5", padding: 0,
-              }}
-            >
+          <div style={{ display: "flex", gap: 5, alignItems: "center", marginBottom: "2rem" }}>
+            <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>Not sure yet?</span>
+            <Button variant="link" size="sm" onClick={() => navigate("/preview")}>
               See last period's picks for free →
-            </button>
+            </Button>
           </div>
 
           {/* Footer strip */}
           <div className="footer-strip" style={{
-            paddingTop: "1.25rem", borderTop: "0.5px solid #eee",
+            paddingTop: "1.25rem", borderTop: "0.5px solid var(--border-subtle)",
             display: "flex", gap: "2rem", flexWrap: "wrap",
           }}>
             {[
@@ -256,11 +243,8 @@ export function Landing() {
               ["Next rebalance", "in ~6 weeks"],
               ["Email + push", "on every change"],
             ].map(([strong, rest]) => (
-              <span key={strong} style={{
-                fontFamily: outfit, fontWeight: 300,
-                fontSize: 12, color: "#b4b2a9",
-              }}>
-                <span style={{ color: "#888780" }}>{strong}</span> {rest}
+              <span key={strong} style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
+                <span style={{ color: "var(--text-secondary)" }}>{strong}</span> {rest}
               </span>
             ))}
           </div>
