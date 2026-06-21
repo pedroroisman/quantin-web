@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "../components/ui";
+import { Button, QuantinLogo } from "../components/ui";
 
 const checkItems = [
   { icon: "📈", label: "Current 15 picks", sub: "The portfolio updated this period, ready to invest." },
@@ -57,9 +57,9 @@ export function Checkout() {
       }}>
         <button
           onClick={() => navigate("/")}
-          style={{ fontSize: 16, fontWeight: 500, color: "var(--text-primary)", background: "none", border: "none", cursor: "pointer" }}
+          style={{ background: "none", border: "none", cursor: "pointer", padding: 0, lineHeight: 0 }}
         >
-          Quantin
+          <QuantinLogo iconSize={22} />
         </button>
         <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
           Secure checkout

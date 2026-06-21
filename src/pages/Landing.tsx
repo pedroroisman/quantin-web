@@ -3,7 +3,7 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid,
 } from "recharts";
-import { Badge, Button, MetricCard } from "../components/ui";
+import { Badge, Button, MetricCard, QuantinLogo } from "../components/ui";
 
 const chartData = [
   { period: "Oct '17", quantin: 10000, sp500: 10000  },
@@ -61,9 +61,7 @@ export function Landing() {
         top: 0,
         zIndex: 10,
       }}>
-        <span style={{ fontSize: 16, fontWeight: 500, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
-          Quantin
-        </span>
+        <QuantinLogo iconSize={22} />
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
           <Button variant="ghost" size="sm" onClick={() => navigate("/preview")}>
             See free preview

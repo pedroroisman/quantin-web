@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Badge, Button } from "../components/ui";
+import { Badge, Button, QuantinLogo } from "../components/ui";
 
 type ResultStatus = "adds-value" | "no-value" | "pending";
 
@@ -157,9 +157,9 @@ export function SmartSelector() {
       }}>
         <button
           onClick={() => navigate("/portfolio")}
-          style={{ fontSize: 16, fontWeight: 500, color: "var(--text-primary)", background: "none", border: "none", cursor: "pointer" }}
+          style={{ background: "none", border: "none", cursor: "pointer", padding: 0, lineHeight: 0 }}
         >
-          Quantin
+          <QuantinLogo iconSize={22} />
         </button>
         <Badge variant="default">Add-on · subscribers only</Badge>
       </nav>

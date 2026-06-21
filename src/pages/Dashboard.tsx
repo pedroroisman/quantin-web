@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Badge, Button, MetricCard } from "../components/ui";
+import { Badge, Button, MetricCard, QuantinLogo } from "../components/ui";
 
 const positions = [
   { t: "NVDA", n: "NVIDIA",        s: "Technology",  ret: +28.4, sig: 92, isNew: false },
@@ -81,7 +81,7 @@ export function Dashboard() {
         background: "var(--bg-primary)", borderBottom: "0.5px solid var(--border-subtle)",
         position: "sticky", top: 0, zIndex: 10,
       }}>
-        <span style={{ fontSize: 16, fontWeight: 500, color: "var(--text-primary)" }}>Quantin</span>
+        <QuantinLogo iconSize={22} />
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
           <Button variant="ghost" size="sm" onClick={() => navigate("/smart-selector")}>
             Smart Selector

@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Badge, Button, MetricCard } from "../components/ui";
+import { Badge, Button, MetricCard, QuantinLogo } from "../components/ui";
 
 const PREV_PERIOD = "Feb 2026 – Apr 2026";
 
@@ -70,9 +70,9 @@ export function FreePreview() {
       <nav style={nav}>
         <button
           onClick={() => navigate("/")}
-          style={{ fontSize: 16, fontWeight: 500, color: "var(--text-primary)", background: "none", border: "none", cursor: "pointer" }}
+          style={{ background: "none", border: "none", cursor: "pointer", padding: 0, lineHeight: 0 }}
         >
-          Quantin
+          <QuantinLogo iconSize={22} />
         </button>
         <Button size="sm" onClick={() => navigate("/subscribe")}>
           Get the portfolio — $25/mo
