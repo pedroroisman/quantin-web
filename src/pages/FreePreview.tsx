@@ -222,17 +222,22 @@ export function FreePreview() {
 
         {/* Hero */}
         <div style={{ marginBottom: "2.5rem" }}>
-          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "1.75rem", flexWrap: "wrap", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "0.75rem", flexWrap: "wrap", gap: 8 }}>
             <h1 style={{
               fontFamily: playfair, fontWeight: 400, fontSize: 32,
               color: "var(--text-primary)", margin: 0, lineHeight: 1.2,
             }}>
-              {asOf ? `Active positions by ${asOf}` : "Loading…"}
+              {asOf ? `Positions by ${asOf}` : "Loading…"}
             </h1>
             <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)", letterSpacing: "0.02em" }}>
               Current picks are for subscribers
             </span>
           </div>
+          {asOf && (
+            <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "var(--text-tertiary)", marginBottom: "1.5rem", lineHeight: 1.6 }}>
+              This is a historical snapshot of the portfolio as it stood 90 days ago ({asOf}). Positions and performance reflect that date — not today's.
+            </p>
+          )}
 
           {/* Metrics */}
           <div style={{
@@ -256,7 +261,7 @@ export function FreePreview() {
             <thead>
               <tr style={{ background: "var(--bg-secondary)" }}>
                 <th style={{ ...thL, padding: "10px 8px 10px 1.25rem", width: "50%" }}>Stock</th>
-                <th style={th}>Performance</th>
+                <th style={th}>Performance since entry</th>
                 <th style={{ ...th, paddingRight: "1.25rem" }}>Position</th>
               </tr>
             </thead>

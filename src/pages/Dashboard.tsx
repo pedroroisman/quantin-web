@@ -514,7 +514,7 @@ export function Dashboard() {
             <thead>
               <tr style={{ background: "var(--bg-secondary)" }}>
                 <th style={{ ...thL, padding: "10px 8px 10px 1.25rem", width: "50%" }}>Stock</th>
-                <th style={th}>Performance</th>
+                <th style={th}>Performance since entry</th>
                 <th style={{ ...th, paddingRight: "1.25rem" }}>Position</th>
               </tr>
             </thead>
