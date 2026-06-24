@@ -36,7 +36,7 @@ const TICKER_NAMES: Record<string, { name: string; sector: string }> = {
   XOM:  { name: "ExxonMobil",             sector: "Energy"      },
 };
 
-interface PortfolioHolding { ticker: string; weight: number; }
+interface PortfolioHolding { ticker: string; weight: number; position?: string; }
 interface PortfolioData {
   portfolio: PortfolioHolding[];
   as_of: string;
@@ -450,7 +450,14 @@ export function Dashboard() {
                       {(h.weight * 100).toFixed(1)}%
                     </td>
                     <td style={{ ...td, paddingRight: "1.25rem" }}>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: "#1D9E75" }}>Long</span>
+                      {(() => {
+                        const pos = h.position ?? "long";
+                        return (
+                          <span style={{ fontSize: 11, fontWeight: 600, color: pos === "long" ? "#1D9E75" : "#8A8F9A" }}>
+                            {pos === "long" ? "Long" : "Cash"}
+                          </span>
+                        );
+                      })()}
                     </td>
                   </tr>
                 );
