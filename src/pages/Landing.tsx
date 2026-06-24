@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip,
@@ -6,23 +7,91 @@ import {
 import { Button, QuantinLogo } from "../components/ui";
 
 const chartData = [
-  { period: "Oct '17", quantin: 10000, sp500: 10000  },
-  { period: "2018",    quantin: 10424, sp500: 10020  },
-  { period: "2019",    quantin: 11523, sp500: 13149  },
-  { period: "2020",    quantin: 23901, sp500: 15565  },
-  { period: "2021",    quantin: 29819, sp500: 20039  },
-  { period: "2022",    quantin: 28692, sp500: 16397  },
-  { period: "2023",    quantin: 34478, sp500: 20692  },
-  { period: "2024",    quantin: 43928, sp500: 25841  },
-  { period: "2025",    quantin: 52732, sp500: 30419  },
-  { period: "Jun '26", quantin: 67569, sp500: 33179  },
+  { period: "Feb '18", quantin: 10000, sp500: 10000  },
+  { period: "2019",    quantin: 12976, sp500: 12238  },
+  { period: "2020",    quantin: 22484, sp500: 14486  },
+  { period: "2021",    quantin: 27192, sp500: 18650  },
+  { period: "2022",    quantin: 26743, sp500: 15261  },
+  { period: "2023",    quantin: 30520, sp500: 19258  },
+  { period: "2024",    quantin: 36951, sp500: 24050  },
+  { period: "2025",    quantin: 46003, sp500: 28310  },
+  { period: "Jun '26", quantin: 58003, sp500: 30714  },
 ];
 
 const metrics = [
-  { val: "+26.4%", label: "Annual return",  sub: "vs +14.5% S&P 500", valueColor: "var(--success-text)" },
-  { val: "2.11",   label: "Sharpe ratio",   sub: "vs 0.80 S&P 500",   valueColor: "var(--text-primary)" },
-  { val: "−9.9%",  label: "Max drawdown",   sub: "vs −33.7% S&P 500", valueColor: "var(--text-primary)" },
+  {
+    val: "+23.6%", label: "Annual return", sub: "vs +14.5% S&P 500",
+    valueColor: "#1D9E75",
+    tooltip: "Average yearly return compounded over the full backtest period (Feb 2018 – Jun 2026).",
+  },
+  {
+    val: "−8.4%", label: "Max drawdown", sub: "vs −33.7% S&P 500",
+    valueColor: "#B5621A",
+    tooltip: "Largest peak-to-trough decline in portfolio value. Lower is better — the S&P 500 fell −33.7% in 2020 alone.",
+  },
+  {
+    val: "1.95", label: "Sharpe ratio", sub: "vs 0.80 S&P 500",
+    valueColor: "#185FA5",
+    tooltip: "Return earned per unit of risk taken. Above 1 is considered strong; above 2 is exceptional.",
+  },
 ];
+
+function MetricCard({ val, label, sub, valueColor, tooltip }: typeof metrics[0]) {
+  const [show, setShow] = useState(false);
+  return (
+    <div style={{
+      background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)",
+      borderRadius: "var(--radius-md)", padding: "14px 16px", position: "relative",
+    }}>
+      <div className="metric-val" style={{
+        fontSize: 26, fontWeight: 500, color: valueColor,
+        marginBottom: 4, letterSpacing: "-0.01em",
+      }}>
+        {val}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 2 }}>
+        <div className="metric-label" style={{
+          fontSize: 11, color: "var(--text-tertiary)",
+          textTransform: "uppercase", letterSpacing: "0.05em",
+        }}>
+          {label}
+        </div>
+        <div
+          onMouseEnter={() => setShow(true)}
+          onMouseLeave={() => setShow(false)}
+          style={{ position: "relative", lineHeight: 0, cursor: "default" }}
+        >
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style={{ opacity: 0.35, display: "block" }}>
+            <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.2"/>
+            <text x="8" y="12" textAnchor="middle" fontSize="9" fill="currentColor" fontFamily="sans-serif">i</text>
+          </svg>
+          {show && (
+            <div style={{
+              position: "absolute", bottom: "calc(100% + 8px)", left: "50%",
+              transform: "translateX(-50%)",
+              background: "var(--bg-primary)", border: "0.5px solid var(--border-default)",
+              borderRadius: 8, padding: "8px 11px", width: 190,
+              fontSize: 11, lineHeight: 1.55, color: "var(--text-secondary)",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+              pointerEvents: "none", zIndex: 20,
+            }}>
+              {tooltip}
+              <div style={{
+                position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)",
+                width: 0, height: 0,
+                borderLeft: "5px solid transparent", borderRight: "5px solid transparent",
+                borderTop: "5px solid var(--border-default)",
+              }} />
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="metric-sub" style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
+        {sub}
+      </div>
+    </div>
+  );
+}
 
 function formatY(v: number) {
   return "$" + Math.round(v / 1000) + "k";
@@ -140,30 +209,7 @@ export function Landing() {
             display: "grid", gridTemplateColumns: "repeat(3, 1fr)",
             gap: 10, marginBottom: "2rem",
           }}>
-            {metrics.map(({ val, label, sub, valueColor }) => (
-              <div key={label} style={{
-                background: "var(--bg-primary)",
-                border: "0.5px solid var(--border-subtle)",
-                borderRadius: "var(--radius-md)",
-                padding: "14px 16px",
-              }}>
-                <div className="metric-val" style={{
-                  fontSize: 26, fontWeight: 500, color: valueColor,
-                  marginBottom: 4, letterSpacing: "-0.01em",
-                }}>
-                  {val}
-                </div>
-                <div className="metric-label" style={{
-                  fontSize: 11, color: "var(--text-tertiary)",
-                  textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2,
-                }}>
-                  {label}
-                </div>
-                <div className="metric-sub" style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
-                  {sub}
-                </div>
-              </div>
-            ))}
+            {metrics.map((m) => <MetricCard key={m.label} {...m} />)}
           </div>
 
           {/* Chart */}
@@ -223,7 +269,7 @@ export function Landing() {
               Get the portfolio — $25/mo
             </Button>
             <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
-              30-day money-back guarantee
+              Receive email alerts on new picks, exits, and cash signals
             </span>
           </div>
 

@@ -133,7 +133,7 @@ export function Checkout() {
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               </svg>
               <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)" }}>
-                30-day money-back guarantee · Secured by Stripe
+                Secured by Stripe · cancel anytime
               </span>
             </div>
           </form>
@@ -175,7 +175,7 @@ export function Checkout() {
               <hr style={{ border: "none", borderTop: "0.5px solid var(--border-subtle)", margin: "1.25rem 0" }} />
 
               <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)", lineHeight: 1.65, margin: 0 }}>
-                Not happy in the first 30 days? We'll refund you in full, no questions asked.
+                Cancel anytime from your account settings. No commitment, no lock-in.
               </p>
             </div>
 
