@@ -57,17 +57,15 @@ interface PortfolioData {
   period_metrics: Record<string, { model: { total: number } }>;
 }
 
-type AlertKey = "exit" | "entry" | "position" | "reminder" | "regime";
+type AlertKey = "exit" | "entry" | "position";
 const defaultAlerts: Record<AlertKey, boolean> = {
-  exit: true, entry: true, position: true, reminder: false, regime: true,
+  exit: true, entry: true, position: true,
 };
 
 const alertDefs: { key: AlertKey; label: string; sub: string; warn?: boolean }[] = [
   { key: "exit",     label: "Stock exits the portfolio",      sub: "Alert when a position is removed at rebalance" },
   { key: "entry",    label: "New stock enters the portfolio",  sub: "Alert when a new position is added at rebalance" },
   { key: "position", label: "Position change (Long ↔ Cash)",  sub: "Alert when a held stock switches between Long and Cash" },
-  { key: "reminder", label: "Rebalance reminder",             sub: "7 days before every scheduled rebalance" },
-  { key: "regime",   label: "Regime change",                  sub: "Alert if market transitions to Bear or high volatility", warn: true },
 ];
 
 function SectorPieChart({ holdings }: { holdings: PortfolioHolding[] }) {
