@@ -49,7 +49,7 @@ const SECTOR_COLORS: Record<string, string> = {
   Commodity:   "#D97706",
 };
 
-interface PortfolioHolding { ticker: string; weight: number; position?: string; performance?: number | null; entry_date?: string | null; }
+interface PortfolioHolding { ticker: string; weight: number; position?: string; performance?: number | null; entry_date?: string | null; performance_since_subscribed?: number | null; }
 interface PortfolioData {
   portfolio: PortfolioHolding[];
   as_of: string;
@@ -191,6 +191,7 @@ export function Dashboard() {
   const toggle = (k: AlertKey) => setAlerts(a => ({ ...a, [k]: !a[k] }));
   const [authReady, setAuthReady] = useState(false);
   const [isSubscriber, setIsSubscriber] = useState<boolean | null>(null);
+  const [subscribedSince, setSubscribedSince] = useState<string | null>(null);
   const [portfolio, setPortfolio] = useState<PortfolioData | null>(null);
 
   useEffect(() => {
@@ -202,12 +203,20 @@ export function Dashboard() {
       setAuthReady(true);
       const { data, error } = await supabase
         .from("subscribers")
-        .select("id")
+        .select("id, created_at")
         .eq("email", session.user.email)
         .maybeSingle();
       if (!mounted) return;
-      // On RLS error, default to showing portfolio (benefit of doubt for real subscribers)
       setIsSubscriber(error ? true : !!data);
+      const since = data?.created_at ? data.created_at.split("T")[0] : null;
+      if (since) setSubscribedSince(since);
+
+      // Fetch portfolio now that we have the subscription date
+      const apiUrl = import.meta.env.VITE_API_URL || "";
+      const url = since
+        ? `${apiUrl}/api/portfolio_optimizer?since=${since}`
+        : `${apiUrl}/api/portfolio_optimizer`;
+      fetch(url).then(r => r.json()).then(d => { if (mounted) setPortfolio(d); }).catch(() => {});
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
@@ -217,14 +226,6 @@ export function Dashboard() {
 
     return () => { mounted = false; subscription.unsubscribe(); };
   }, [navigate]);
-
-  useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || "";
-    fetch(`${apiUrl}/api/portfolio_optimizer`)
-      .then(r => r.json())
-      .then(setPortfolio)
-      .catch(() => {});
-  }, []);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -513,8 +514,9 @@ export function Dashboard() {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "var(--bg-secondary)" }}>
-                <th style={{ ...thL, padding: "10px 8px 10px 1.25rem", width: "50%" }}>Stock</th>
+                <th style={{ ...thL, padding: "10px 8px 10px 1.25rem", width: "40%" }}>Stock</th>
                 <th style={th}>Performance since entry</th>
+                {subscribedSince && <th style={th}>Since subscribed</th>}
                 <th style={{ ...th, paddingRight: "1.25rem" }}>Position</th>
               </tr>
             </thead>
@@ -547,6 +549,15 @@ export function Dashboard() {
                           </>
                         : <span style={{ color: "var(--text-tertiary)" }}>—</span>}
                     </td>
+                    {subscribedSince && (
+                      <td style={{ ...td }}>
+                        {h.performance_since_subscribed != null
+                          ? <span style={{ fontWeight: 500, color: h.performance_since_subscribed >= 0 ? "#1D9E75" : "#B5621A" }}>
+                              {h.performance_since_subscribed >= 0 ? "+" : ""}{h.performance_since_subscribed.toFixed(1)}%
+                            </span>
+                          : <span style={{ color: "var(--text-tertiary)" }}>—</span>}
+                      </td>
+                    )}
                     <td style={{ ...td, paddingRight: "1.25rem" }}>
                       <span style={{ fontSize: 11, fontWeight: 600, color: pos === "long" ? "#1D9E75" : "#8A8F9A" }}>
                         {pos === "long" ? "Long" : "Cash"}
