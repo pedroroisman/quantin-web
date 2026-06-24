@@ -381,7 +381,7 @@ export function Dashboard() {
             const v = portfolio?.validation;
             const p6 = portfolio?.period_metrics?.["6m"];
             const liveMetrics = v ? [
-              { val: `+${Math.round(v.total_return)}%`,  label: "since inception" },
+              { val: `+${Math.round(v.metrics.total_return)}%`,  label: "since inception" },
               { val: `×${(v.dollar_simulation.final_model / v.dollar_simulation.final_spy).toFixed(1)}`, label: "vs S&P 500" },
               { val: p6 ? `+${p6.model.total.toFixed(1)}%` : "—", label: "this period (6m)" },
               { val: `−${Math.abs(v.metrics.max_dd).toFixed(1)}%`, label: "max drawdown" },
