@@ -400,9 +400,6 @@ export function Dashboard() {
       }}>
         <QuantinLogo iconSize={22} />
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <Button variant="ghost" size="sm" onClick={() => navigate("/smart-selector")}>
-            Smart Selector
-          </Button>
           <Button variant="ghost" size="sm" onClick={handleSignOut}>
             Sign out
           </Button>
