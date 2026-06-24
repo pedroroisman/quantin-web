@@ -398,7 +398,9 @@ export function Dashboard() {
         background: "var(--bg-primary)", borderBottom: "0.5px solid var(--border-subtle)",
         position: "sticky", top: 0, zIndex: 10,
       }}>
-        <QuantinLogo iconSize={22} />
+        <button onClick={() => navigate("/")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, lineHeight: 0 }}>
+          <QuantinLogo iconSize={22} />
+        </button>
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
           <Button variant="ghost" size="sm" onClick={handleSignOut}>
             Sign out
