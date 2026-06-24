@@ -3,23 +3,46 @@ import { useNavigate } from "react-router-dom";
 import { Button, QuantinLogo } from "../components/ui";
 import { supabase } from "../lib/supabase";
 
-const positions = [
-  { t: "NVDA", n: "NVIDIA",        s: "Technology",  ret: +28.4, sig: 92, isNew: false, pos: "long" as const },
-  { t: "META", n: "Meta",          s: "Technology",  ret: +19.6, sig: 87, isNew: false, pos: "long" as const },
-  { t: "GE",   n: "GE Aerospace",  s: "Industrials", ret: +14.2, sig: 84, isNew: false, pos: "long" as const },
-  { t: "LLY",  n: "Eli Lilly",     s: "Healthcare",  ret: +12.8, sig: 81, isNew: true,  pos: "long" as const },
-  { t: "AMZN", n: "Amazon",        s: "Consumer",    ret: +11.9, sig: 79, isNew: false, pos: "long" as const },
-  { t: "VST",  n: "Vistra",        s: "Utilities",   ret: +10.4, sig: 76, isNew: false, pos: "long" as const },
-  { t: "CEG",  n: "Constellation", s: "Utilities",   ret:  +9.8, sig: 74, isNew: false, pos: "long" as const },
-  { t: "AAPL", n: "Apple",         s: "Technology",  ret:  +8.6, sig: 71, isNew: false, pos: "cash" as const },
-  { t: "CRWD", n: "CrowdStrike",   s: "Technology",  ret:  +7.9, sig: 68, isNew: false, pos: "long" as const },
-  { t: "MSFT", n: "Microsoft",     s: "Technology",  ret:  +7.1, sig: 64, isNew: false, pos: "long" as const },
-  { t: "JPM",  n: "JPMorgan",      s: "Financials",  ret:  +6.4, sig: 61, isNew: true,  pos: "long" as const },
-  { t: "ANET", n: "Arista",        s: "Technology",  ret:  +5.8, sig: 58, isNew: false, pos: "long" as const },
-  { t: "PGR",  n: "Progressive",   s: "Financials",  ret:  +5.2, sig: 54, isNew: false, pos: "long" as const },
-  { t: "NRG",  n: "NRG Energy",    s: "Utilities",   ret:  +3.8, sig: 50, isNew: true,  pos: "long" as const },
-  { t: "DECK", n: "Deckers",       s: "Consumer",    ret:  +2.1, sig: 45, isNew: false, pos: "long" as const },
-];
+const TICKER_NAMES: Record<string, { name: string; sector: string }> = {
+  AAPL: { name: "Apple",                   sector: "Technology"  },
+  AMAT: { name: "Applied Materials",        sector: "Technology"  },
+  AMZN: { name: "Amazon",                  sector: "Consumer"    },
+  ANET: { name: "Arista Networks",          sector: "Technology"  },
+  ASML: { name: "ASML Holding",            sector: "Technology"  },
+  AVDV: { name: "Avantis Intl Small Cap",  sector: "ETF"         },
+  AVLV: { name: "Avantis US Large Cap Val",sector: "ETF"         },
+  CEG:  { name: "Constellation Energy",    sector: "Utilities"   },
+  CRWD: { name: "CrowdStrike",             sector: "Technology"  },
+  CSCO: { name: "Cisco Systems",           sector: "Technology"  },
+  DECK: { name: "Deckers Outdoor",         sector: "Consumer"    },
+  EWY:  { name: "iShares MSCI South Korea",sector: "ETF"         },
+  GE:   { name: "GE Aerospace",            sector: "Industrials" },
+  JPM:  { name: "JPMorgan Chase",          sector: "Financials"  },
+  LRCX: { name: "Lam Research",            sector: "Technology"  },
+  LLY:  { name: "Eli Lilly",              sector: "Healthcare"  },
+  META: { name: "Meta Platforms",          sector: "Technology"  },
+  MSFT: { name: "Microsoft",              sector: "Technology"  },
+  MU:   { name: "Micron Technology",       sector: "Technology"  },
+  NRG:  { name: "NRG Energy",             sector: "Utilities"   },
+  NVDA: { name: "NVIDIA",                 sector: "Technology"  },
+  PBR:  { name: "Petrobras",              sector: "Energy"      },
+  PGR:  { name: "Progressive",            sector: "Financials"  },
+  RYDAF:{ name: "Ryder System",           sector: "Industrials" },
+  SPDW: { name: "SPDR Dev World ex-US",   sector: "ETF"         },
+  TSM:  { name: "Taiwan Semiconductor",   sector: "Technology"  },
+  VLUE: { name: "iShares MSCI Value",     sector: "ETF"         },
+  VST:  { name: "Vistra",                 sector: "Utilities"   },
+  WDC:  { name: "Western Digital",        sector: "Technology"  },
+  XOM:  { name: "ExxonMobil",             sector: "Energy"      },
+};
+
+interface PortfolioHolding { ticker: string; weight: number; }
+interface PortfolioData {
+  portfolio: PortfolioHolding[];
+  as_of: string;
+  validation: { metrics: { cagr: number; sharpe: number; max_dd: number; total_return: number }; dollar_simulation: { final_model: number; final_spy: number } };
+  period_metrics: Record<string, { model: { total: number } }>;
+}
 
 type AlertKey = "exit" | "entry" | "reminder" | "regime";
 const defaultAlerts: Record<AlertKey, boolean> = {
@@ -31,13 +54,6 @@ const alertDefs: { key: AlertKey; label: string; sub: string; warn?: boolean }[]
   { key: "entry",    label: "New stock enters the portfolio",  sub: "Alert when a new position is added at rebalance" },
   { key: "reminder", label: "Rebalance reminder",             sub: "7 days before every scheduled rebalance" },
   { key: "regime",   label: "Regime change",                  sub: "Alert if market transitions to Bear or high volatility", warn: true },
-];
-
-const metrics = [
-  { val: "+575%",  label: "since inception" },
-  { val: "×2.0",   label: "vs S&P 500" },
-  { val: "+18.4%", label: "this period" },
-  { val: "−9.9%",  label: "max drawdown" },
 ];
 
 function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
@@ -83,6 +99,8 @@ export function Dashboard() {
   const toggle = (k: AlertKey) => setAlerts(a => ({ ...a, [k]: !a[k] }));
   const [authReady, setAuthReady] = useState(false);
   const [isSubscriber, setIsSubscriber] = useState<boolean | null>(null);
+  const [portfolio, setPortfolio] = useState<PortfolioData | null>(null);
+  const [positions, setPositions] = useState<Record<string, string>>({});
 
   useEffect(() => {
     let mounted = true;
@@ -108,6 +126,17 @@ export function Dashboard() {
 
     return () => { mounted = false; subscription.unsubscribe(); };
   }, [navigate]);
+
+  useEffect(() => {
+    const apiUrl = import.meta.env.VITE_API_URL || "";
+    Promise.all([
+      fetch(`${apiUrl}/api/portfolio_optimizer`).then(r => r.json()),
+      fetch(`${apiUrl}/api/portfolio_positions`).then(r => r.json()),
+    ]).then(([port, pos]) => {
+      setPortfolio(port);
+      setPositions(pos);
+    }).catch(() => {});
+  }, []);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -348,28 +377,45 @@ export function Dashboard() {
           </div>
 
           {/* Metrics */}
-          <div style={{
-            display: "grid", gridTemplateColumns: "repeat(4, 1fr)",
-            borderTop: "0.5px solid var(--border-subtle)", paddingTop: "1.5rem", gap: 0,
-          }}>
-            {metrics.map(({ val, label }, i) => (
-              <div key={label} style={{ paddingRight: i < 3 ? "1.5rem" : 0 }}>
-                <div style={{
-                  fontFamily: outfit, fontWeight: 200, fontSize: 26,
-                  color: val.startsWith("−") ? "var(--text-secondary)" : "#1e1e1c",
-                  letterSpacing: "-0.02em", marginBottom: 5,
-                }}>
-                  {val}
-                </div>
-                <div style={{
-                  fontSize: 10, color: "var(--text-tertiary)",
-                  textTransform: "uppercase", letterSpacing: "0.06em",
-                }}>
-                  {label}
-                </div>
+          {(() => {
+            const v = portfolio?.validation;
+            const p6 = portfolio?.period_metrics?.["6m"];
+            const liveMetrics = v ? [
+              { val: `+${Math.round(v.total_return)}%`,  label: "since inception" },
+              { val: `×${(v.dollar_simulation.final_model / v.dollar_simulation.final_spy).toFixed(1)}`, label: "vs S&P 500" },
+              { val: p6 ? `+${p6.model.total.toFixed(1)}%` : "—", label: "this period (6m)" },
+              { val: `−${Math.abs(v.metrics.max_dd).toFixed(1)}%`, label: "max drawdown" },
+            ] : [
+              { val: "—", label: "since inception" },
+              { val: "—", label: "vs S&P 500" },
+              { val: "—", label: "this period" },
+              { val: "—", label: "max drawdown" },
+            ];
+            return (
+              <div style={{
+                display: "grid", gridTemplateColumns: "repeat(4, 1fr)",
+                borderTop: "0.5px solid var(--border-subtle)", paddingTop: "1.5rem", gap: 0,
+              }}>
+                {liveMetrics.map(({ val, label }, i) => (
+                  <div key={label} style={{ paddingRight: i < 3 ? "1.5rem" : 0 }}>
+                    <div style={{
+                      fontFamily: outfit, fontWeight: 200, fontSize: 26,
+                      color: val.startsWith("−") ? "var(--text-secondary)" : "#1e1e1c",
+                      letterSpacing: "-0.02em", marginBottom: 5,
+                    }}>
+                      {val}
+                    </div>
+                    <div style={{
+                      fontSize: 10, color: "var(--text-tertiary)",
+                      textTransform: "uppercase", letterSpacing: "0.06em",
+                    }}>
+                      {label}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            );
+          })()}
         </div>
 
         {/* Positions table */}
@@ -380,57 +426,56 @@ export function Dashboard() {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "var(--bg-secondary)" }}>
-                <th style={{ ...thL, padding: "10px 8px 10px 1.25rem", width: "34%" }}>Stock</th>
+                <th style={{ ...thL, padding: "10px 8px 10px 1.25rem", width: "50%" }}>Stock</th>
                 <th style={th}>Weight</th>
-                <th style={th}>Signal</th>
-                <th style={th}>Since entry</th>
                 <th style={{ ...th, paddingRight: "1.25rem" }}>Position</th>
               </tr>
             </thead>
             <tbody>
-              {positions.map((p, i) => (
-                <tr key={p.t} style={{ background: i % 2 === 0 ? "var(--bg-primary)" : "transparent" }}>
-                  <td style={{ ...tdL, padding: "11px 8px 11px 1.25rem" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                      <span style={{ fontWeight: 500 }}>{p.t}</span>
-                      {p.isNew && (
-                        <span style={{
-                          fontSize: 10, fontWeight: 500, borderRadius: 3, padding: "1px 5px",
-                          background: "var(--info-bg)", color: "var(--info-text)",
-                        }}>NEW</span>
+              {portfolio ? portfolio.portfolio.map((h, i) => {
+                const info = TICKER_NAMES[h.ticker] ?? { name: "", sector: "" };
+                const pos  = positions[h.ticker] ?? "long";
+                return (
+                  <tr key={h.ticker} style={{ background: i % 2 === 0 ? "var(--bg-primary)" : "transparent" }}>
+                    <td style={{ ...tdL, padding: "11px 8px 11px 1.25rem" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                        <span style={{ fontWeight: 500 }}>{h.ticker}</span>
+                        {info.sector && (
+                          <span style={{
+                            fontSize: 10, color: "var(--text-tertiary)",
+                            background: "var(--bg-secondary)", borderRadius: 3, padding: "1px 5px",
+                          }}>{info.sector}</span>
+                        )}
+                      </div>
+                      {info.name && (
+                        <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2 }}>{info.name}</div>
                       )}
+                    </td>
+                    <td style={{ ...td, color: "var(--text-secondary)" }}>
+                      {(h.weight * 100).toFixed(1)}%
+                    </td>
+                    <td style={{ ...td, paddingRight: "1.25rem" }}>
                       <span style={{
-                        fontSize: 10, color: "var(--text-tertiary)",
-                        background: "var(--bg-secondary)", borderRadius: 3, padding: "1px 5px",
-                      }}>{p.s}</span>
-                    </div>
-                    <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2 }}>{p.n}</div>
-                  </td>
-                  <td style={{ ...td, color: "var(--text-secondary)" }}>6.7%</td>
-                  <td style={td}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "flex-end" }}>
-                      <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>{p.sig}</span>
-                      <div style={{ width: Math.round(p.sig * 0.4), height: 4, borderRadius: 2, background: "#185FA5" }} />
-                    </div>
-                  </td>
-                  <td style={{ ...td, color: p.ret >= 0 ? "var(--success-text)" : "var(--danger-text)" }}>
-                    {p.ret >= 0 ? "+" : ""}{p.ret.toFixed(1)}%
-                  </td>
-                  <td style={{ ...td, paddingRight: "1.25rem" }}>
-                    <span style={{
-                      fontSize: 11, fontWeight: 600,
-                      color: p.pos === "long" ? "#1D9E75" : "#8A8F9A",
-                    }}>
-                      {p.pos === "long" ? "Long" : "Cash"}
-                    </span>
+                        fontSize: 11, fontWeight: 600,
+                        color: pos === "long" ? "#1D9E75" : "#8A8F9A",
+                      }}>
+                        {pos === "long" ? "Long" : "Cash"}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              }) : (
+                <tr>
+                  <td colSpan={3} style={{ ...td, textAlign: "center", color: "var(--text-tertiary)", padding: "2rem" }}>
+                    Loading portfolio…
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
           <div style={{ padding: "0.75rem 1.25rem", background: "var(--bg-secondary)", fontSize: 12, color: "var(--text-tertiary)", display: "flex", justifyContent: "space-between" }}>
-            <span>15 positions · equal weight 6.7% each</span>
-            <span>Last updated Jun 12, 2026</span>
+            <span>{portfolio ? `${portfolio.portfolio.length} positions · equal weight` : "—"}</span>
+            <span>{portfolio ? `As of ${portfolio.as_of}` : ""}</span>
           </div>
         </div>
 
