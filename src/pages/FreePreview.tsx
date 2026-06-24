@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, QuantinLogo } from "../components/ui";
 
-const outfit = "'Outfit', sans-serif";
+const outfit   = "'Outfit', sans-serif";
 const playfair = "'Playfair Display', serif";
 
 const TICKER_NAMES: Record<string, { name: string; sector: string }> = {
@@ -50,57 +50,140 @@ const TICKER_NAMES: Record<string, { name: string; sector: string }> = {
   XOM:   { name: "ExxonMobil",              sector: "Energy"      },
 };
 
-interface Holding { ticker: string; active: boolean; }
-interface PrevPeriod {
-  start_date: string;
-  end_date: string;
-  holdings: Holding[];
-  total: number;
-  period_model: number | null;
-  period_spy: number | null;
-  period_alpha: number | null;
+interface PreviewHolding {
+  ticker: string;
+  weight: number;
+  position?: string;
+  performance?: number | null;
+  entry_date?: string | null;
 }
 
-function fmt(d: string) {
-  const [y, m] = d.split("-");
-  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  return `${months[parseInt(m, 10) - 1]} ${y}`;
+interface PreviewData {
+  as_of: string;
+  inception_date: string;
+  holdings: PreviewHolding[];
+  metrics: {
+    total_return: number;
+    spy_total_return: number;
+    ratio_vs_spy: number | null;
+    period_6m: number | null;
+    max_dd: number;
+  };
 }
 
-const th: React.CSSProperties = {
+function fmtDate(iso: string) {
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+function InfoIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style={{ opacity: 0.35, display: "block", flexShrink: 0 }}>
+      <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.2"/>
+      <text x="8" y="12" textAnchor="middle" fontSize="9" fill="currentColor" fontFamily="sans-serif">i</text>
+    </svg>
+  );
+}
+
+function MetricCard({ val, label, tooltip, dimmed }: { val: string; label: string; tooltip: string; dimmed?: boolean }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div>
+      <div style={{
+        fontFamily: outfit, fontWeight: 200, fontSize: 26,
+        color: dimmed ? "var(--text-secondary)" : "#1e1e1c",
+        letterSpacing: "-0.02em", marginBottom: 4,
+      }}>
+        {val}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 5, position: "relative" }}>
+        <div style={{ fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          {label}
+        </div>
+        <div
+          onMouseEnter={() => setShow(true)}
+          onMouseLeave={() => setShow(false)}
+          style={{ cursor: "default", lineHeight: 0 }}
+        >
+          <InfoIcon />
+          {show && (
+            <div style={{
+              position: "absolute", bottom: "calc(100% + 8px)", left: 0,
+              background: "var(--bg-primary)", border: "0.5px solid var(--border-default)",
+              borderRadius: 8, padding: "8px 11px", width: 200,
+              fontSize: 11, lineHeight: 1.55, color: "var(--text-secondary)",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+              pointerEvents: "none", zIndex: 20,
+            }}>
+              {tooltip}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const thL: React.CSSProperties = {
   fontSize: 10, textTransform: "uppercase", letterSpacing: "0.04em",
   color: "var(--text-tertiary)", fontWeight: 400, fontFamily: outfit,
-  padding: "0 8px 10px 0", borderBottom: "0.5px solid var(--border-subtle)",
-  textAlign: "left" as const,
-};
-const thR: React.CSSProperties = { ...th, textAlign: "right" as const };
-const td: React.CSSProperties = {
   padding: "10px 8px 10px 0", borderBottom: "0.5px solid var(--border-subtle)",
-  fontSize: 13, color: "var(--text-primary)",
+  textAlign: "left",
 };
-const tdR: React.CSSProperties = { ...td, textAlign: "right" as const };
-
-const sectionLabel: React.CSSProperties = {
-  fontFamily: outfit, fontWeight: 300, fontSize: 10,
-  textTransform: "uppercase", letterSpacing: "0.1em",
-  color: "#1D9E75", marginBottom: "0.75rem",
+const th: React.CSSProperties = { ...thL };
+const tdL: React.CSSProperties = {
+  padding: "11px 8px 11px 0", borderBottom: "0.5px solid var(--border-subtle)",
+  fontSize: 13, color: "var(--text-primary)", fontFamily: outfit, fontWeight: 300,
 };
+const td: React.CSSProperties = { ...tdL };
 
 export function FreePreview() {
   const navigate = useNavigate();
-  const [data, setData] = useState<PrevPeriod | null>(null);
+  const [data, setData] = useState<PreviewData | null>(null);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     const apiUrl = import.meta.env.VITE_API_URL || "";
-    fetch(`${apiUrl}/api/portfolio_previous_period`)
+    fetch(`${apiUrl}/api/portfolio_preview`)
       .then(r => { if (!r.ok) throw new Error(); return r.json(); })
       .then(setData)
       .catch(() => setError(true));
   }, []);
 
-  const activeCount  = data?.holdings.filter(h => h.active).length ?? 0;
-  const exitedCount  = data?.holdings.filter(h => !h.active).length ?? 0;
+  const asOf = data ? fmtDate(data.as_of) : null;
+  const m    = data?.metrics;
+
+  const metrics = m ? [
+    {
+      val:     `+${Math.round(m.total_return)}%`,
+      label:   "since inception",
+      tooltip: `Total cumulative return of the portfolio from ${data?.inception_date} up to ${data?.as_of}.`,
+      dimmed:  false,
+    },
+    {
+      val:     m.ratio_vs_spy != null ? `×${m.ratio_vs_spy.toFixed(1)}` : "—",
+      label:   "vs S&P 500",
+      tooltip: "How many times more the portfolio returned compared to the S&P 500 over the same period.",
+      dimmed:  false,
+    },
+    {
+      val:     m.period_6m != null ? `${m.period_6m >= 0 ? "+" : ""}${m.period_6m.toFixed(1)}%` : "—",
+      label:   "this period (6m)",
+      tooltip: "Portfolio return over the 6 months leading up to this snapshot date.",
+      dimmed:  false,
+    },
+    {
+      val:     `−${Math.abs(m.max_dd).toFixed(1)}%`,
+      label:   "max drawdown",
+      tooltip: "Largest peak-to-trough decline in portfolio value since inception. Lower is better.",
+      dimmed:  true,
+    },
+  ] : [
+    { val: "—", label: "since inception",  tooltip: "", dimmed: false },
+    { val: "—", label: "vs S&P 500",       tooltip: "", dimmed: false },
+    { val: "—", label: "this period (6m)", tooltip: "", dimmed: false },
+    { val: "—", label: "max drawdown",     tooltip: "", dimmed: true  },
+  ];
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-tertiary)" }}>
@@ -123,138 +206,116 @@ export function FreePreview() {
         </Button>
       </nav>
 
-      <main style={{ maxWidth: 720, margin: "0 auto", padding: "3rem 2rem 6rem" }}>
+      <main style={{ maxWidth: 800, margin: "0 auto", padding: "2.5rem 2rem 6rem" }}>
 
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: "1rem", flexWrap: "wrap" }}>
+        {/* Badge */}
+        <div style={{ marginBottom: "1.25rem" }}>
           <span style={{
             display: "inline-flex", alignItems: "center", gap: 6,
             background: "#f0f8f4", border: "0.5px solid #c0e0d4",
             borderRadius: 100, padding: "3px 10px",
             fontFamily: outfit, fontWeight: 300, fontSize: 11, color: "#0F6E56",
           }}>
-            Free preview
-          </span>
-          {data && (
-            <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "var(--text-tertiary)" }}>
-              {fmt(data.start_date)} · previous rebalance period
-            </span>
-          )}
-          <span style={{ marginLeft: "auto", fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)" }}>
-            Current picks are for subscribers
+            Free preview · 90 days ago
           </span>
         </div>
 
-        <h1 style={{
-          fontFamily: playfair, fontWeight: 400, fontSize: 28,
-          color: "var(--text-primary)", marginBottom: "0.4rem", lineHeight: 1.2,
+        {/* Hero */}
+        <div style={{ marginBottom: "2.5rem" }}>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "1.75rem", flexWrap: "wrap", gap: 8 }}>
+            <h1 style={{
+              fontFamily: playfair, fontWeight: 400, fontSize: 32,
+              color: "var(--text-primary)", margin: 0, lineHeight: 1.2,
+            }}>
+              {asOf ? `Active positions by ${asOf}` : "Loading…"}
+            </h1>
+            <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)", letterSpacing: "0.02em" }}>
+              Current picks are for subscribers
+            </span>
+          </div>
+
+          {/* Metrics */}
+          <div style={{
+            display: "grid", gridTemplateColumns: "repeat(4, 1fr)",
+            borderTop: "0.5px solid var(--border-subtle)", paddingTop: "1.5rem", gap: 0,
+          }}>
+            {metrics.map(({ val, label, tooltip, dimmed }, i) => (
+              <div key={label} style={{ paddingRight: i < 3 ? "1.5rem" : 0 }}>
+                <MetricCard val={val} label={label} tooltip={tooltip} dimmed={dimmed} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Holdings table */}
+        <div style={{
+          background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)",
+          borderRadius: "var(--radius-lg)", overflow: "hidden", marginBottom: "2rem",
         }}>
-          {data ? `The portfolio from ${fmt(data.start_date)}` : "Loading…"}
-        </h1>
-        {data && (
-          <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 14, lineHeight: 1.65, maxWidth: 520, color: "var(--text-secondary)", marginBottom: "2rem" }}>
-            These were the {data.total} picks selected on {fmt(data.start_date)}.
-            {exitedCount > 0
-              ? ` ${exitedCount} have since exited — subscribers received an alert when each one was replaced.`
-              : " All are still active in the current portfolio."}
-          </p>
-        )}
-
-        {/* Period metrics */}
-        {data && data.period_model !== null && (
-          <>
-            <p style={sectionLabel}>
-              Portfolio performance · {fmt(data.start_date)} – {fmt(data.end_date)}
-            </p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: "2.5rem" }}>
-              {[
-                { label: "Portfolio return",    val: `${data.period_model >= 0 ? "+" : ""}${data.period_model}%`, green: (data.period_model ?? 0) >= 0 },
-                { label: "S&P 500 same period", val: `${(data.period_spy ?? 0) >= 0 ? "+" : ""}${data.period_spy}%`, green: false },
-                { label: "Alpha vs S&P 500",    val: `${(data.period_alpha ?? 0) >= 0 ? "+" : ""}${data.period_alpha}pp`, green: (data.period_alpha ?? 0) >= 0 },
-              ].map(({ label, val, green }) => (
-                <div key={label} style={{
-                  background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)",
-                  borderRadius: "var(--radius-md)", padding: "14px 16px",
-                }}>
-                  <div style={{
-                    fontFamily: playfair, fontWeight: 400, fontSize: 22,
-                    color: green ? "#0F6E56" : "var(--text-secondary)",
-                    marginBottom: 4,
-                  }}>
-                    {val}
-                  </div>
-                  <div style={{
-                    fontFamily: outfit, fontWeight: 300, fontSize: 10,
-                    color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em",
-                  }}>
-                    {label}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-
-        {/* Picks table */}
-        {data && (
-          <>
-            <p style={sectionLabel}>
-              Picks · {fmt(data.start_date)} – {fmt(data.end_date)} · {activeCount} still active, {exitedCount} exited
-            </p>
-            <div style={{ background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", borderRadius: "var(--radius-lg)", overflow: "hidden", marginBottom: "2.5rem" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr style={{ background: "var(--bg-secondary)" }}>
-                    <th style={{ ...th, padding: "10px 8px 10px 1.25rem", width: "55%" }}>Stock</th>
-                    <th style={thR}>Sector</th>
-                    <th style={{ ...thR, paddingRight: "1.25rem" }}>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.holdings.map((h, i) => {
-                    const info = TICKER_NAMES[h.ticker] ?? { name: "", sector: "—" };
-                    return (
-                      <tr key={h.ticker} style={{ background: i % 2 === 0 ? "var(--bg-primary)" : "transparent" }}>
-                        <td style={{ ...td, padding: "10px 8px 10px 1.25rem" }}>
-                          <span style={{ fontWeight: 500 }}>{h.ticker}</span>
-                          {info.name && (
-                            <>
-                              <br />
-                              <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>{info.name}</span>
-                            </>
-                          )}
-                        </td>
-                        <td style={tdR}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ background: "var(--bg-secondary)" }}>
+                <th style={{ ...thL, padding: "10px 8px 10px 1.25rem", width: "50%" }}>Stock</th>
+                <th style={th}>Performance</th>
+                <th style={{ ...th, paddingRight: "1.25rem" }}>Position</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data ? data.holdings.map((h, i) => {
+                const info = TICKER_NAMES[h.ticker] ?? { name: "", sector: "" };
+                const pos  = h.position ?? "long";
+                const perf = h.performance;
+                return (
+                  <tr key={h.ticker} style={{ background: i % 2 === 0 ? "var(--bg-primary)" : "transparent" }}>
+                    <td style={{ ...tdL, padding: "11px 8px 11px 1.25rem" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                        <span style={{ fontWeight: 500 }}>{h.ticker}</span>
+                        {info.sector && (
                           <span style={{
                             fontSize: 10, color: "var(--text-tertiary)",
-                            background: "var(--bg-secondary)", borderRadius: 3,
-                            padding: "1px 5px",
-                          }}>
-                            {info.sector}
-                          </span>
-                        </td>
-                        <td style={{ ...tdR, paddingRight: "1.25rem" }}>
-                          <span style={{
-                            fontSize: 11, fontWeight: 600,
-                            color: h.active ? "#1D9E75" : "#8A8F9A",
-                          }}>
-                            {h.active ? "Active" : "Exited"}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-
-        {error && (
-          <p style={{ color: "var(--text-tertiary)", textAlign: "center", padding: "3rem 0" }}>
-            Unable to load portfolio data.
-          </p>
-        )}
+                            background: "var(--bg-secondary)", borderRadius: 3, padding: "1px 5px",
+                          }}>{info.sector}</span>
+                        )}
+                      </div>
+                      {info.name && (
+                        <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2 }}>{info.name}</div>
+                      )}
+                    </td>
+                    <td style={td}>
+                      {perf != null
+                        ? <>
+                            <span style={{ fontWeight: 500, color: perf >= 0 ? "#1D9E75" : "#B5621A" }}>
+                              {perf >= 0 ? "+" : ""}{perf.toFixed(1)}%
+                            </span>
+                            {h.entry_date && (
+                              <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 1 }}>
+                                since {h.entry_date}
+                              </div>
+                            )}
+                          </>
+                        : <span style={{ color: "var(--text-tertiary)" }}>—</span>}
+                    </td>
+                    <td style={{ ...td, paddingRight: "1.25rem" }}>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: pos === "long" ? "#1D9E75" : "#8A8F9A" }}>
+                        {pos === "long" ? "Long" : "Cash"}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              }) : (
+                <tr>
+                  <td colSpan={3} style={{ ...td, textAlign: "center", color: "var(--text-tertiary)", padding: "2rem" }}>
+                    {error ? "Unable to load preview data." : "Loading…"}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+          <div style={{ padding: "0.75rem 1.25rem", background: "var(--bg-secondary)", fontSize: 12, color: "var(--text-tertiary)", display: "flex", justifyContent: "space-between" }}>
+            <span>Equal weight · {data?.holdings.length ?? "—"} positions</span>
+            <span>{asOf ? `Snapshot as of ${asOf}` : ""}</span>
+          </div>
+        </div>
 
         {/* Paywall CTA */}
         <div style={{

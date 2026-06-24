@@ -68,6 +68,33 @@ const alertDefs: { key: AlertKey; label: string; sub: string; warn?: boolean }[]
   { key: "position", label: "Position change (Long ↔ Cash)",  sub: "Alert when a held stock switches between Long and Cash" },
 ];
 
+function MetricTooltip({ text }: { text: string }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+      style={{ position: "relative", lineHeight: 0, cursor: "default", flexShrink: 0 }}
+    >
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style={{ opacity: 0.3, display: "block" }}>
+        <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.2"/>
+        <text x="8" y="12" textAnchor="middle" fontSize="9" fill="currentColor" fontFamily="sans-serif">i</text>
+      </svg>
+      {show && (
+        <div style={{
+          position: "absolute", bottom: "calc(100% + 8px)", left: 0,
+          background: "var(--bg-primary)", border: "0.5px solid var(--border-default)",
+          borderRadius: 8, padding: "8px 11px", width: 200, zIndex: 20,
+          fontSize: 11, lineHeight: 1.55, color: "var(--text-secondary)",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.08)", pointerEvents: "none",
+        }}>
+          {text}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SectorPieChart({ holdings }: { holdings: PortfolioHolding[] }) {
   const sectors: Record<string, number> = {};
   holdings.forEach(h => {
@@ -441,22 +468,22 @@ export function Dashboard() {
             const v = portfolio?.validation;
             const p6 = portfolio?.period_metrics?.["6m"];
             const liveMetrics = v ? [
-              { val: `+${Math.round(v.metrics.total_return)}%`,  label: "since inception" },
-              { val: `×${(v.dollar_simulation.final_model / v.dollar_simulation.final_spy).toFixed(1)}`, label: "vs S&P 500" },
-              { val: p6 ? `+${p6.model.total.toFixed(1)}%` : "—", label: "this period (6m)" },
-              { val: `−${Math.abs(v.metrics.max_dd).toFixed(1)}%`, label: "max drawdown" },
+              { val: `+${Math.round(v.metrics.total_return)}%`,  label: "since inception",  tooltip: `Total cumulative return of the portfolio since the start of the backtest (Feb 2018).` },
+              { val: `×${(v.dollar_simulation.final_model / v.dollar_simulation.final_spy).toFixed(1)}`, label: "vs S&P 500", tooltip: "How many times more the portfolio returned compared to the S&P 500 over the same period." },
+              { val: p6 ? `+${p6.model.total.toFixed(1)}%` : "—", label: "this period (6m)", tooltip: "Portfolio return over the last 6 months (most recent closed period)." },
+              { val: `−${Math.abs(v.metrics.max_dd).toFixed(1)}%`, label: "max drawdown", tooltip: "Largest peak-to-trough decline in portfolio value since inception. Lower is better." },
             ] : [
-              { val: "—", label: "since inception" },
-              { val: "—", label: "vs S&P 500" },
-              { val: "—", label: "this period" },
-              { val: "—", label: "max drawdown" },
+              { val: "—", label: "since inception",  tooltip: "" },
+              { val: "—", label: "vs S&P 500",       tooltip: "" },
+              { val: "—", label: "this period (6m)", tooltip: "" },
+              { val: "—", label: "max drawdown",     tooltip: "" },
             ];
             return (
               <div style={{
                 display: "grid", gridTemplateColumns: "repeat(4, 1fr)",
                 borderTop: "0.5px solid var(--border-subtle)", paddingTop: "1.5rem", gap: 0,
               }}>
-                {liveMetrics.map(({ val, label }, i) => (
+                {liveMetrics.map(({ val, label, tooltip }, i) => (
                   <div key={label} style={{ paddingRight: i < 3 ? "1.5rem" : 0 }}>
                     <div style={{
                       fontFamily: outfit, fontWeight: 200, fontSize: 26,
@@ -465,11 +492,11 @@ export function Dashboard() {
                     }}>
                       {val}
                     </div>
-                    <div style={{
-                      fontSize: 10, color: "var(--text-tertiary)",
-                      textTransform: "uppercase", letterSpacing: "0.06em",
-                    }}>
-                      {label}
+                    <div style={{ display: "flex", alignItems: "center", gap: 5, position: "relative" }}>
+                      <div style={{ fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                        {label}
+                      </div>
+                      {tooltip && <MetricTooltip text={tooltip} />}
                     </div>
                   </div>
                 ))}
