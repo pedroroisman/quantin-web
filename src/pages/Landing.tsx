@@ -147,9 +147,7 @@ export function Landing() {
         }}>
           <QuantinLogo iconSize={22} />
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            <span className="nav-secondary" style={{ display: "inline-flex" }}>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/signin")}>Sign in</Button>
-            </span>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/signin")}>Sign in</Button>
             <span className="nav-secondary" style={{ display: "inline-flex" }}>
               <Button variant="ghost" size="sm" onClick={() => navigate("/preview")}>See free preview</Button>
             </span>
