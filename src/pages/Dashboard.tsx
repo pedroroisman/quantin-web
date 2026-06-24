@@ -100,7 +100,6 @@ export function Dashboard() {
   const [authReady, setAuthReady] = useState(false);
   const [isSubscriber, setIsSubscriber] = useState<boolean | null>(null);
   const [portfolio, setPortfolio] = useState<PortfolioData | null>(null);
-  const [positions, setPositions] = useState<Record<string, string>>({});
 
   useEffect(() => {
     let mounted = true;
@@ -129,13 +128,10 @@ export function Dashboard() {
 
   useEffect(() => {
     const apiUrl = import.meta.env.VITE_API_URL || "";
-    Promise.all([
-      fetch(`${apiUrl}/api/portfolio_optimizer`).then(r => r.json()),
-      fetch(`${apiUrl}/api/portfolio_positions`).then(r => r.json()),
-    ]).then(([port, pos]) => {
-      setPortfolio(port);
-      setPositions(pos);
-    }).catch(() => {});
+    fetch(`${apiUrl}/api/portfolio_optimizer`)
+      .then(r => r.json())
+      .then(setPortfolio)
+      .catch(() => {});
   }, []);
 
   const handleSignOut = async () => {
@@ -434,7 +430,6 @@ export function Dashboard() {
             <tbody>
               {portfolio ? portfolio.portfolio.map((h, i) => {
                 const info = TICKER_NAMES[h.ticker] ?? { name: "", sector: "" };
-                const pos  = positions[h.ticker] ?? "long";
                 return (
                   <tr key={h.ticker} style={{ background: i % 2 === 0 ? "var(--bg-primary)" : "transparent" }}>
                     <td style={{ ...tdL, padding: "11px 8px 11px 1.25rem" }}>
@@ -455,12 +450,7 @@ export function Dashboard() {
                       {(h.weight * 100).toFixed(1)}%
                     </td>
                     <td style={{ ...td, paddingRight: "1.25rem" }}>
-                      <span style={{
-                        fontSize: 11, fontWeight: 600,
-                        color: pos === "long" ? "#1D9E75" : "#8A8F9A",
-                      }}>
-                        {pos === "long" ? "Long" : "Cash"}
-                      </span>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: "#1D9E75" }}>Long</span>
                     </td>
                   </tr>
                 );
