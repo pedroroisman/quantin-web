@@ -4,21 +4,21 @@ import { Button, QuantinLogo } from "../components/ui";
 import { supabase } from "../lib/supabase";
 
 const positions = [
-  { t: "NVDA", n: "NVIDIA",        s: "Technology",  ret: +28.4, sig: 92, isNew: false },
-  { t: "META", n: "Meta",          s: "Technology",  ret: +19.6, sig: 87, isNew: false },
-  { t: "GE",   n: "GE Aerospace",  s: "Industrials", ret: +14.2, sig: 84, isNew: false },
-  { t: "LLY",  n: "Eli Lilly",     s: "Healthcare",  ret: +12.8, sig: 81, isNew: true  },
-  { t: "AMZN", n: "Amazon",        s: "Consumer",    ret: +11.9, sig: 79, isNew: false },
-  { t: "VST",  n: "Vistra",        s: "Utilities",   ret: +10.4, sig: 76, isNew: false },
-  { t: "CEG",  n: "Constellation", s: "Utilities",   ret:  +9.8, sig: 74, isNew: false },
-  { t: "AAPL", n: "Apple",         s: "Technology",  ret:  +8.6, sig: 71, isNew: false },
-  { t: "CRWD", n: "CrowdStrike",   s: "Technology",  ret:  +7.9, sig: 68, isNew: false },
-  { t: "MSFT", n: "Microsoft",     s: "Technology",  ret:  +7.1, sig: 64, isNew: false },
-  { t: "JPM",  n: "JPMorgan",      s: "Financials",  ret:  +6.4, sig: 61, isNew: true  },
-  { t: "ANET", n: "Arista",        s: "Technology",  ret:  +5.8, sig: 58, isNew: false },
-  { t: "PGR",  n: "Progressive",   s: "Financials",  ret:  +5.2, sig: 54, isNew: false },
-  { t: "NRG",  n: "NRG Energy",    s: "Utilities",   ret:  +3.8, sig: 50, isNew: true  },
-  { t: "DECK", n: "Deckers",       s: "Consumer",    ret:  +2.1, sig: 45, isNew: false },
+  { t: "NVDA", n: "NVIDIA",        s: "Technology",  ret: +28.4, sig: 92, isNew: false, pos: "long" as const },
+  { t: "META", n: "Meta",          s: "Technology",  ret: +19.6, sig: 87, isNew: false, pos: "long" as const },
+  { t: "GE",   n: "GE Aerospace",  s: "Industrials", ret: +14.2, sig: 84, isNew: false, pos: "long" as const },
+  { t: "LLY",  n: "Eli Lilly",     s: "Healthcare",  ret: +12.8, sig: 81, isNew: true,  pos: "long" as const },
+  { t: "AMZN", n: "Amazon",        s: "Consumer",    ret: +11.9, sig: 79, isNew: false, pos: "long" as const },
+  { t: "VST",  n: "Vistra",        s: "Utilities",   ret: +10.4, sig: 76, isNew: false, pos: "long" as const },
+  { t: "CEG",  n: "Constellation", s: "Utilities",   ret:  +9.8, sig: 74, isNew: false, pos: "long" as const },
+  { t: "AAPL", n: "Apple",         s: "Technology",  ret:  +8.6, sig: 71, isNew: false, pos: "cash" as const },
+  { t: "CRWD", n: "CrowdStrike",   s: "Technology",  ret:  +7.9, sig: 68, isNew: false, pos: "long" as const },
+  { t: "MSFT", n: "Microsoft",     s: "Technology",  ret:  +7.1, sig: 64, isNew: false, pos: "long" as const },
+  { t: "JPM",  n: "JPMorgan",      s: "Financials",  ret:  +6.4, sig: 61, isNew: true,  pos: "long" as const },
+  { t: "ANET", n: "Arista",        s: "Technology",  ret:  +5.8, sig: 58, isNew: false, pos: "long" as const },
+  { t: "PGR",  n: "Progressive",   s: "Financials",  ret:  +5.2, sig: 54, isNew: false, pos: "long" as const },
+  { t: "NRG",  n: "NRG Energy",    s: "Utilities",   ret:  +3.8, sig: 50, isNew: true,  pos: "long" as const },
+  { t: "DECK", n: "Deckers",       s: "Consumer",    ret:  +2.1, sig: 45, isNew: false, pos: "long" as const },
 ];
 
 type AlertKey = "exit" | "entry" | "reminder" | "regime";
@@ -384,7 +384,7 @@ export function Dashboard() {
                 <th style={th}>Weight</th>
                 <th style={th}>Signal</th>
                 <th style={th}>Since entry</th>
-                <th style={{ ...th, paddingRight: "1.25rem" }}>Status</th>
+                <th style={{ ...th, paddingRight: "1.25rem" }}>Position</th>
               </tr>
             </thead>
             <tbody>
@@ -417,7 +417,12 @@ export function Dashboard() {
                     {p.ret >= 0 ? "+" : ""}{p.ret.toFixed(1)}%
                   </td>
                   <td style={{ ...td, paddingRight: "1.25rem" }}>
-                    <span style={{ fontSize: 11, fontWeight: 500, color: "var(--success-text)" }}>● Hold</span>
+                    <span style={{
+                      fontSize: 11, fontWeight: 600,
+                      color: p.pos === "long" ? "#1D9E75" : "#8A8F9A",
+                    }}>
+                      {p.pos === "long" ? "Long" : "Cash"}
+                    </span>
                   </td>
                 </tr>
               ))}
