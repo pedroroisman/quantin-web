@@ -1,29 +1,71 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, QuantinLogo } from "../components/ui";
 
 const outfit = "'Outfit', sans-serif";
 const playfair = "'Playfair Display', serif";
 
-const SNAPSHOT_LABEL = "Apr 2026 · 90 days ago";
+const TICKER_NAMES: Record<string, { name: string; sector: string }> = {
+  AAPL:  { name: "Apple",                    sector: "Technology"  },
+  AMAT:  { name: "Applied Materials",         sector: "Technology"  },
+  AMZN:  { name: "Amazon",                   sector: "Consumer"    },
+  ANET:  { name: "Arista Networks",           sector: "Technology"  },
+  ASML:  { name: "ASML Holding",             sector: "Technology"  },
+  ACWX:  { name: "iShares MSCI ACWI ex-US",  sector: "ETF"         },
+  AVDV:  { name: "Avantis Intl Small Cap",   sector: "ETF"         },
+  AVLV:  { name: "Avantis US Large Cap Val", sector: "ETF"         },
+  BAR:   { name: "GraniteShares Gold",       sector: "Commodity"   },
+  CEG:   { name: "Constellation Energy",     sector: "Utilities"   },
+  CRWD:  { name: "CrowdStrike",              sector: "Technology"  },
+  CSCO:  { name: "Cisco Systems",            sector: "Technology"  },
+  DECK:  { name: "Deckers Outdoor",          sector: "Consumer"    },
+  EWY:   { name: "iShares MSCI South Korea", sector: "ETF"         },
+  EWT:   { name: "iShares MSCI Taiwan",      sector: "ETF"         },
+  GDX:   { name: "VanEck Gold Miners",       sector: "Commodity"   },
+  GE:    { name: "GE Aerospace",             sector: "Industrials" },
+  GLDM:  { name: "SPDR Gold MiniShares",     sector: "Commodity"   },
+  JPM:   { name: "JPMorgan Chase",           sector: "Financials"  },
+  LRCX:  { name: "Lam Research",             sector: "Technology"  },
+  LLY:   { name: "Eli Lilly",               sector: "Healthcare"  },
+  META:  { name: "Meta Platforms",           sector: "Technology"  },
+  MSFT:  { name: "Microsoft",               sector: "Technology"  },
+  MU:    { name: "Micron Technology",        sector: "Technology"  },
+  NRG:   { name: "NRG Energy",              sector: "Utilities"   },
+  NVDA:  { name: "NVIDIA",                  sector: "Technology"  },
+  PBR:   { name: "Petrobras",               sector: "Energy"      },
+  PGR:   { name: "Progressive",             sector: "Financials"  },
+  RYDAF: { name: "Ryder System",            sector: "Industrials" },
+  SGOL:  { name: "Aberdeen Gold ETF",       sector: "Commodity"   },
+  SIVR:  { name: "Aberdeen Silver ETF",     sector: "Commodity"   },
+  SLV:   { name: "iShares Silver Trust",    sector: "Commodity"   },
+  SPDW:  { name: "SPDR Dev World ex-US",    sector: "ETF"         },
+  TQQQ:  { name: "ProShares UltraPro QQQ",  sector: "ETF"         },
+  TSM:   { name: "Taiwan Semiconductor",    sector: "Technology"  },
+  VCSH:  { name: "Vanguard Short-Term Corp",sector: "ETF"         },
+  VGSH:  { name: "Vanguard Short-Term Tsy", sector: "ETF"         },
+  VLUE:  { name: "iShares MSCI Value",      sector: "ETF"         },
+  VST:   { name: "Vistra",                  sector: "Utilities"   },
+  VXUS:  { name: "Vanguard Total Intl",     sector: "ETF"         },
+  WDC:   { name: "Western Digital",         sector: "Technology"  },
+  XOM:   { name: "ExxonMobil",              sector: "Energy"      },
+};
 
-const picks = [
-  { t: "NVDA", n: "NVIDIA",         s: "Technology",  m: +28.4, bh: +22.1, active: true  },
-  { t: "META", n: "Meta",           s: "Technology",  m: +19.6, bh: +17.2, active: true  },
-  { t: "GE",   n: "GE Aerospace",   s: "Industrials", m: +17.8, bh: +12.0, active: true  },
-  { t: "LLY",  n: "Eli Lilly",      s: "Healthcare",  m: +15.2, bh: +11.8, active: true  },
-  { t: "AMZN", n: "Amazon",         s: "Consumer",    m: +14.9, bh: +13.5, active: true  },
-  { t: "VST",  n: "Vistra",         s: "Utilities",   m: +13.4, bh: +10.2, active: true  },
-  { t: "CEG",  n: "Constellation",  s: "Utilities",   m: +12.8, bh: +8.9,  active: true  },
-  { t: "AAPL", n: "Apple",          s: "Technology",  m: +11.6, bh: +10.1, active: true  },
-  { t: "CRWD", n: "CrowdStrike",    s: "Technology",  m: +11.2, bh: +9.0,  active: true  },
-  { t: "MSFT", n: "Microsoft",      s: "Technology",  m:  +9.8, bh: +9.3,  active: true  },
-  { t: "JPM",  n: "JPMorgan",       s: "Financials",  m:  +9.1, bh: +7.6,  active: true  },
-  { t: "ANET", n: "Arista",         s: "Technology",  m:  +8.4, bh: +5.9,  active: true  },
-  { t: "PGR",  n: "Progressive",    s: "Financials",  m:  +6.7, bh: +5.1,  active: true  },
-  { t: "TSLA", n: "Tesla",          s: "Consumer",    m:  +5.2, bh: +8.4,  active: false },
-  { t: "COIN", n: "Coinbase",       s: "Financials",  m:  +3.1, bh: +11.2, active: false },
-];
+interface Holding { ticker: string; active: boolean; }
+interface PrevPeriod {
+  start_date: string;
+  end_date: string;
+  holdings: Holding[];
+  total: number;
+  period_model: number | null;
+  period_spy: number | null;
+  period_alpha: number | null;
+}
 
+function fmt(d: string) {
+  const [y, m] = d.split("-");
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return `${months[parseInt(m, 10) - 1]} ${y}`;
+}
 
 const th: React.CSSProperties = {
   fontSize: 10, textTransform: "uppercase", letterSpacing: "0.04em",
@@ -46,6 +88,19 @@ const sectionLabel: React.CSSProperties = {
 
 export function FreePreview() {
   const navigate = useNavigate();
+  const [data, setData] = useState<PrevPeriod | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    const apiUrl = import.meta.env.VITE_API_URL || "";
+    fetch(`${apiUrl}/api/portfolio_previous_period`)
+      .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+      .then(setData)
+      .catch(() => setError(true));
+  }, []);
+
+  const activeCount  = data?.holdings.filter(h => h.active).length ?? 0;
+  const exitedCount  = data?.holdings.filter(h => !h.active).length ?? 0;
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-tertiary)" }}>
@@ -80,9 +135,11 @@ export function FreePreview() {
           }}>
             Free preview
           </span>
-          <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "var(--text-tertiary)" }}>
-            {SNAPSHOT_LABEL}
-          </span>
+          {data && (
+            <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "var(--text-tertiary)" }}>
+              {fmt(data.start_date)} · previous rebalance period
+            </span>
+          )}
           <span style={{ marginLeft: "auto", fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)" }}>
             Current picks are for subscribers
           </span>
@@ -92,90 +149,112 @@ export function FreePreview() {
           fontFamily: playfair, fontWeight: 400, fontSize: 28,
           color: "var(--text-primary)", marginBottom: "0.4rem", lineHeight: 1.2,
         }}>
-          The portfolio, 90 days ago
+          {data ? `The portfolio from ${fmt(data.start_date)}` : "Loading…"}
         </h1>
-        <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 14, lineHeight: 1.65, maxWidth: 520, color: "var(--text-secondary)", marginBottom: "2rem" }}>
-          These were the 15 picks in April 2026. 2 have since exited the portfolio — subscribers received an email alert when each one was replaced.
-        </p>
+        {data && (
+          <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 14, lineHeight: 1.65, maxWidth: 520, color: "var(--text-secondary)", marginBottom: "2rem" }}>
+            These were the {data.total} picks selected on {fmt(data.start_date)}.
+            {exitedCount > 0
+              ? ` ${exitedCount} have since exited — subscribers received an alert when each one was replaced.`
+              : " All are still active in the current portfolio."}
+          </p>
+        )}
 
         {/* Period metrics */}
-        <p style={sectionLabel}>Portfolio performance · Apr 2026 – Jun 2026 (last 90 days)</p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: "2.5rem" }}>
-          {[
-            { label: "Portfolio return",    val: "+14.2%", green: true },
-            { label: "S&P 500 same period", val: "+6.1%",  green: false },
-            { label: "Alpha vs S&P 500",    val: "+8.1pp", green: true },
-          ].map(({ label, val, green }) => (
-            <div key={label} style={{
-              background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)",
-              borderRadius: "var(--radius-md)", padding: "14px 16px",
-            }}>
-              <div style={{
-                fontFamily: playfair, fontWeight: 400, fontSize: 22,
-                color: green ? "#0F6E56" : "var(--text-secondary)",
-                marginBottom: 4,
-              }}>
-                {val}
-              </div>
-              <div style={{
-                fontFamily: outfit, fontWeight: 300, fontSize: 10,
-                color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em",
-              }}>
-                {label}
-              </div>
+        {data && data.period_model !== null && (
+          <>
+            <p style={sectionLabel}>
+              Portfolio performance · {fmt(data.start_date)} – {fmt(data.end_date)}
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: "2.5rem" }}>
+              {[
+                { label: "Portfolio return",    val: `${data.period_model >= 0 ? "+" : ""}${data.period_model}%`, green: (data.period_model ?? 0) >= 0 },
+                { label: "S&P 500 same period", val: `${(data.period_spy ?? 0) >= 0 ? "+" : ""}${data.period_spy}%`, green: false },
+                { label: "Alpha vs S&P 500",    val: `${(data.period_alpha ?? 0) >= 0 ? "+" : ""}${data.period_alpha}pp`, green: (data.period_alpha ?? 0) >= 0 },
+              ].map(({ label, val, green }) => (
+                <div key={label} style={{
+                  background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)",
+                  borderRadius: "var(--radius-md)", padding: "14px 16px",
+                }}>
+                  <div style={{
+                    fontFamily: playfair, fontWeight: 400, fontSize: 22,
+                    color: green ? "#0F6E56" : "var(--text-secondary)",
+                    marginBottom: 4,
+                  }}>
+                    {val}
+                  </div>
+                  <div style={{
+                    fontFamily: outfit, fontWeight: 300, fontSize: 10,
+                    color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em",
+                  }}>
+                    {label}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </>
+        )}
 
         {/* Picks table */}
-        <p style={sectionLabel}>Individual picks · Apr – Jun 2026 · model return vs buy & hold</p>
-        <div style={{ background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", borderRadius: "var(--radius-lg)", overflow: "hidden", marginBottom: "2.5rem" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ background: "var(--bg-secondary)" }}>
-                <th style={{ ...th, padding: "10px 8px 10px 1.25rem", width: "38%" }}>Stock</th>
-                <th style={thR}>Model</th>
-                <th style={thR}>Buy & hold</th>
-                <th style={{ ...thR, paddingRight: "1.25rem" }}>Alpha</th>
-              </tr>
-            </thead>
-            <tbody>
-              {picks.map((p, i) => {
-                const alpha = p.m - p.bh;
-                const pos = (v: number) => v >= 0 ? `+${v.toFixed(1)}%` : `${v.toFixed(1)}%`;
-                return (
-                  <tr key={p.t} style={{ background: i % 2 === 0 ? "var(--bg-primary)" : "transparent" }}>
-                    <td style={{ ...td, padding: "10px 8px 10px 1.25rem" }}>
-                      <span style={{ fontWeight: 500 }}>{p.t}</span>
-                      <span style={{
-                        fontSize: 10, color: "var(--text-tertiary)",
-                        background: "var(--bg-secondary)", borderRadius: 3,
-                        padding: "1px 5px", marginLeft: 6,
-                      }}>{p.s}</span>
-                      <br />
-                      <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>{p.n}</span>
-                    </td>
-                    <td style={{ ...tdR, color: p.m >= 0 ? "#0F6E56" : "var(--danger-text)" }}>
-                      {pos(p.m)}
-                    </td>
-                    <td style={{ ...tdR, color: "var(--text-secondary)" }}>
-                      {pos(p.bh)}
-                    </td>
-                    <td style={{ ...tdR, paddingRight: "1.25rem" }}>
-                      <span style={{
-                        fontSize: 11, borderRadius: 4, padding: "2px 6px",
-                        background: alpha >= 0 ? "#f0f8f4" : "var(--danger-bg)",
-                        color: alpha >= 0 ? "#0F6E56" : "var(--danger-text)",
-                      }}>
-                        {alpha >= 0 ? "+" : ""}{alpha.toFixed(1)}%
-                      </span>
-                    </td>
+        {data && (
+          <>
+            <p style={sectionLabel}>
+              Picks · {fmt(data.start_date)} – {fmt(data.end_date)} · {activeCount} still active, {exitedCount} exited
+            </p>
+            <div style={{ background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", borderRadius: "var(--radius-lg)", overflow: "hidden", marginBottom: "2.5rem" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ background: "var(--bg-secondary)" }}>
+                    <th style={{ ...th, padding: "10px 8px 10px 1.25rem", width: "55%" }}>Stock</th>
+                    <th style={thR}>Sector</th>
+                    <th style={{ ...thR, paddingRight: "1.25rem" }}>Status</th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                </thead>
+                <tbody>
+                  {data.holdings.map((h, i) => {
+                    const info = TICKER_NAMES[h.ticker] ?? { name: "", sector: "—" };
+                    return (
+                      <tr key={h.ticker} style={{ background: i % 2 === 0 ? "var(--bg-primary)" : "transparent" }}>
+                        <td style={{ ...td, padding: "10px 8px 10px 1.25rem" }}>
+                          <span style={{ fontWeight: 500 }}>{h.ticker}</span>
+                          {info.name && (
+                            <>
+                              <br />
+                              <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>{info.name}</span>
+                            </>
+                          )}
+                        </td>
+                        <td style={tdR}>
+                          <span style={{
+                            fontSize: 10, color: "var(--text-tertiary)",
+                            background: "var(--bg-secondary)", borderRadius: 3,
+                            padding: "1px 5px",
+                          }}>
+                            {info.sector}
+                          </span>
+                        </td>
+                        <td style={{ ...tdR, paddingRight: "1.25rem" }}>
+                          <span style={{
+                            fontSize: 11, fontWeight: 600,
+                            color: h.active ? "#1D9E75" : "#8A8F9A",
+                          }}>
+                            {h.active ? "Active" : "Exited"}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {error && (
+          <p style={{ color: "var(--text-tertiary)", textAlign: "center", padding: "3rem 0" }}>
+            Unable to load portfolio data.
+          </p>
+        )}
 
         {/* Paywall CTA */}
         <div style={{
@@ -189,7 +268,7 @@ export function FreePreview() {
               Ready to see the current 15?
             </p>
             <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "var(--text-tertiary)", margin: 0 }}>
-              Updated 6 weeks ago · next change in ~6 weeks · alerts included
+              Updated every 2 months · email alert on every change
             </p>
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
