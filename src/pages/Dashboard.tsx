@@ -48,7 +48,7 @@ const SECTOR_COLORS: Record<string, string> = {
   Commodity:   "#D97706",
 };
 
-interface PortfolioHolding { ticker: string; weight: number; position?: string; performance?: number | null; }
+interface PortfolioHolding { ticker: string; weight: number; position?: string; performance?: number | null; entry_date?: string | null; }
 interface PortfolioData {
   portfolio: PortfolioHolding[];
   as_of: string;
@@ -515,7 +515,10 @@ export function Dashboard() {
                     </td>
                     <td style={{ ...td }}>
                       {perf != null
-                        ? <span style={{ fontWeight: 500, color: perf >= 0 ? "#1D9E75" : "#B5621A" }}>{perf >= 0 ? "+" : ""}{perf.toFixed(1)}%</span>
+                        ? <>
+                            <span style={{ fontWeight: 500, color: perf >= 0 ? "#1D9E75" : "#B5621A" }}>{perf >= 0 ? "+" : ""}{perf.toFixed(1)}%</span>
+                            {h.entry_date && <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 1 }}>since {h.entry_date}</div>}
+                          </>
                         : <span style={{ color: "var(--text-tertiary)" }}>—</span>}
                     </td>
                     <td style={{ ...td, paddingRight: "1.25rem" }}>
