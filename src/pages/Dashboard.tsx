@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, QuantinLogo } from "../components/ui";
 import { supabase } from "../lib/supabase";
+import { useRegime } from "../hooks/useRegime";
 
 const TICKER_NAMES: Record<string, { name: string; sector: string }> = {
   AAPL: { name: "Apple",                   sector: "Technology"  },
@@ -160,6 +161,7 @@ const playfair = "'Playfair Display', serif";
 
 export function Dashboard() {
   const navigate = useNavigate();
+  const { label: regimeLabel, colors: regimeColors } = useRegime();
   const [alerts, setAlerts] = useState(defaultAlerts);
   const toggle = (k: AlertKey) => setAlerts(a => ({ ...a, [k]: !a[k] }));
   const [authReady, setAuthReady] = useState(false);
@@ -261,12 +263,12 @@ export function Dashboard() {
         </p>
         <div style={{
           display: "inline-flex", alignItems: "center", gap: 8, marginBottom: "2.5rem",
-          background: "#f0f8f4", border: "0.5px solid #c0e0d4",
+          background: regimeColors.bg, border: `0.5px solid ${regimeColors.border}`,
           borderRadius: 100, padding: "5px 14px",
         }}>
-          <div style={{ width: 6, height: 6, background: "#1D9E75", borderRadius: "50%" }} />
-          <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "#0F6E56" }}>
-            Bull market, low volatility — historically the strongest regime
+          <div style={{ width: 6, height: 6, background: regimeColors.dot, borderRadius: "50%" }} />
+          <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: regimeColors.text }}>
+            {regimeLabel ?? "Loading…"}
           </span>
         </div>
         <Button size="lg" onClick={() => navigate("/subscribe")}>
@@ -344,9 +346,9 @@ export function Dashboard() {
               background: "#f0f8f4", border: "0.5px solid #c0e0d4",
               borderRadius: 100, padding: "6px 14px", marginBottom: "2.5rem",
             }}>
-              <div style={{ width: 7, height: 7, background: "#1D9E75", borderRadius: "50%" }} />
-              <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "#0F6E56" }}>
-                Bull market, low volatility — historically the strongest regime
+              <div style={{ width: 7, height: 7, background: regimeColors.dot, borderRadius: "50%" }} />
+              <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: regimeColors.text }}>
+                {regimeLabel ?? "Loading…"}
               </span>
             </div>
 
@@ -418,9 +420,9 @@ export function Dashboard() {
             background: "#f0f8f4", border: "0.5px solid #c0e0d4",
             borderRadius: 100, padding: "5px 13px", marginBottom: "1.5rem",
           }}>
-            <div style={{ width: 7, height: 7, background: "#1D9E75", borderRadius: "50%", flexShrink: 0 }} />
-            <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "#0F6E56" }}>
-              Bull market, low volatility
+            <div style={{ width: 7, height: 7, background: regimeColors.dot, borderRadius: "50%", flexShrink: 0 }} />
+            <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: regimeColors.text }}>
+              {regimeLabel ?? "Loading…"}
             </span>
           </div>
 

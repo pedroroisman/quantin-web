@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useRegime } from "../hooks/useRegime";
 import { useNavigate } from "react-router-dom";
 import { Button, QuantinLogo } from "../components/ui";
 import { supabase } from "../lib/supabase";
@@ -24,6 +25,7 @@ const inputStyle: React.CSSProperties = {
 
 export function Checkout() {
   const navigate = useNavigate();
+  const { label: regimeLabel, colors: regimeColors } = useRegime();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
 
@@ -186,10 +188,10 @@ export function Checkout() {
               background: "#f0f8f4", border: "0.5px solid #c0e0d4",
               borderRadius: 100,
             }}>
-              <div style={{ width: 7, height: 7, background: "#1D9E75", borderRadius: "50%", flexShrink: 0 }} />
+              <div style={{ width: 7, height: 7, background: regimeColors.dot, borderRadius: "50%", flexShrink: 0 }} />
               <div>
-                <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "#0F6E56", margin: 0 }}>
-                  Current regime: Bull, low volatility
+                <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: regimeColors.text, margin: 0 }}>
+                  Current regime: {regimeLabel ?? "Loading…"}
                 </p>
                 <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 11, color: "#1D9E75", margin: 0 }}>
                   Historically the strongest period for the model

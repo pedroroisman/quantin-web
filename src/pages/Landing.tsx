@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useRegime } from "../hooks/useRegime";
 import { useNavigate } from "react-router-dom";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip,
@@ -116,6 +117,7 @@ function CustomTooltip({ active, payload, label }: any) {
 
 export function Landing() {
   const navigate = useNavigate();
+  const { label: regimeLabel, colors: regimeColors } = useRegime();
 
   return (
     <>
@@ -174,9 +176,9 @@ export function Landing() {
               background: "rgba(29,158,117,0.08)", border: "0.5px solid rgba(29,158,117,0.3)",
               borderRadius: 100, padding: "4px 12px",
             }}>
-              <span style={{ width: 6, height: 6, background: "#1D9E75", borderRadius: "50%", display: "inline-block" }} />
-              <span style={{ fontSize: 12, color: "#0F6E56", letterSpacing: "0.01em" }}>
-                Live · Bull market, low volatility
+              <span style={{ width: 6, height: 6, background: regimeColors.dot, borderRadius: "50%", display: "inline-block" }} />
+              <span style={{ fontSize: 12, color: regimeColors.text, letterSpacing: "0.01em" }}>
+                Live · {regimeLabel ?? "Loading…"}
               </span>
             </span>
           </div>
