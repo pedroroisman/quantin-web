@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRegime } from "../hooks/useRegime";
 import { useNavigate } from "react-router-dom";
 import {
@@ -6,6 +6,7 @@ import {
   ResponsiveContainer, CartesianGrid,
 } from "recharts";
 import { Button, QuantinLogo } from "../components/ui";
+import { supabase } from "../lib/supabase";
 
 const chartData = [
   { period: "Feb '18", quantin: 10000, sp500: 10000  },
@@ -115,9 +116,24 @@ function CustomTooltip({ active, payload, label }: any) {
   );
 }
 
+type AuthState = "loading" | "none" | "subscribed" | "unsubscribed";
+
 export function Landing() {
   const navigate = useNavigate();
   const { label: regimeLabel, colors: regimeColors } = useRegime();
+  const [authState, setAuthState] = useState<AuthState>("loading");
+
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session?.user?.email) { setAuthState("none"); return; }
+      const { data } = await supabase
+        .from("subscribers")
+        .select("id")
+        .eq("email", session.user.email)
+        .maybeSingle();
+      setAuthState(data ? "subscribed" : "unsubscribed");
+    });
+  }, []);
 
   return (
     <>
@@ -147,11 +163,22 @@ export function Landing() {
         }}>
           <QuantinLogo iconSize={22} />
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/signin")}>Sign in</Button>
-            <span className="nav-secondary" style={{ display: "inline-flex" }}>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/preview")}>See free preview</Button>
-            </span>
-            <Button variant="primary" size="sm" onClick={() => navigate("/subscribe")}>Get the portfolio</Button>
+            {authState === "subscribed" ? (
+              <Button variant="primary" size="sm" onClick={() => navigate("/portfolio")}>View Portfolio</Button>
+            ) : authState === "unsubscribed" ? (
+              <>
+                <Button variant="ghost" size="sm" onClick={() => navigate("/signin")}>Sign in</Button>
+                <Button variant="primary" size="sm" onClick={() => navigate("/subscribe")}>Subscribe</Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" onClick={() => navigate("/signin?mode=signup")}>Sign in</Button>
+                <span className="nav-secondary" style={{ display: "inline-flex" }}>
+                  <Button variant="ghost" size="sm" onClick={() => navigate("/preview")}>See free preview</Button>
+                </span>
+                <Button variant="primary" size="sm" onClick={() => navigate("/subscribe")}>Get the portfolio</Button>
+              </>
+            )}
           </div>
         </nav>
 

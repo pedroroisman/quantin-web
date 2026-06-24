@@ -28,13 +28,23 @@ export function Checkout() {
   const { label: regimeLabel, colors: regimeColors } = useRegime();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
+  const [sessionChecked, setSessionChecked] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { navigate("/signin?mode=signup"); return; }
-      if (session.user.email) setEmail(session.user.email);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session?.user?.email) { navigate("/signin?mode=signup"); return; }
+      const { data } = await supabase
+        .from("subscribers")
+        .select("id")
+        .eq("email", session.user.email)
+        .maybeSingle();
+      if (data) { navigate("/portfolio"); return; }
+      setEmail(session.user.email);
+      setSessionChecked(true);
     });
   }, [navigate]);
+
+  if (!sessionChecked) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
