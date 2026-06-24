@@ -36,7 +36,19 @@ const TICKER_NAMES: Record<string, { name: string; sector: string }> = {
   XOM:  { name: "ExxonMobil",             sector: "Energy"      },
 };
 
-interface PortfolioHolding { ticker: string; weight: number; position?: string; }
+const SECTOR_COLORS: Record<string, string> = {
+  Technology:  "#185FA5",
+  ETF:         "#1D9E75",
+  Energy:      "#B5621A",
+  Industrials: "#6B7280",
+  Healthcare:  "#8B5CF6",
+  Financials:  "#F59E0B",
+  Consumer:    "#EC4899",
+  Utilities:   "#10B981",
+  Commodity:   "#D97706",
+};
+
+interface PortfolioHolding { ticker: string; weight: number; position?: string; performance?: number | null; }
 interface PortfolioData {
   portfolio: PortfolioHolding[];
   as_of: string;
@@ -44,17 +56,70 @@ interface PortfolioData {
   period_metrics: Record<string, { model: { total: number } }>;
 }
 
-type AlertKey = "exit" | "entry" | "reminder" | "regime";
+type AlertKey = "exit" | "entry" | "position" | "reminder" | "regime";
 const defaultAlerts: Record<AlertKey, boolean> = {
-  exit: true, entry: true, reminder: false, regime: true,
+  exit: true, entry: true, position: true, reminder: false, regime: true,
 };
 
 const alertDefs: { key: AlertKey; label: string; sub: string; warn?: boolean }[] = [
-  { key: "exit",     label: "Stock exits the portfolio",      sub: "Immediate email + push when a position is dropped" },
+  { key: "exit",     label: "Stock exits the portfolio",      sub: "Alert when a position is removed at rebalance" },
   { key: "entry",    label: "New stock enters the portfolio",  sub: "Alert when a new position is added at rebalance" },
+  { key: "position", label: "Position change (Long ↔ Cash)",  sub: "Alert when a held stock switches between Long and Cash" },
   { key: "reminder", label: "Rebalance reminder",             sub: "7 days before every scheduled rebalance" },
   { key: "regime",   label: "Regime change",                  sub: "Alert if market transitions to Bear or high volatility", warn: true },
 ];
+
+function SectorPieChart({ holdings }: { holdings: PortfolioHolding[] }) {
+  const sectors: Record<string, number> = {};
+  holdings.forEach(h => {
+    const s = TICKER_NAMES[h.ticker]?.sector ?? "Other";
+    sectors[s] = (sectors[s] ?? 0) + 1;
+  });
+  const total = holdings.length;
+  const entries = Object.entries(sectors).sort((a, b) => b[1] - a[1]);
+
+  const cx = 70, cy = 70, r = 55, inner = 32;
+  let angle = -Math.PI / 2;
+  const slices = entries.map(([sector, count]) => {
+    const pct = count / total;
+    const sweep = pct * 2 * Math.PI;
+    const x1 = cx + r * Math.cos(angle);
+    const y1 = cy + r * Math.sin(angle);
+    angle += sweep;
+    const x2 = cx + r * Math.cos(angle);
+    const y2 = cy + r * Math.sin(angle);
+    const xi1 = cx + inner * Math.cos(angle - sweep);
+    const yi1 = cy + inner * Math.sin(angle - sweep);
+    const xi2 = cx + inner * Math.cos(angle);
+    const yi2 = cy + inner * Math.sin(angle);
+    const large = sweep > Math.PI ? 1 : 0;
+    return { sector, pct, large, x1, y1, x2, y2, xi1, yi1, xi2, yi2, color: SECTOR_COLORS[sector] ?? "#8A8F9A" };
+  });
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
+      <svg width="140" height="140" viewBox="0 0 140 140">
+        {slices.map(s => (
+          <path key={s.sector}
+            d={`M ${s.xi1} ${s.yi1} L ${s.x1} ${s.y1} A ${r} ${r} 0 ${s.large} 1 ${s.x2} ${s.y2} L ${s.xi2} ${s.yi2} A ${inner} ${inner} 0 ${s.large} 0 ${s.xi1} ${s.yi1} Z`}
+            fill={s.color} stroke="var(--bg-primary)" strokeWidth="1.5"
+          />
+        ))}
+      </svg>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {slices.map(s => (
+          <div key={s.sector} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: s.color, flexShrink: 0 }} />
+            <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{s.sector}</span>
+            <span style={{ fontSize: 12, color: "var(--text-tertiary)", marginLeft: "auto", minWidth: 32, textAlign: "right" }}>
+              {Math.round(s.pct * 100)}%
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   return (
@@ -423,13 +488,15 @@ export function Dashboard() {
             <thead>
               <tr style={{ background: "var(--bg-secondary)" }}>
                 <th style={{ ...thL, padding: "10px 8px 10px 1.25rem", width: "50%" }}>Stock</th>
-                <th style={th}>Weight</th>
+                <th style={th}>Performance</th>
                 <th style={{ ...th, paddingRight: "1.25rem" }}>Position</th>
               </tr>
             </thead>
             <tbody>
               {portfolio ? portfolio.portfolio.map((h, i) => {
                 const info = TICKER_NAMES[h.ticker] ?? { name: "", sector: "" };
+                const pos  = h.position ?? "long";
+                const perf = h.performance;
                 return (
                   <tr key={h.ticker} style={{ background: i % 2 === 0 ? "var(--bg-primary)" : "transparent" }}>
                     <td style={{ ...tdL, padding: "11px 8px 11px 1.25rem" }}>
@@ -446,18 +513,15 @@ export function Dashboard() {
                         <div style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: 2 }}>{info.name}</div>
                       )}
                     </td>
-                    <td style={{ ...td, color: "var(--text-secondary)" }}>
-                      {(h.weight * 100).toFixed(1)}%
+                    <td style={{ ...td }}>
+                      {perf != null
+                        ? <span style={{ fontWeight: 500, color: perf >= 0 ? "#1D9E75" : "#B5621A" }}>{perf >= 0 ? "+" : ""}{perf.toFixed(1)}%</span>
+                        : <span style={{ color: "var(--text-tertiary)" }}>—</span>}
                     </td>
                     <td style={{ ...td, paddingRight: "1.25rem" }}>
-                      {(() => {
-                        const pos = h.position ?? "long";
-                        return (
-                          <span style={{ fontSize: 11, fontWeight: 600, color: pos === "long" ? "#1D9E75" : "#8A8F9A" }}>
-                            {pos === "long" ? "Long" : "Cash"}
-                          </span>
-                        );
-                      })()}
+                      <span style={{ fontSize: 11, fontWeight: 600, color: pos === "long" ? "#1D9E75" : "#8A8F9A" }}>
+                        {pos === "long" ? "Long" : "Cash"}
+                      </span>
                     </td>
                   </tr>
                 );
@@ -471,10 +535,25 @@ export function Dashboard() {
             </tbody>
           </table>
           <div style={{ padding: "0.75rem 1.25rem", background: "var(--bg-secondary)", fontSize: 12, color: "var(--text-tertiary)", display: "flex", justifyContent: "space-between" }}>
-            <span>{portfolio ? `${portfolio.portfolio.length} positions · equal weight` : "—"}</span>
-            <span>{portfolio ? `As of ${portfolio.as_of}` : ""}</span>
+            <span>Equal weight · {portfolio?.portfolio.length ?? "—"} positions</span>
+            <span>{portfolio ? `Since rebalance · as of ${portfolio.as_of}` : ""}</span>
           </div>
         </div>
+
+        {/* Sector composition */}
+        {portfolio && portfolio.portfolio.length > 0 && (
+          <>
+            <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1D9E75", marginBottom: "0.75rem" }}>
+              Sector composition
+            </p>
+            <div style={{
+              background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)",
+              borderRadius: "var(--radius-lg)", padding: "1.25rem", marginBottom: "2rem",
+            }}>
+              <SectorPieChart holdings={portfolio.portfolio} />
+            </div>
+          </>
+        )}
 
         {/* Alert settings */}
         <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1D9E75", marginBottom: "0.75rem" }}>
