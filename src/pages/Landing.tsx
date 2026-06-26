@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRegime } from "../hooks/useRegime";
 import { useNavigate } from "react-router-dom";
 import {
@@ -116,6 +116,174 @@ function CustomTooltip({ active, payload, label }: any) {
   );
 }
 
+const TICKER_SCREENS: { header: string; lines: string[]; ml?: boolean; done?: boolean }[] = [
+  {
+    header: "— 1. parameters —",
+    lines: ["Universe.....  798 stocks & ETFs", "Strategies...  150 combinations", "Lookback.....  3 to 12 months", "Portfolio....  15 stocks", "Rebalance....  every 2 months"],
+  },
+  {
+    header: "— 2. backtesting —",
+    lines: ["Testing 150 strategies...", "Using 8 years of market data..."],
+  },
+  {
+    header: "— 3. market reading —",
+    lines: ["Detecting market conditions..."],
+    ml: true,
+  },
+  {
+    header: "— 4. strategy selection —",
+    lines: ["Matching strategy to conditions..."],
+    ml: true,
+  },
+  {
+    header: "— 5. portfolio —",
+    lines: ["Walk-forward validation...", "Scoring all 798 stocks...", "Selecting top 15..."],
+  },
+  {
+    header: "Portfolio ready  ●",
+    lines: [],
+    done: true,
+  },
+];
+
+function TickerTape() {
+  const tapeRef = useRef<HTMLDivElement>(null);
+  const dotRef  = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const tape = tapeRef.current;
+    const dot  = dotRef.current;
+    if (!tape || !dot) return;
+
+    let si = 0, li = 0, ci = 0;
+    let lineEl: HTMLDivElement | null = null;
+    let cursorEl: HTMLSpanElement | null = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    function clearScreen(next: () => void) {
+      tape.style.opacity = "0";
+      tape.style.transition = "opacity 0.25s";
+      timer = setTimeout(() => {
+        tape.innerHTML = "";
+        tape.style.transition = "";
+        tape.style.opacity = "1";
+        next();
+      }, 280);
+    }
+
+    function nextScreen() {
+      si = (si + 1) % TICKER_SCREENS.length;
+      li = 0; ci = 0; lineEl = null; cursorEl = null;
+      if (dot) dot.style.background = si === TICKER_SCREENS.length - 1 ? "#185FA5" : "#2D6A3F";
+      clearScreen(tick);
+    }
+
+    function makeLineEl(text: string, isHeader: boolean, isDone: boolean) {
+      const el = document.createElement("div");
+      Object.assign(el.style, {
+        fontFamily: "monospace",
+        fontSize: "11px",
+        lineHeight: "1.8",
+        textTransform: "uppercase",
+        letterSpacing: isHeader ? "0.1em" : "0.04em",
+        whiteSpace: "pre",
+        minHeight: "1.4em",
+        color: isDone ? "#1D5C3A" : isHeader ? "#0A0A0A" : "#1A1209",
+        fontWeight: isHeader || isDone ? "500" : "400",
+      });
+      return el;
+    }
+
+    function makeCursor() {
+      const el = document.createElement("span");
+      Object.assign(el.style, {
+        display: "inline-block", width: "6px", height: "10px",
+        background: "#1A1209", verticalAlign: "-2px", marginLeft: "1px",
+        animation: "qtblink 0.7s step-end infinite",
+      });
+      return el;
+    }
+
+    function tick() {
+      const screen = TICKER_SCREENS[si];
+      const allLines = [screen.header, ...screen.lines];
+      const isHeader = li === 0;
+      const isDone = !!screen.done;
+      const text = allLines[li] ?? "";
+
+      if (ci === 0) {
+        if (cursorEl) cursorEl.remove();
+        lineEl = makeLineEl(text, isHeader, isDone);
+        cursorEl = makeCursor();
+        lineEl.appendChild(cursorEl);
+        tape.appendChild(lineEl);
+        if (isHeader && li === 0) {
+          const spacer = document.createElement("div");
+          spacer.style.height = "6px";
+          tape.insertBefore(spacer, lineEl);
+        }
+      }
+
+      if (ci < text.length) {
+        lineEl!.insertBefore(document.createTextNode(text[ci]), cursorEl!);
+        ci++;
+        timer = setTimeout(tick, text[ci - 1] === "." ? 60 : 22);
+      } else {
+        if (screen.ml && isHeader) {
+          const b = document.createElement("span");
+          Object.assign(b.style, {
+            display: "inline-block", background: "#1C2F4A", color: "#85B7EB",
+            fontSize: "8px", letterSpacing: "0.1em",
+            padding: "1px 5px", borderRadius: "3px",
+            verticalAlign: "2px", marginLeft: "4px",
+          });
+          b.textContent = "ML";
+          lineEl!.insertBefore(b, cursorEl!);
+        }
+        li++; ci = 0;
+        if (li < allLines.length) {
+          timer = setTimeout(tick, isHeader ? 120 : 180);
+        } else {
+          if (cursorEl) cursorEl.remove();
+          const holdMs = screen.done ? 3000 : 2200;
+          timer = setTimeout(nextScreen, holdMs);
+        }
+      }
+    }
+
+    dot.style.background = "#2D6A3F";
+    tick();
+    return () => { if (timer) clearTimeout(timer); };
+  }, []);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column" }}>
+      <div style={{
+        fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
+        color: "var(--text-tertiary)", marginBottom: "0.5rem",
+      }}>
+        how the model works
+      </div>
+      <div style={{ background: "#1A1A1A", borderRadius: "10px 10px 6px 6px", padding: "10px 0 0 0" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 14px 8px" }}>
+          <span style={{ fontFamily: "monospace", fontSize: 8, letterSpacing: "0.15em", color: "#555", textTransform: "uppercase" }}>
+            Quantin · Model v3
+          </span>
+          <span ref={dotRef} style={{ width: 5, height: 5, borderRadius: "50%", background: "#2D6A3F", display: "inline-block" }} />
+        </div>
+        <div style={{ height: 2, background: "#0A0A0A", margin: "0 6px", borderRadius: 1 }} />
+        <div
+          ref={tapeRef}
+          style={{ background: "#FFF8EE", margin: "4px 0 0 0", height: 148, padding: "10px 16px 12px", overflow: "hidden" }}
+        />
+        <div style={{ background: "#141414", borderRadius: "0 0 6px 6px", height: 6, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+          {[0, 1, 2].map(i => <div key={i} style={{ width: 3, height: 3, borderRadius: "50%", background: "#2a2a2a" }} />)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 type AuthState = "loading" | "none" | "subscribed" | "unsubscribed";
 
 export function Landing() {
@@ -138,6 +306,11 @@ export function Landing() {
   return (
     <>
       <style>{`
+        @keyframes qtblink { 0%,100%{opacity:1} 50%{opacity:0} }
+        @media (max-width: 640px) {
+          .hero-row { flex-direction: column !important; }
+          .hero-ticker { width: 100% !important; }
+        }
         @media (max-width: 600px) {
           .nav-secondary { display: none !important; }
           .hero-headline { font-size: 28px !important; }
@@ -208,28 +381,37 @@ export function Landing() {
             </span>
           </div>
 
-          <p style={{
-            fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em",
-            color: "var(--text-tertiary)", marginBottom: "0.3rem",
-          }}>
-            Quantitative portfolio
-          </p>
+          {/* Hero: headline left, ticker right */}
+          <div className="hero-row" style={{ display: "flex", gap: "2rem", alignItems: "flex-start", marginBottom: "2.5rem" }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{
+                fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em",
+                color: "var(--text-tertiary)", marginBottom: "0.3rem",
+              }}>
+                Quantitative portfolio
+              </p>
 
-          <h1 className="hero-headline" style={{
-            fontFamily: "'Playfair Display', serif", fontWeight: 400,
-            fontSize: 36, marginBottom: "0.75rem",
-            color: "var(--text-primary)", lineHeight: 1.2,
-          }}>
-            Math picks your stocks.<br />You just invest.
-          </h1>
+              <h1 className="hero-headline" style={{
+                fontFamily: "'Playfair Display', serif", fontWeight: 400,
+                fontSize: 36, marginBottom: "0.75rem",
+                color: "var(--text-primary)", lineHeight: 1.2,
+              }}>
+                Math picks your stocks.<br />You just invest.
+              </h1>
 
-          <p style={{
-            fontSize: 16, lineHeight: 1.65, maxWidth: 520,
-            color: "var(--text-secondary)", marginBottom: "2.5rem",
-          }}>
-            Every two months, Quantin selects the 15 best-performing assets using
-            quantitative models. No opinions. Just data.
-          </p>
+              <p style={{
+                fontSize: 16, lineHeight: 1.65,
+                color: "var(--text-secondary)", marginBottom: 0,
+              }}>
+                Every two months, Quantin selects the 15 best-performing assets using
+                quantitative models. No opinions. Just data.
+              </p>
+            </div>
+
+            <div className="hero-ticker" style={{ flexShrink: 0, width: 240 }}>
+              <TickerTape />
+            </div>
+          </div>
 
           {/* Metrics */}
           <div className="metric-grid" style={{
