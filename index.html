@@ -4,7 +4,122 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Quantin</title>
+
+    <!-- Primary SEO -->
+    <title>Quantin — Math picks your stocks. You just invest.</title>
+    <meta name="description" content="A quantitative model selects the 15 best US stocks every 2 months. +23.6% annual return, −8.4% max drawdown, Sharpe ratio 1.95. Walk-forward validated, no opinions — just data. $25/month." />
+    <meta name="keywords" content="quantitative portfolio, algorithmic investing, stock selection model, quantitative finance, momentum investing, machine learning investing, retail investor" />
+    <link rel="canonical" href="https://quantin.finance" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://quantin.finance" />
+    <meta property="og:title" content="Quantin — Math picks your stocks. You just invest." />
+    <meta property="og:description" content="A quantitative model selects the 15 best US stocks every 2 months. +23.6% annual return, −8.4% max drawdown vs −33.7% S&P 500. Walk-forward validated since 2017." />
+    <meta property="og:site_name" content="Quantin" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Quantin — Math picks your stocks. You just invest." />
+    <meta name="twitter:description" content="Quantitative model selects 15 US stocks every 2 months. +23.6% annual return, Sharpe 1.95. No opinions — just data." />
+
+    <!-- Robots -->
+    <meta name="robots" content="index, follow" />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://quantin.finance/#org",
+          "name": "Quantin",
+          "url": "https://quantin.finance",
+          "description": "Quantin is a quantitative portfolio service that uses machine learning to select the 15 best-performing US stocks every two months.",
+          "foundingDate": "2024",
+          "areaServed": "Worldwide"
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://quantin.finance/#website",
+          "url": "https://quantin.finance",
+          "name": "Quantin",
+          "publisher": { "@id": "https://quantin.finance/#org" }
+        },
+        {
+          "@type": "WebApplication",
+          "@id": "https://quantin.finance/#product",
+          "name": "Quantin Portfolio",
+          "url": "https://quantin.finance",
+          "provider": { "@id": "https://quantin.finance/#org" },
+          "applicationCategory": "FinanceApplication",
+          "offers": {
+            "@type": "Offer",
+            "price": "25",
+            "priceCurrency": "USD",
+            "description": "Monthly subscription. Includes email and push alerts on every portfolio change."
+          },
+          "description": "A machine learning model that selects 15 US stocks and ETFs every two months based on momentum, regime detection, and walk-forward validation.",
+          "featureList": [
+            "798-asset universe screened every 2 months",
+            "150 strategies backtested on 8 years of market data",
+            "Two-stage market regime detection using machine learning",
+            "Walk-forward validation across 50 rebalance periods",
+            "Equal-weight portfolio of 15 positions",
+            "Email and push alerts on new picks, exits, and cash signals"
+          ]
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How does Quantin pick stocks?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Quantin's model screens 798 US stocks and ETFs every two months. It tests 150 strategy combinations on 8 years of historical data, detects the current market regime using machine learning, selects the best-fit strategy, and applies walk-forward validation before choosing the top 15 positions by risk-adjusted momentum."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What is Quantin's historical performance?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Backtested from February 2018 to June 2026, Quantin returned +23.6% annually (vs +14.5% for the S&P 500), had a maximum drawdown of −8.4% (vs −33.7% for the S&P 500), and achieved a Sharpe ratio of 1.95 (vs 0.80 for the S&P 500). Results are walk-forward validated with no lookahead bias."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How often does Quantin rebalance the portfolio?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The portfolio rebalances every two months. Subscribers receive email and push notifications whenever a new pick is added, a position is exited, or a cash signal is triggered."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How much does Quantin cost?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Quantin costs $25 per month. Subscribers get full access to the current 15-stock portfolio, historical performance data, and alerts on every portfolio change."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is there a free preview?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. A free preview at quantin.finance/preview shows the portfolio as it stood 90 days ago, including positions and performance since entry."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300&family=Playfair+Display:wght@400&display=swap" rel="stylesheet" />
