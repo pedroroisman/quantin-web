@@ -151,8 +151,8 @@ function TickerTape() {
   const dotRef  = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
-    const tape = tapeRef.current;
-    const dot  = dotRef.current;
+    const tape: HTMLDivElement = tapeRef.current!;
+    const dot: HTMLSpanElement = dotRef.current!;
     if (!tape || !dot) return;
 
     let si = 0, li = 0, ci = 0;
@@ -178,7 +178,7 @@ function TickerTape() {
       clearScreen(tick);
     }
 
-    function makeLineEl(text: string, isHeader: boolean, isDone: boolean) {
+    function makeLineEl(_text: string, isHeader: boolean, isDone: boolean) {
       const el = document.createElement("div");
       Object.assign(el.style, {
         fontFamily: "monospace",
