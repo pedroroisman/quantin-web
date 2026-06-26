@@ -307,6 +307,10 @@ export function Landing() {
     <>
       <style>{`
         @keyframes qtblink { 0%,100%{opacity:1} 50%{opacity:0} }
+        @media (min-width: 900px) {
+          .hero-headline { font-size: 48px !important; }
+          .hero-chart   { height: 280px !important; }
+        }
         @media (max-width: 640px) {
           .hero-row { flex-direction: column !important; }
           .hero-ticker { width: 100% !important; }
@@ -356,7 +360,7 @@ export function Landing() {
         </nav>
 
         {/* Hero */}
-        <main style={{ maxWidth: 720, margin: "0 auto", padding: "4rem 2rem 6rem" }}>
+        <main style={{ maxWidth: 1100, margin: "0 auto", padding: "4rem 3rem 6rem" }}>
 
           {/* Logo mark — centered */}
           <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
@@ -408,7 +412,7 @@ export function Landing() {
               </p>
             </div>
 
-            <div className="hero-ticker" style={{ flexShrink: 0, width: 240 }}>
+            <div className="hero-ticker" style={{ flexShrink: 0, width: 300 }}>
               <TickerTape />
             </div>
           </div>
@@ -422,7 +426,7 @@ export function Landing() {
           </div>
 
           {/* Chart */}
-          <div style={{ width: "100%", height: 220, marginBottom: "0.75rem" }}>
+          <div className="hero-chart" style={{ width: "100%", height: 220, marginBottom: "0.75rem" }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
                 <CartesianGrid stroke="var(--border-subtle)" vertical={false} />
