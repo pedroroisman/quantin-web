@@ -116,34 +116,35 @@ function CustomTooltip({ active, payload, label }: any) {
   );
 }
 
-const TICKER_SCREENS: { header: string; lines: string[]; ml?: boolean; done?: boolean }[] = [
-  {
-    header: "— 1. parameters —",
-    lines: ["Universe.....  798 stocks & ETFs", "Strategies...  150 combinations", "Lookback.....  3 to 12 months", "Portfolio....  15 stocks", "Rebalance....  every 2 months"],
-  },
-  {
-    header: "— 2. backtesting —",
-    lines: ["Testing 150 strategies...", "Using 8 years of market data..."],
-  },
-  {
-    header: "— 3. market reading —",
-    lines: ["Detecting market conditions..."],
-    ml: true,
-  },
-  {
-    header: "— 4. strategy selection —",
-    lines: ["Matching strategy to conditions..."],
-    ml: true,
-  },
-  {
-    header: "— 5. portfolio —",
-    lines: ["Walk-forward validation...", "Scoring all 798 stocks...", "Selecting top 15..."],
-  },
-  {
-    header: "Portfolio ready  ●",
-    lines: [],
-    done: true,
-  },
+const TICKER_LINES: { text: string; sec?: boolean; ml?: boolean; done?: boolean }[] = [
+  { text: "— 1. parameters —", sec: true },
+  { text: "" },
+  { text: "Universe.....  798 stocks & ETFs" },
+  { text: "Strategies...  150 combinations" },
+  { text: "Lookback.....  3 to 12 months" },
+  { text: "Portfolio....  15 stocks" },
+  { text: "Rebalance....  every 2 months" },
+  { text: "" },
+  { text: "— 2. backtesting —", sec: true },
+  { text: "" },
+  { text: "Testing 150 strategies..." },
+  { text: "Using 8 years of market data..." },
+  { text: "" },
+  { text: "— 3. market reading —", sec: true, ml: true },
+  { text: "" },
+  { text: "Detecting market conditions..." },
+  { text: "" },
+  { text: "— 4. strategy selection —", sec: true, ml: true },
+  { text: "" },
+  { text: "Matching strategy to conditions..." },
+  { text: "" },
+  { text: "— 5. portfolio —", sec: true },
+  { text: "" },
+  { text: "Walk-forward validation..." },
+  { text: "Scoring all 798 stocks..." },
+  { text: "Selecting top 15..." },
+  { text: "" },
+  { text: "Portfolio ready  ●", done: true },
 ];
 
 function TickerTape() {
@@ -155,81 +156,57 @@ function TickerTape() {
     const dot: HTMLSpanElement = dotRef.current!;
     if (!tape || !dot) return;
 
-    let si = 0, li = 0, ci = 0;
+    let li = 0, ci = 0;
     let lineEl: HTMLDivElement | null = null;
     let cursorEl: HTMLSpanElement | null = null;
     let timer: ReturnType<typeof setTimeout> | null = null;
 
-    function clearScreen(next: () => void) {
+    function restart() {
+      tape.style.transition = "opacity 0.4s";
       tape.style.opacity = "0";
-      tape.style.transition = "opacity 0.25s";
       timer = setTimeout(() => {
         tape.innerHTML = "";
         tape.style.transition = "";
         tape.style.opacity = "1";
-        next();
-      }, 280);
-    }
-
-    function nextScreen() {
-      si = (si + 1) % TICKER_SCREENS.length;
-      li = 0; ci = 0; lineEl = null; cursorEl = null;
-      if (dot) dot.style.background = si === TICKER_SCREENS.length - 1 ? "#185FA5" : "#2D6A3F";
-      clearScreen(tick);
-    }
-
-    function makeLineEl(_text: string, isHeader: boolean, isDone: boolean) {
-      const el = document.createElement("div");
-      Object.assign(el.style, {
-        fontFamily: "monospace",
-        fontSize: "11px",
-        lineHeight: "1.8",
-        textTransform: "uppercase",
-        letterSpacing: isHeader ? "0.1em" : "0.04em",
-        whiteSpace: "pre",
-        minHeight: "1.4em",
-        color: isDone ? "#1D5C3A" : isHeader ? "#0A0A0A" : "#1A1209",
-        fontWeight: isHeader || isDone ? "500" : "400",
-      });
-      return el;
-    }
-
-    function makeCursor() {
-      const el = document.createElement("span");
-      Object.assign(el.style, {
-        display: "inline-block", width: "6px", height: "10px",
-        background: "#1A1209", verticalAlign: "-2px", marginLeft: "1px",
-        animation: "qtblink 0.7s step-end infinite",
-      });
-      return el;
+        li = 0; ci = 0; lineEl = null; cursorEl = null;
+        dot.style.background = "#2D6A3F";
+        tick();
+      }, 450);
     }
 
     function tick() {
-      const screen = TICKER_SCREENS[si];
-      const allLines = [screen.header, ...screen.lines];
-      const isHeader = li === 0;
-      const isDone = !!screen.done;
-      const text = allLines[li] ?? "";
-
+      if (li >= TICKER_LINES.length) {
+        if (cursorEl) cursorEl.remove();
+        dot.style.background = "#185FA5";
+        timer = setTimeout(restart, 4000);
+        return;
+      }
+      const { text = "", sec, ml, done } = TICKER_LINES[li];
       if (ci === 0) {
         if (cursorEl) cursorEl.remove();
-        lineEl = makeLineEl(text, isHeader, isDone);
-        cursorEl = makeCursor();
+        lineEl = document.createElement("div");
+        Object.assign(lineEl.style, {
+          fontFamily: "monospace", fontSize: "11px", lineHeight: "1.8",
+          textTransform: "uppercase", whiteSpace: "pre", minHeight: "1.5em",
+          letterSpacing: sec ? "0.1em" : "0.04em",
+          color: done ? "#1D5C3A" : sec ? "#0A0A0A" : "#1A1209",
+          fontWeight: sec || done ? "500" : "400",
+        });
+        cursorEl = document.createElement("span");
+        Object.assign(cursorEl.style, {
+          display: "inline-block", width: "6px", height: "10px",
+          background: "#1A1209", verticalAlign: "-2px", marginLeft: "1px",
+          animation: "qtblink 0.7s step-end infinite",
+        });
         lineEl.appendChild(cursorEl);
         tape.appendChild(lineEl);
-        if (isHeader && li === 0) {
-          const spacer = document.createElement("div");
-          spacer.style.height = "6px";
-          tape.insertBefore(spacer, lineEl);
-        }
       }
-
       if (ci < text.length) {
         lineEl!.insertBefore(document.createTextNode(text[ci]), cursorEl!);
         ci++;
-        timer = setTimeout(tick, text[ci - 1] === "." ? 60 : 22);
+        timer = setTimeout(tick, text[ci - 1] === "." ? 65 : 20);
       } else {
-        if (screen.ml && isHeader) {
+        if (ml) {
           const b = document.createElement("span");
           Object.assign(b.style, {
             display: "inline-block", background: "#1C2F4A", color: "#85B7EB",
@@ -240,14 +217,8 @@ function TickerTape() {
           b.textContent = "ML";
           lineEl!.insertBefore(b, cursorEl!);
         }
-        li++; ci = 0;
-        if (li < allLines.length) {
-          timer = setTimeout(tick, isHeader ? 120 : 180);
-        } else {
-          if (cursorEl) cursorEl.remove();
-          const holdMs = screen.done ? 3000 : 2200;
-          timer = setTimeout(nextScreen, holdMs);
-        }
+        ci = 0; li++;
+        timer = setTimeout(tick, text === "" ? 20 : li <= 8 ? 55 : 160);
       }
     }
 
@@ -257,28 +228,25 @@ function TickerTape() {
   }, []);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column" }}>
+    <div>
       <div style={{
         fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
         color: "var(--text-tertiary)", marginBottom: "0.5rem",
       }}>
         how the model works
       </div>
-      <div style={{ background: "#1A1A1A", borderRadius: "10px 10px 6px 6px", padding: "10px 0 0 0" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 14px 8px" }}>
+      <div style={{ background: "#1A1A1A", borderRadius: "8px 8px 0 0", padding: "9px 14px 8px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={{ fontFamily: "monospace", fontSize: 8, letterSpacing: "0.15em", color: "#555", textTransform: "uppercase" }}>
             Quantin · Model v3
           </span>
           <span ref={dotRef} style={{ width: 5, height: 5, borderRadius: "50%", background: "#2D6A3F", display: "inline-block" }} />
         </div>
-        <div style={{ height: 2, background: "#0A0A0A", margin: "0 6px", borderRadius: 1 }} />
-        <div
-          ref={tapeRef}
-          style={{ background: "#FFF8EE", margin: "4px 0 0 0", height: 148, padding: "10px 16px 12px", overflow: "hidden" }}
-        />
-        <div style={{ background: "#141414", borderRadius: "0 0 6px 6px", height: 6, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
-          {[0, 1, 2].map(i => <div key={i} style={{ width: 3, height: 3, borderRadius: "50%", background: "#2a2a2a" }} />)}
-        </div>
+      </div>
+      <div style={{ height: 2, background: "#0A0A0A" }} />
+      <div ref={tapeRef} style={{ background: "#FFF8EE", padding: "10px 16px 4px" }} />
+      <div style={{ background: "#141414", borderRadius: "0 0 6px 6px", height: 6, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
+        {[0, 1, 2].map(i => <div key={i} style={{ width: 3, height: 3, borderRadius: "50%", background: "#2a2a2a" }} />)}
       </div>
     </div>
   );
@@ -309,11 +277,11 @@ export function Landing() {
         @keyframes qtblink { 0%,100%{opacity:1} 50%{opacity:0} }
         @media (min-width: 900px) {
           .hero-headline { font-size: 48px !important; }
-          .hero-chart   { height: 280px !important; }
+          .hero-chart    { height: 280px !important; }
         }
-        @media (max-width: 640px) {
-          .hero-row { flex-direction: column !important; }
-          .hero-ticker { width: 100% !important; }
+        @media (max-width: 860px) {
+          .hero-cols   { flex-direction: column !important; }
+          .hero-ticker { display: none !important; }
         }
         @media (max-width: 600px) {
           .nav-secondary { display: none !important; }
@@ -371,23 +339,26 @@ export function Landing() {
             </svg>
           </div>
 
-          {/* Regime pill */}
-          <div style={{ marginBottom: "1.5rem" }}>
-            <span style={{
-              display: "inline-flex", alignItems: "center", gap: 7,
-              background: "rgba(29,158,117,0.08)", border: "0.5px solid rgba(29,158,117,0.3)",
-              borderRadius: 100, padding: "4px 12px",
-            }}>
-              <span style={{ width: 6, height: 6, background: regimeColors.dot, borderRadius: "50%", display: "inline-block" }} />
-              <span style={{ fontSize: 12, color: regimeColors.text, letterSpacing: "0.01em" }}>
-                Live · {regimeLabel ?? "Loading…"}
-              </span>
-            </span>
-          </div>
+          {/* Two-column: content left, ticker right */}
+          <div className="hero-cols" style={{ display: "flex", gap: "3rem", alignItems: "flex-start" }}>
 
-          {/* Hero: headline left, ticker right */}
-          <div className="hero-row" style={{ display: "flex", gap: "2rem", alignItems: "flex-start", marginBottom: "2.5rem" }}>
+            {/* Left: all content */}
             <div style={{ flex: 1, minWidth: 0 }}>
+
+              {/* Regime pill */}
+              <div style={{ marginBottom: "1.5rem" }}>
+                <span style={{
+                  display: "inline-flex", alignItems: "center", gap: 7,
+                  background: "rgba(29,158,117,0.08)", border: "0.5px solid rgba(29,158,117,0.3)",
+                  borderRadius: 100, padding: "4px 12px",
+                }}>
+                  <span style={{ width: 6, height: 6, background: regimeColors.dot, borderRadius: "50%", display: "inline-block" }} />
+                  <span style={{ fontSize: 12, color: regimeColors.text, letterSpacing: "0.01em" }}>
+                    Live · {regimeLabel ?? "Loading…"}
+                  </span>
+                </span>
+              </div>
+
               <p style={{
                 fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em",
                 color: "var(--text-tertiary)", marginBottom: "0.3rem",
@@ -404,109 +375,87 @@ export function Landing() {
               </h1>
 
               <p style={{
-                fontSize: 16, lineHeight: 1.65,
-                color: "var(--text-secondary)", marginBottom: 0,
+                fontSize: 16, lineHeight: 1.65, maxWidth: 520,
+                color: "var(--text-secondary)", marginBottom: "2.5rem",
               }}>
                 Every two months, Quantin selects the 15 best-performing assets using
                 quantitative models. No opinions. Just data.
               </p>
+
+              {/* Metrics */}
+              <div className="metric-grid" style={{
+                display: "grid", gridTemplateColumns: "repeat(3, 1fr)",
+                gap: 10, marginBottom: "2rem",
+              }}>
+                {metrics.map((m) => <MetricCard key={m.label} {...m} />)}
+              </div>
+
+              {/* Chart */}
+              <div className="hero-chart" style={{ width: "100%", height: 220, marginBottom: "0.75rem" }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+                    <CartesianGrid stroke="var(--border-subtle)" vertical={false} />
+                    <XAxis dataKey="period" tick={{ fontSize: 11, fill: "var(--text-tertiary)" }} axisLine={false} tickLine={false} />
+                    <YAxis tickFormatter={formatY} tick={{ fontSize: 11, fill: "var(--text-tertiary)" }} axisLine={false} tickLine={false} width={42} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Line type="monotone" dataKey="quantin" name="Quantin" stroke="#185FA5" strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: "#185FA5" }} />
+                    <Line type="monotone" dataKey="sp500" name="S&P 500" stroke="#888780" strokeWidth={1.5} strokeDasharray="5 4" dot={false} activeDot={{ r: 4, fill: "#888780" }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Chart legend */}
+              <div className="chart-legend" style={{ display: "flex", gap: 18, alignItems: "center", marginBottom: "2rem", flexWrap: "wrap" }}>
+                <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-secondary)" }}>
+                  <span style={{ width: 18, height: 2.5, background: "#185FA5", display: "inline-block", borderRadius: 1 }} />
+                  Quantin
+                </span>
+                <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-secondary)" }}>
+                  <span style={{ width: 18, height: 0, borderTop: "1.5px dashed #888780", display: "inline-block" }} />
+                  S&P 500
+                </span>
+                <span className="chart-legend-note" style={{ marginLeft: "auto", fontSize: 11, color: "var(--text-tertiary)" }}>
+                  $10,000 invested Oct 2017 · walk-forward, no lookahead
+                </span>
+              </div>
+
+              {/* CTA */}
+              <div className="cta-row" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", marginBottom: "0.9rem" }}>
+                <Button size="lg" onClick={() => navigate("/subscribe")}>
+                  Get the portfolio — $25/mo
+                </Button>
+                <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
+                  Receive email alerts on new picks, exits, and cash signals
+                </span>
+              </div>
+
+              <div style={{ display: "flex", gap: 5, alignItems: "center", marginBottom: "2rem" }}>
+                <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>Not sure yet?</span>
+                <Button variant="link" size="sm" onClick={() => navigate("/preview")}>
+                  See last period's picks for free →
+                </Button>
+              </div>
+
+              {/* Footer strip */}
+              <div className="footer-strip" style={{ paddingTop: "1.25rem", borderTop: "0.5px solid var(--border-subtle)", display: "flex", gap: "2rem", flexWrap: "wrap" }}>
+                {[
+                  ["15 positions", "active today"],
+                  ["Next rebalance", "in ~6 weeks"],
+                  ["Email + push", "on every change"],
+                ].map(([strong, rest]) => (
+                  <span key={strong} style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
+                    <span style={{ color: "var(--text-secondary)" }}>{strong}</span> {rest}
+                  </span>
+                ))}
+              </div>
+
             </div>
 
-            <div className="hero-ticker" style={{ flexShrink: 0, width: 300 }}>
+            {/* Right: ticker tape grows downward */}
+            <div className="hero-ticker" style={{ flexShrink: 0, width: 260, paddingTop: "3.5rem" }}>
               <TickerTape />
             </div>
-          </div>
 
-          {/* Metrics */}
-          <div className="metric-grid" style={{
-            display: "grid", gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 10, marginBottom: "2rem",
-          }}>
-            {metrics.map((m) => <MetricCard key={m.label} {...m} />)}
-          </div>
-
-          {/* Chart */}
-          <div className="hero-chart" style={{ width: "100%", height: 220, marginBottom: "0.75rem" }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-                <CartesianGrid stroke="var(--border-subtle)" vertical={false} />
-                <XAxis
-                  dataKey="period"
-                  tick={{ fontSize: 11, fill: "var(--text-tertiary)" }}
-                  axisLine={false} tickLine={false}
-                />
-                <YAxis
-                  tickFormatter={formatY}
-                  tick={{ fontSize: 11, fill: "var(--text-tertiary)" }}
-                  axisLine={false} tickLine={false} width={42}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Line
-                  type="monotone" dataKey="quantin" name="Quantin"
-                  stroke="#185FA5" strokeWidth={2.5} dot={false}
-                  activeDot={{ r: 4, fill: "#185FA5" }}
-                />
-                <Line
-                  type="monotone" dataKey="sp500" name="S&P 500"
-                  stroke="#888780" strokeWidth={1.5} strokeDasharray="5 4"
-                  dot={false} activeDot={{ r: 4, fill: "#888780" }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Chart legend */}
-          <div className="chart-legend" style={{
-            display: "flex", gap: 18, alignItems: "center",
-            marginBottom: "2rem", flexWrap: "wrap",
-          }}>
-            <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-secondary)" }}>
-              <span style={{ width: 18, height: 2.5, background: "#185FA5", display: "inline-block", borderRadius: 1 }} />
-              Quantin
-            </span>
-            <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-secondary)" }}>
-              <span style={{ width: 18, height: 0, borderTop: "1.5px dashed #888780", display: "inline-block" }} />
-              S&P 500
-            </span>
-            <span className="chart-legend-note" style={{ marginLeft: "auto", fontSize: 11, color: "var(--text-tertiary)" }}>
-              $10,000 invested Oct 2017 · walk-forward, no lookahead
-            </span>
-          </div>
-
-          {/* CTA */}
-          <div className="cta-row" style={{
-            display: "flex", alignItems: "center", gap: 14,
-            flexWrap: "wrap", marginBottom: "0.9rem",
-          }}>
-            <Button size="lg" onClick={() => navigate("/subscribe")}>
-              Get the portfolio — $25/mo
-            </Button>
-            <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
-              Receive email alerts on new picks, exits, and cash signals
-            </span>
-          </div>
-
-          <div style={{ display: "flex", gap: 5, alignItems: "center", marginBottom: "2rem" }}>
-            <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>Not sure yet?</span>
-            <Button variant="link" size="sm" onClick={() => navigate("/preview")}>
-              See last period's picks for free →
-            </Button>
-          </div>
-
-          {/* Footer strip */}
-          <div className="footer-strip" style={{
-            paddingTop: "1.25rem", borderTop: "0.5px solid var(--border-subtle)",
-            display: "flex", gap: "2rem", flexWrap: "wrap",
-          }}>
-            {[
-              ["15 positions", "active today"],
-              ["Next rebalance", "in ~6 weeks"],
-              ["Email + push", "on every change"],
-            ].map(([strong, rest]) => (
-              <span key={strong} style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
-                <span style={{ color: "var(--text-secondary)" }}>{strong}</span> {rest}
-              </span>
-            ))}
           </div>
 
         </main>
