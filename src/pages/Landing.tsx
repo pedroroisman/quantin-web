@@ -117,32 +117,35 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 const TICKER_LINES: { text: string; sec?: boolean; ml?: boolean; done?: boolean }[] = [
-  { text: "— 1. parameters —", sec: true },
+  { text: "— parameters —", sec: true },
   { text: "" },
-  { text: "Universe.....  798 stocks & ETFs" },
-  { text: "Strategies...  150 combinations" },
-  { text: "Lookback.....  3 to 12 months" },
-  { text: "Portfolio....  15 stocks" },
-  { text: "Rebalance....  every 2 months" },
+  { text: "Universe......  798 assets" },
+  { text: "Lookback......  3·6·9·12 months" },
+  { text: "Portfolio.....  15 positions" },
+  { text: "Weighting.....  equal" },
+  { text: "Rebalance.....  bi-monthly" },
   { text: "" },
-  { text: "— 2. backtesting —", sec: true },
+  { text: "— strategy test —", sec: true },
   { text: "" },
-  { text: "Testing 150 strategies..." },
-  { text: "Using 8 years of market data..." },
+  { text: "150 strategies backtested" },
+  { text: "8yr market data analyzed" },
+  { text: "Bias controls applied" },
   { text: "" },
-  { text: "— 3. market reading —", sec: true, ml: true },
+  { text: "— regime detection —", sec: true, ml: true },
   { text: "" },
-  { text: "Detecting market conditions..." },
+  { text: "Market conditions scanned" },
+  { text: "Regime classified" },
   { text: "" },
-  { text: "— 4. strategy selection —", sec: true, ml: true },
+  { text: "— strategy match —", sec: true, ml: true },
   { text: "" },
-  { text: "Matching strategy to conditions..." },
+  { text: "Best-fit strategy selected" },
+  { text: "Risk profile confirmed" },
   { text: "" },
-  { text: "— 5. portfolio —", sec: true },
+  { text: "— portfolio build —", sec: true },
   { text: "" },
-  { text: "Walk-forward validation..." },
-  { text: "Scoring all 798 stocks..." },
-  { text: "Selecting top 15..." },
+  { text: "50 walk-fwd. periods validated" },
+  { text: "798 assets momentum-ranked" },
+  { text: "Top 15 positions confirmed" },
   { text: "" },
   { text: "Portfolio ready  ●", done: true },
 ];
@@ -161,24 +164,10 @@ function TickerTape() {
     let cursorEl: HTMLSpanElement | null = null;
     let timer: ReturnType<typeof setTimeout> | null = null;
 
-    function restart() {
-      tape.style.transition = "opacity 0.4s";
-      tape.style.opacity = "0";
-      timer = setTimeout(() => {
-        tape.innerHTML = "";
-        tape.style.transition = "";
-        tape.style.opacity = "1";
-        li = 0; ci = 0; lineEl = null; cursorEl = null;
-        dot.style.background = "#2D6A3F";
-        tick();
-      }, 450);
-    }
-
     function tick() {
       if (li >= TICKER_LINES.length) {
         if (cursorEl) cursorEl.remove();
         dot.style.background = "#185FA5";
-        timer = setTimeout(restart, 4000);
         return;
       }
       const { text = "", sec, ml, done } = TICKER_LINES[li];
