@@ -360,7 +360,7 @@ export function Landing() {
         </nav>
 
         {/* Hero */}
-        <main style={{ maxWidth: 1100, margin: "0 auto", padding: "4rem 3rem 6rem" }}>
+        <main style={{ maxWidth: 1440, margin: "0 auto", padding: "4rem max(2rem, 6%) 6rem" }}>
 
           {/* Logo mark — centered */}
           <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
