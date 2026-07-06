@@ -7,6 +7,7 @@ import {
 } from "recharts";
 import { Button, QuantinLogo } from "../components/ui";
 import { supabase } from "../lib/supabase";
+import { track } from "../lib/analytics";
 
 const chartData = [
   { period: "Feb '18", quantin: 10000, sp500: 10000  },
@@ -302,15 +303,15 @@ export function Landing() {
             ) : authState === "unsubscribed" ? (
               <>
                 <Button variant="ghost" size="sm" onClick={() => navigate("/signin")}>Sign in</Button>
-                <Button variant="primary" size="sm" onClick={() => navigate("/subscribe")}>Subscribe</Button>
+                <Button variant="primary" size="sm" onClick={() => { track("click_subscribe", { source: "nav" }); navigate("/subscribe"); }}>Subscribe</Button>
               </>
             ) : (
               <>
                 <Button variant="ghost" size="sm" onClick={() => navigate("/signin?mode=signup")}>Sign in</Button>
                 <span className="nav-secondary" style={{ display: "inline-flex" }}>
-                  <Button variant="ghost" size="sm" onClick={() => navigate("/preview")}>See free preview</Button>
+                  <Button variant="ghost" size="sm" onClick={() => { track("click_free_preview", { source: "nav" }); navigate("/preview"); }}>See free preview</Button>
                 </span>
-                <Button variant="primary" size="sm" onClick={() => navigate("/subscribe")}>Get the portfolio</Button>
+                <Button variant="primary" size="sm" onClick={() => { track("click_subscribe", { source: "nav" }); navigate("/subscribe"); }}>Get the portfolio</Button>
               </>
             )}
           </div>
@@ -410,7 +411,7 @@ export function Landing() {
 
               {/* CTA */}
               <div className="cta-row" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", marginBottom: "0.9rem" }}>
-                <Button size="lg" onClick={() => navigate("/subscribe")}>
+                <Button size="lg" onClick={() => { track("click_subscribe", { source: "hero_cta" }); navigate("/subscribe"); }}>
                   Get the portfolio — $25/mo
                 </Button>
                 <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
@@ -420,7 +421,7 @@ export function Landing() {
 
               <div style={{ display: "flex", gap: 5, alignItems: "center", marginBottom: "2rem" }}>
                 <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>Not sure yet?</span>
-                <Button variant="link" size="sm" onClick={() => navigate("/preview")}>
+                <Button variant="link" size="sm" onClick={() => { track("click_free_preview", { source: "hero_link" }); navigate("/preview"); }}>
                   See last period's picks for free →
                 </Button>
               </div>

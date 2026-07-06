@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button, QuantinLogo } from "../components/ui";
 import { supabase } from "../lib/supabase";
 import { useRegime } from "../hooks/useRegime";
+import { track, identify } from "../lib/analytics";
 
 const TICKER_NAMES: Record<string, { name: string; sector: string }> = {
   AAPL: { name: "Apple",                   sector: "Technology"  },
@@ -201,6 +202,7 @@ export function Dashboard() {
       if (!mounted) return;
       if (!session?.user?.email) { navigate("/signin"); return; }
       setAuthReady(true);
+      identify(session.user.email, { email: session.user.email });
       const { data, error } = await supabase
         .from("subscribers")
         .select("id, created_at")
@@ -233,7 +235,9 @@ export function Dashboard() {
   };
 
   const [showWelcome] = useState(() => {
-    return new URLSearchParams(window.location.search).has("session_id");
+    const hasSid = new URLSearchParams(window.location.search).has("session_id");
+    if (hasSid) track("paid", { plan: "monthly", amount: 25, currency: "USD" });
+    return hasSid;
   });
   const [welcomeVisible, setWelcomeVisible] = useState(showWelcome);
 

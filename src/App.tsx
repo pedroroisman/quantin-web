@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 import "./styles/global.css";
 
 import { Landing }       from "./pages/Landing";
@@ -21,6 +22,7 @@ export default function App() {
         <Route path="/signin"         element={<SignIn />} />
         <Route path="/auth/callback"  element={<AuthCallback />} />
       </Routes>
+      <Analytics />
     </BrowserRouter>
   );
 }

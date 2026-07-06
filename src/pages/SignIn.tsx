@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { QuantinLogo } from "../components/ui";
+import { track, identify } from "../lib/analytics";
 
 const outfit = "'Outfit', sans-serif";
 const playfair = "'Playfair Display', serif";
@@ -28,6 +29,7 @@ export function SignIn() {
   }, [navigate]);
 
   const handleGoogle = async () => {
+    track("sign_in", { method: "google" });
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${window.location.origin}/auth/callback` },
@@ -48,6 +50,8 @@ export function SignIn() {
         setLoading(false);
         return;
       }
+      track("sign_up", { method: "email" });
+      identify(email, { email });
       navigate("/subscribe");
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -56,6 +60,8 @@ export function SignIn() {
         setLoading(false);
         return;
       }
+      track("sign_in", { method: "email" });
+      identify(email, { email });
       routeAfterSignIn(navigate);
     }
   };

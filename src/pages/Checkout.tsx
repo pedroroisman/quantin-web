@@ -3,6 +3,7 @@ import { useRegime } from "../hooks/useRegime";
 import { useNavigate } from "react-router-dom";
 import { Button, QuantinLogo } from "../components/ui";
 import { supabase } from "../lib/supabase";
+import { track } from "../lib/analytics";
 
 const outfit = "'Outfit', sans-serif";
 const playfair = "'Playfair Display', serif";
@@ -41,6 +42,7 @@ export function Checkout() {
       if (data) { navigate("/portfolio"); return; }
       setEmail(session.user.email);
       setSessionChecked(true);
+      track("view_checkout", { email: session.user.email });
     });
   }, [navigate]);
 
@@ -50,6 +52,7 @@ export function Checkout() {
     e.preventDefault();
     setLoading(true);
     try {
+      track("checkout_started", { email });
       const apiUrl = import.meta.env.VITE_API_URL || "";
       const res = await fetch(`${apiUrl}/api/create-checkout-session`, {
         method: "POST",
