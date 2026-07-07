@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRegime } from "../hooks/useRegime";
 import { useNavigate } from "react-router-dom";
 import {
@@ -9,7 +9,8 @@ import { Button, QuantinLogo } from "../components/ui";
 import { supabase } from "../lib/supabase";
 import { track } from "../lib/analytics";
 
-const chartData = [
+// Fallback — shown while API loads
+const FALLBACK_CHART_DATA = [
   { period: "Feb '18", quantin: 10000, sp500: 10000  },
   { period: "2019",    quantin: 12976, sp500: 12238  },
   { period: "2020",    quantin: 22484, sp500: 14486  },
@@ -21,7 +22,7 @@ const chartData = [
   { period: "Jun '26", quantin: 58003, sp500: 30714  },
 ];
 
-const metrics = [
+const ALL_TIME_METRICS = [
   {
     val: "+23.6%", label: "Annual return", sub: "vs +14.5% S&P 500",
     valueColor: "#1D9E75",
@@ -39,7 +40,83 @@ const metrics = [
   },
 ];
 
-function MetricCard({ val, label, sub, valueColor, tooltip }: typeof metrics[0]) {
+interface SeriesPoint { date: string; model: number; spy: number; }
+interface MetricData  { val: string; label: string; sub: string; valueColor: string; tooltip: string; }
+
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const YEAR_TOGGLE = ["all", 2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018] as const;
+type YearSelection = typeof YEAR_TOGGLE[number];
+
+function buildChartData(series: SeriesPoint[], year: YearSelection) {
+  const pts = year === "all"
+    ? (() => {
+        // One point per year-end + first point
+        const byYear: Record<number, SeriesPoint[]> = {};
+        for (const p of series) {
+          const y = new Date(p.date).getFullYear();
+          (byYear[y] ??= []).push(p);
+        }
+        const result = [series[0]];
+        for (const y of Object.keys(byYear).map(Number).sort()) {
+          const last = byYear[y][byYear[y].length - 1];
+          if (last.date !== series[0].date) result.push(last);
+        }
+        return result;
+      })()
+    : series.filter(p => new Date(p.date).getFullYear() === year);
+
+  if (!pts.length) return null;
+  const bm = pts[0].model, bs = pts[0].spy;
+  return pts.map(p => {
+    const d = new Date(p.date);
+    const period = year === "all"
+      ? (d.getFullYear() === 2018 && d.getMonth() === 1 ? "Feb '18" : String(d.getFullYear()))
+      : MONTHS[d.getMonth()];
+    return { period, quantin: Math.round(p.model / bm * 10000), sp500: Math.round(p.spy / bs * 10000) };
+  });
+}
+
+function buildYearMetrics(series: SeriesPoint[], year: number): MetricData[] {
+  const pts = series.filter(p => new Date(p.date).getFullYear() === year);
+  if (pts.length < 2) return ALL_TIME_METRICS;
+  const first = pts[0], last = pts[pts.length - 1];
+  const modelRet = (last.model / first.model - 1) * 100;
+  const spyRet   = (last.spy   / first.spy   - 1) * 100;
+  const alpha     = modelRet - spyRet;
+  let peak = first.model, maxDD = 0;
+  for (const p of pts) {
+    if (p.model > peak) peak = p.model;
+    const dd = (p.model - peak) / peak * 100;
+    if (dd < maxDD) maxDD = dd;
+  }
+  const isPartial = year === 2018 || year === new Date().getFullYear();
+  const fmt = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
+  return [
+    {
+      val: fmt(modelRet),
+      label: isPartial ? "YTD return" : "Year return",
+      sub: `vs ${fmt(spyRet)} S&P 500`,
+      valueColor: modelRet >= 0 ? "#1D9E75" : "#B5621A",
+      tooltip: `Quantin returned ${fmt(modelRet)} in ${year}, vs ${fmt(spyRet)} for the S&P 500.`,
+    },
+    {
+      val: `${alpha >= 0 ? "+" : ""}${alpha.toFixed(1)}pp`,
+      label: "vs S&P 500",
+      sub: "outperformance",
+      valueColor: alpha >= 0 ? "#185FA5" : "#B5621A",
+      tooltip: `Quantin ${alpha >= 0 ? "outperformed" : "underperformed"} the S&P 500 by ${Math.abs(alpha).toFixed(1)} percentage points in ${year}.`,
+    },
+    {
+      val: maxDD === 0 ? "0.0%" : `${maxDD.toFixed(1)}%`,
+      label: "Max drawdown",
+      sub: "within the year",
+      valueColor: "#B5621A",
+      tooltip: `Largest peak-to-trough decline during ${year}. Walk-forward validated.`,
+    },
+  ];
+}
+
+function MetricCard({ val, label, sub, valueColor, tooltip }: MetricData) {
   const [show, setShow] = useState(false);
   return (
     <div style={{
@@ -97,7 +174,9 @@ function MetricCard({ val, label, sub, valueColor, tooltip }: typeof metrics[0])
 }
 
 function formatY(v: number) {
-  return "$" + Math.round(v / 1000) + "k";
+  return v >= 10000
+    ? "$" + Math.round(v / 1000) + "k"
+    : "$" + (v / 1000).toFixed(1) + "k";
 }
 
 function CustomTooltip({ active, payload, label }: any) {
@@ -247,7 +326,9 @@ type AuthState = "loading" | "none" | "subscribed" | "unsubscribed";
 export function Landing() {
   const navigate = useNavigate();
   const { label: regimeLabel, colors: regimeColors } = useRegime();
-  const [authState, setAuthState] = useState<AuthState>("loading");
+  const [authState, setAuthState]   = useState<AuthState>("loading");
+  const [chartSeries, setChartSeries] = useState<SeriesPoint[]>([]);
+  const [selectedYear, setSelectedYear] = useState<YearSelection>("all");
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -260,6 +341,31 @@ export function Landing() {
       setAuthState(data ? "subscribed" : "unsubscribed");
     });
   }, []);
+
+  useEffect(() => {
+    const apiUrl = import.meta.env.VITE_API_URL || "";
+    fetch(`${apiUrl}/api/portfolio_optimizer/chart`)
+      .then(r => r.json())
+      .then(d => { if (Array.isArray(d.series)) setChartSeries(d.series); })
+      .catch(() => {});
+  }, []);
+
+  const activeChartData = useMemo(() => {
+    if (!chartSeries.length) return selectedYear === "all" ? FALLBACK_CHART_DATA : null;
+    return buildChartData(chartSeries, selectedYear) ?? FALLBACK_CHART_DATA;
+  }, [chartSeries, selectedYear]);
+
+  const activeMetrics = useMemo<MetricData[]>(() => {
+    if (selectedYear === "all" || !chartSeries.length) return ALL_TIME_METRICS;
+    return buildYearMetrics(chartSeries, selectedYear);
+  }, [chartSeries, selectedYear]);
+
+  const legendNote = useMemo(() => {
+    if (selectedYear === "all") return "$10,000 invested Feb 2018 · walk-forward, no lookahead";
+    const isPartial = selectedYear === 2018 || selectedYear === new Date().getFullYear();
+    const start = selectedYear === 2018 ? "Feb 2018" : `Jan ${selectedYear}`;
+    return `$10,000 invested ${start} · ${isPartial ? "partial year" : "calendar year"} · walk-forward`;
+  }, [selectedYear]);
 
   return (
     <>
@@ -377,13 +483,37 @@ export function Landing() {
                 display: "grid", gridTemplateColumns: "repeat(3, 1fr)",
                 gap: 10, marginBottom: "2rem",
               }}>
-                {metrics.map((m) => <MetricCard key={m.label} {...m} />)}
+                {activeMetrics.map((m) => <MetricCard key={m.label} {...m} />)}
+              </div>
+
+              {/* Year toggle */}
+              <div style={{ display: "flex", gap: 4, marginBottom: "0.6rem", overflowX: "auto", paddingBottom: 2 }}>
+                {YEAR_TOGGLE.map(y => {
+                  const active = selectedYear === y;
+                  return (
+                    <button
+                      key={y}
+                      onClick={() => setSelectedYear(y)}
+                      style={{
+                        padding: "3px 10px", fontSize: 11, flexShrink: 0,
+                        border: active ? "0.5px solid var(--text-secondary)" : "0.5px solid var(--border-subtle)",
+                        borderRadius: 100, cursor: "pointer", fontFamily: "inherit",
+                        background: active ? "var(--bg-primary)" : "transparent",
+                        color: active ? "var(--text-primary)" : "var(--text-tertiary)",
+                        fontWeight: active ? 500 : 400,
+                        transition: "all 0.15s",
+                      }}
+                    >
+                      {y === "all" ? "All" : y}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Chart */}
               <div className="hero-chart" style={{ width: "100%", height: 220, marginBottom: "0.75rem" }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+                  <LineChart data={activeChartData ?? []} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
                     <CartesianGrid stroke="var(--border-subtle)" vertical={false} />
                     <XAxis dataKey="period" tick={{ fontSize: 11, fill: "var(--text-tertiary)" }} axisLine={false} tickLine={false} />
                     <YAxis tickFormatter={formatY} tick={{ fontSize: 11, fill: "var(--text-tertiary)" }} axisLine={false} tickLine={false} width={42} />
@@ -405,7 +535,7 @@ export function Landing() {
                   S&P 500
                 </span>
                 <span className="chart-legend-note" style={{ marginLeft: "auto", fontSize: 11, color: "var(--text-tertiary)" }}>
-                  $10,000 invested Oct 2017 · walk-forward, no lookahead
+                  {legendNote}
                 </span>
               </div>
 
