@@ -9,6 +9,7 @@ const outfit = "'Outfit', sans-serif";
 const playfair = "'Playfair Display', serif";
 
 const checkItems = [
+  { label: "14 days free",       sub: "Full access from day one. No charge until day 15." },
   { label: "Current 15 picks",  sub: "The portfolio updated this period, ready to invest." },
   { label: "Rebalance alerts",  sub: "Email + push every time a stock enters or exits." },
   { label: "Full history",      sub: "Every past selection and its performance." },
@@ -102,10 +103,10 @@ export function Checkout() {
           fontFamily: playfair, fontWeight: 400, fontSize: 30,
           color: "var(--text-primary)", marginBottom: "0.4rem", lineHeight: 1.2,
         }}>
-          Get the portfolio
+          Try free for 14 days.
         </h1>
         <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 14, color: "var(--text-tertiary)", marginBottom: "2.5rem" }}>
-          Cancel anytime. No commitment.
+          No charge until day 15. Cancel anytime.
         </p>
 
         <div style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: "2.5rem", alignItems: "start" }}>
@@ -131,7 +132,7 @@ export function Checkout() {
             </div>
 
             <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)", marginBottom: "1.5rem" }}>
-              You'll enter your card details on Stripe's secure page.
+              You'll add your card on Stripe's secure page. Nothing is charged for 14 days.
             </p>
 
             <Button
@@ -140,7 +141,7 @@ export function Checkout() {
               style={{ width: "100%", justifyContent: "center" }}
               disabled={loading}
             >
-              {loading ? "Processing..." : "Subscribe — $25/month"}
+              {loading ? "Processing..." : "Start free trial →"}
             </Button>
 
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: "0.9rem" }}>
@@ -148,7 +149,7 @@ export function Checkout() {
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               </svg>
               <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)" }}>
-                Secured by Stripe · cancel anytime
+                Secured by Stripe · cancel before day 15 to pay nothing
               </span>
             </div>
           </form>
@@ -180,17 +181,21 @@ export function Checkout() {
               <hr style={{ border: "none", borderTop: "0.5px solid var(--border-subtle)", margin: "1.25rem 0" }} />
 
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-                <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "var(--text-secondary)" }}>Monthly</span>
-                <span style={{ fontFamily: playfair, fontWeight: 400, fontSize: 22, color: "var(--text-primary)" }}>$25</span>
+                <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "var(--text-secondary)" }}>Today</span>
+                <span style={{ fontFamily: playfair, fontWeight: 400, fontSize: 22, color: "#1D9E75" }}>$0</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+                <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "var(--text-secondary)" }}>After 14 days</span>
+                <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 14, color: "var(--text-primary)" }}>$25/month</span>
               </div>
               <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)", margin: 0 }}>
-                Billed monthly · cancel anytime
+                Billed monthly · cancel before day 15 to pay nothing
               </p>
 
               <hr style={{ border: "none", borderTop: "0.5px solid var(--border-subtle)", margin: "1.25rem 0" }} />
 
               <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)", lineHeight: 1.65, margin: 0 }}>
-                Cancel anytime from your account settings. No commitment, no lock-in.
+                Cancel anytime from your account settings. If you cancel within 14 days, you won't be charged.
               </p>
             </div>
 

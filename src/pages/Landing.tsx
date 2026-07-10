@@ -615,10 +615,10 @@ export function Landing() {
               {/* CTA */}
               <div className="cta-row" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", marginBottom: "0.9rem" }}>
                 <Button size="lg" onClick={() => { track("click_subscribe", { source: "hero_cta" }); navigate("/subscribe"); }}>
-                  Get the portfolio — $25/mo
+                  Try free for 14 days
                 </Button>
                 <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
-                  Receive email alerts on new picks, exits, and cash signals
+                  Then $25/mo · cancel anytime
                 </span>
               </div>
 
