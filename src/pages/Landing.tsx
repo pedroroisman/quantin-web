@@ -375,6 +375,7 @@ export function Landing() {
       setCustomStart(months[Math.max(0, months.length - 25)]);
     }
     setSelectedYear(y);
+    track("chart_period_selected", { period: String(y) });
   };
 
   const effectiveStart = customStart || availableMonths[0] || "";
@@ -550,7 +551,7 @@ export function Landing() {
                   <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>From</span>
                   <select
                     value={customStart}
-                    onChange={e => setCustomStart(e.target.value)}
+                    onChange={e => { setCustomStart(e.target.value); track("chart_custom_range", { start: e.target.value, end: customEnd }); }}
                     style={{
                       fontSize: 11, padding: "3px 8px",
                       border: "0.5px solid var(--border-default)",
@@ -565,7 +566,7 @@ export function Landing() {
                   <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>to</span>
                   <select
                     value={customEnd}
-                    onChange={e => setCustomEnd(e.target.value)}
+                    onChange={e => { setCustomEnd(e.target.value); track("chart_custom_range", { start: customStart, end: e.target.value }); }}
                     style={{
                       fontSize: 11, padding: "3px 8px",
                       border: "0.5px solid var(--border-default)",
