@@ -194,6 +194,8 @@ export function Dashboard() {
   const [isSubscriber, setIsSubscriber] = useState<boolean | null>(null);
   const [subscribedSince, setSubscribedSince] = useState<string | null>(null);
   const [portfolio, setPortfolio] = useState<PortfolioData | null>(null);
+  const [cancelState, setCancelState] = useState<"idle" | "confirming" | "loading" | "done">("idle");
+  const [cancelEndsOn, setCancelEndsOn] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -232,6 +234,26 @@ export function Dashboard() {
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate("/signin");
+  };
+
+  const handleCancelSubscription = async () => {
+    setCancelState("loading");
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) { setCancelState("idle"); return; }
+    const apiUrl = import.meta.env.VITE_API_URL || "";
+    try {
+      const res = await fetch(`${apiUrl}/api/cancel-subscription`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const { ends_on } = await res.json();
+      setCancelEndsOn(ends_on ?? null);
+      setCancelState("done");
+      track("subscription_cancelled");
+    } catch {
+      setCancelState("confirming");
+    }
   };
 
   const [showWelcome] = useState(() => {
@@ -603,7 +625,7 @@ export function Dashboard() {
         <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1D9E75", marginBottom: "0.75rem" }}>
           Alert settings
         </p>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: "3rem" }}>
           {alertDefs.map(({ key, label, sub, warn }) => (
             <div key={key} style={{
               display: "flex", alignItems: "center", gap: 14,
@@ -622,6 +644,66 @@ export function Dashboard() {
               <Toggle on={alerts[key]} onToggle={() => toggle(key)} />
             </div>
           ))}
+        </div>
+
+        {/* Subscription management */}
+        <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-tertiary)", marginBottom: "0.75rem" }}>
+          Subscription
+        </p>
+        <div style={{
+          background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)",
+          borderRadius: "var(--radius-md)", padding: "1.25rem",
+        }}>
+          {cancelState === "done" ? (
+            <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "var(--text-secondary)", margin: 0 }}>
+              Your subscription has been cancelled.{cancelEndsOn ? ` You'll have full access until ${cancelEndsOn}.` : ""}
+            </p>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)", margin: 0, marginBottom: 2 }}>
+                  Cancel subscription
+                </p>
+                <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0 }}>
+                  {cancelState === "confirming"
+                    ? "Are you sure? Your access will continue until the end of the current period."
+                    : "You'll keep access until the end of the current billing period."}
+                </p>
+              </div>
+              <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                {cancelState === "confirming" && (
+                  <button
+                    onClick={() => setCancelState("idle")}
+                    style={{
+                      fontFamily: outfit, fontWeight: 300, fontSize: 13,
+                      padding: "6px 14px", borderRadius: "var(--radius-md)",
+                      border: "0.5px solid var(--border-default)",
+                      background: "transparent", color: "var(--text-secondary)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Keep subscription
+                  </button>
+                )}
+                <button
+                  onClick={cancelState === "idle" ? () => setCancelState("confirming") : handleCancelSubscription}
+                  disabled={cancelState === "loading"}
+                  style={{
+                    fontFamily: outfit, fontWeight: 300, fontSize: 13,
+                    padding: "6px 14px", borderRadius: "var(--radius-md)",
+                    border: "0.5px solid var(--border-default)",
+                    background: cancelState === "confirming" ? "#B5621A" : "transparent",
+                    color: cancelState === "confirming" ? "#fff" : "var(--text-tertiary)",
+                    cursor: cancelState === "loading" ? "not-allowed" : "pointer",
+                    opacity: cancelState === "loading" ? 0.6 : 1,
+                    transition: "all 0.15s",
+                  }}
+                >
+                  {cancelState === "loading" ? "Cancelling…" : cancelState === "confirming" ? "Yes, cancel" : "Cancel subscription"}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
       </main>
