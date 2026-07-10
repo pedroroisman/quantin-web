@@ -44,40 +44,52 @@ interface SeriesPoint { date: string; model: number; spy: number; }
 interface MetricData  { val: string; label: string; sub: string; valueColor: string; tooltip: string; }
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-const YEAR_TOGGLE = ["all", 2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018] as const;
+const YEAR_TOGGLE = ["all", 2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, "custom"] as const;
 type YearSelection = typeof YEAR_TOGGLE[number];
 
-function buildChartData(series: SeriesPoint[], year: YearSelection) {
-  const pts = year === "all"
-    ? (() => {
-        // One point per year-end + first point
-        const byYear: Record<number, SeriesPoint[]> = {};
-        for (const p of series) {
-          const y = new Date(p.date).getFullYear();
-          (byYear[y] ??= []).push(p);
-        }
-        const result = [series[0]];
-        for (const y of Object.keys(byYear).map(Number).sort()) {
-          const last = byYear[y][byYear[y].length - 1];
-          if (last.date !== series[0].date) result.push(last);
-        }
-        return result;
-      })()
-    : series.filter(p => new Date(p.date).getFullYear() === year);
+function fmtMonth(yyyyMM: string) {
+  const [y, m] = yyyyMM.split("-");
+  return `${MONTHS[parseInt(m) - 1]} ${y}`;
+}
 
+function filterPts(series: SeriesPoint[], year: YearSelection, cStart: string, cEnd: string) {
+  if (year === "all") {
+    const byYear: Record<number, SeriesPoint[]> = {};
+    for (const p of series) (byYear[new Date(p.date).getFullYear()] ??= []).push(p);
+    const result = [series[0]];
+    for (const y of Object.keys(byYear).map(Number).sort()) {
+      const last = byYear[y][byYear[y].length - 1];
+      if (last.date !== series[0].date) result.push(last);
+    }
+    return result;
+  }
+  if (year === "custom") {
+    return series.filter(p => p.date.slice(0, 7) >= cStart && p.date.slice(0, 7) <= cEnd);
+  }
+  return series.filter(p => new Date(p.date).getFullYear() === year);
+}
+
+function buildChartData(series: SeriesPoint[], year: YearSelection, cStart: string, cEnd: string) {
+  const pts = filterPts(series, year, cStart, cEnd);
   if (!pts.length) return null;
   const bm = pts[0].model, bs = pts[0].spy;
+  const multiYear = pts.some(p => new Date(p.date).getFullYear() !== new Date(pts[0].date).getFullYear());
   return pts.map(p => {
     const d = new Date(p.date);
-    const period = year === "all"
-      ? (d.getFullYear() === 2018 && d.getMonth() === 1 ? "Feb '18" : String(d.getFullYear()))
-      : MONTHS[d.getMonth()];
+    let period: string;
+    if (year === "all") {
+      period = d.getFullYear() === 2018 && d.getMonth() === 1 ? "Feb '18" : String(d.getFullYear());
+    } else if (multiYear) {
+      period = `${MONTHS[d.getMonth()]} '${String(d.getFullYear()).slice(2)}`;
+    } else {
+      period = MONTHS[d.getMonth()];
+    }
     return { period, quantin: Math.round(p.model / bm * 10000), sp500: Math.round(p.spy / bs * 10000) };
   });
 }
 
-function buildYearMetrics(series: SeriesPoint[], year: number): MetricData[] {
-  const pts = series.filter(p => new Date(p.date).getFullYear() === year);
+function buildRangeMetrics(series: SeriesPoint[], year: YearSelection, cStart: string, cEnd: string): MetricData[] {
+  const pts = filterPts(series, year, cStart, cEnd);
   if (pts.length < 2) return ALL_TIME_METRICS;
   const first = pts[0], last = pts[pts.length - 1];
   const modelRet = (last.model / first.model - 1) * 100;
@@ -89,29 +101,31 @@ function buildYearMetrics(series: SeriesPoint[], year: number): MetricData[] {
     const dd = (p.model - peak) / peak * 100;
     if (dd < maxDD) maxDD = dd;
   }
-  const isPartial = year === 2018 || year === new Date().getFullYear();
   const fmt = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
+  const isYearPartial = typeof year === "number" && (year === 2018 || year === new Date().getFullYear());
+  const retLabel = year === "custom" ? "Period return" : isYearPartial ? "YTD return" : "Year return";
+  const ddSub    = year === "custom" ? "within the period" : "within the year";
+  const tip = typeof year === "number"
+    ? `Quantin returned ${fmt(modelRet)} in ${year}, vs ${fmt(spyRet)} for the S&P 500.`
+    : `Quantin returned ${fmt(modelRet)} from ${fmtMonth(cStart)} to ${fmtMonth(cEnd)}, vs ${fmt(spyRet)} for the S&P 500.`;
   return [
     {
-      val: fmt(modelRet),
-      label: isPartial ? "YTD return" : "Year return",
+      val: fmt(modelRet), label: retLabel,
       sub: `vs ${fmt(spyRet)} S&P 500`,
       valueColor: modelRet >= 0 ? "#1D9E75" : "#B5621A",
-      tooltip: `Quantin returned ${fmt(modelRet)} in ${year}, vs ${fmt(spyRet)} for the S&P 500.`,
+      tooltip: tip,
     },
     {
       val: `${alpha >= 0 ? "+" : ""}${alpha.toFixed(1)}pp`,
-      label: "vs S&P 500",
-      sub: "outperformance",
+      label: "vs S&P 500", sub: "outperformance",
       valueColor: alpha >= 0 ? "#185FA5" : "#B5621A",
-      tooltip: `Quantin ${alpha >= 0 ? "outperformed" : "underperformed"} the S&P 500 by ${Math.abs(alpha).toFixed(1)} percentage points in ${year}.`,
+      tooltip: `Quantin ${alpha >= 0 ? "outperformed" : "underperformed"} the S&P 500 by ${Math.abs(alpha).toFixed(1)} percentage points.`,
     },
     {
       val: maxDD === 0 ? "0.0%" : `${maxDD.toFixed(1)}%`,
-      label: "Max drawdown",
-      sub: "within the year",
+      label: "Max drawdown", sub: ddSub,
       valueColor: "#B5621A",
-      tooltip: `Largest peak-to-trough decline during ${year}. Walk-forward validated.`,
+      tooltip: `Largest peak-to-trough decline within the selected period. Walk-forward validated.`,
     },
   ];
 }
@@ -329,6 +343,8 @@ export function Landing() {
   const [authState, setAuthState]   = useState<AuthState>("loading");
   const [chartSeries, setChartSeries] = useState<SeriesPoint[]>([]);
   const [selectedYear, setSelectedYear] = useState<YearSelection>("all");
+  const [customStart, setCustomStart] = useState<string>("");
+  const [customEnd,   setCustomEnd]   = useState<string>("");
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -350,22 +366,41 @@ export function Landing() {
       .catch(() => {});
   }, []);
 
+  const availableMonths = useMemo(() => chartSeries.map(p => p.date.slice(0, 7)), [chartSeries]);
+
+  const handleSelectYear = (y: YearSelection) => {
+    if (y === "custom" && chartSeries.length) {
+      const months = chartSeries.map(p => p.date.slice(0, 7));
+      setCustomEnd(months[months.length - 1]);
+      setCustomStart(months[Math.max(0, months.length - 25)]);
+    }
+    setSelectedYear(y);
+  };
+
+  const effectiveStart = customStart || availableMonths[0] || "";
+  const effectiveEnd   = customEnd   || availableMonths[availableMonths.length - 1] || "";
+
   const activeChartData = useMemo(() => {
     if (!chartSeries.length) return selectedYear === "all" ? FALLBACK_CHART_DATA : null;
-    return buildChartData(chartSeries, selectedYear) ?? FALLBACK_CHART_DATA;
-  }, [chartSeries, selectedYear]);
+    return buildChartData(chartSeries, selectedYear, effectiveStart, effectiveEnd) ?? FALLBACK_CHART_DATA;
+  }, [chartSeries, selectedYear, effectiveStart, effectiveEnd]);
 
   const activeMetrics = useMemo<MetricData[]>(() => {
     if (selectedYear === "all" || !chartSeries.length) return ALL_TIME_METRICS;
-    return buildYearMetrics(chartSeries, selectedYear);
-  }, [chartSeries, selectedYear]);
+    return buildRangeMetrics(chartSeries, selectedYear, effectiveStart, effectiveEnd);
+  }, [chartSeries, selectedYear, effectiveStart, effectiveEnd]);
 
   const legendNote = useMemo(() => {
     if (selectedYear === "all") return "$10,000 invested Feb 2018 · walk-forward, no lookahead";
+    if (selectedYear === "custom") {
+      return effectiveStart && effectiveEnd
+        ? `$10,000 invested ${fmtMonth(effectiveStart)} · custom range · walk-forward`
+        : "$10,000 invested · custom range · walk-forward";
+    }
     const isPartial = selectedYear === 2018 || selectedYear === new Date().getFullYear();
     const start = selectedYear === 2018 ? "Feb 2018" : `Jan ${selectedYear}`;
     return `$10,000 invested ${start} · ${isPartial ? "partial year" : "calendar year"} · walk-forward`;
-  }, [selectedYear]);
+  }, [selectedYear, effectiveStart, effectiveEnd]);
 
   return (
     <>
@@ -487,28 +522,63 @@ export function Landing() {
               </div>
 
               {/* Year toggle */}
-              <div style={{ display: "flex", gap: 4, marginBottom: "0.6rem", overflowX: "auto", paddingBottom: 2 }}>
+              <div style={{ display: "flex", gap: 4, marginBottom: "0.5rem", overflowX: "auto", paddingBottom: 2 }}>
                 {YEAR_TOGGLE.map(y => {
                   const active = selectedYear === y;
                   return (
                     <button
                       key={y}
-                      onClick={() => setSelectedYear(y)}
+                      onClick={() => handleSelectYear(y)}
                       style={{
                         padding: "3px 10px", fontSize: 11, flexShrink: 0,
                         border: active ? "0.5px solid var(--text-secondary)" : "0.5px solid var(--border-subtle)",
                         borderRadius: 100, cursor: "pointer", fontFamily: "inherit",
                         background: active ? "var(--bg-primary)" : "transparent",
                         color: active ? "var(--text-primary)" : "var(--text-tertiary)",
-                        fontWeight: active ? 500 : 400,
-                        transition: "all 0.15s",
+                        fontWeight: active ? 500 : 400, transition: "all 0.15s",
                       }}
                     >
-                      {y === "all" ? "All" : y}
+                      {y === "all" ? "All" : y === "custom" ? "Custom" : y}
                     </button>
                   );
                 })}
               </div>
+
+              {/* Custom range pickers */}
+              {selectedYear === "custom" && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: "0.6rem", flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>From</span>
+                  <select
+                    value={customStart}
+                    onChange={e => setCustomStart(e.target.value)}
+                    style={{
+                      fontSize: 11, padding: "3px 8px",
+                      border: "0.5px solid var(--border-default)",
+                      borderRadius: 6, background: "var(--bg-primary)",
+                      color: "var(--text-primary)", fontFamily: "inherit", cursor: "pointer",
+                    }}
+                  >
+                    {availableMonths.filter(m => !customEnd || m <= customEnd).map(m => (
+                      <option key={m} value={m}>{fmtMonth(m)}</option>
+                    ))}
+                  </select>
+                  <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>to</span>
+                  <select
+                    value={customEnd}
+                    onChange={e => setCustomEnd(e.target.value)}
+                    style={{
+                      fontSize: 11, padding: "3px 8px",
+                      border: "0.5px solid var(--border-default)",
+                      borderRadius: 6, background: "var(--bg-primary)",
+                      color: "var(--text-primary)", fontFamily: "inherit", cursor: "pointer",
+                    }}
+                  >
+                    {availableMonths.filter(m => !customStart || m >= customStart).map(m => (
+                      <option key={m} value={m}>{fmtMonth(m)}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Chart */}
               <div className="hero-chart" style={{ width: "100%", height: 220, marginBottom: "0.75rem" }}>
