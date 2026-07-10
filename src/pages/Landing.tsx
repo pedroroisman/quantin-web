@@ -412,11 +412,13 @@ export function Landing() {
           .hero-chart    { height: 280px !important; }
         }
         @media (max-width: 860px) {
-          .hero-cols   { flex-direction: column !important; }
+          .hero-cols   { flex-direction: column !important; align-items: stretch !important; }
           .hero-ticker { display: none !important; }
         }
         @media (max-width: 600px) {
           .nav-secondary { display: none !important; }
+          .hero-nav  { padding: 0 1.25rem !important; }
+          .hero-main { padding: 2.5rem 1.25rem 4rem !important; }
           .hero-headline { font-size: 28px !important; }
           .metric-grid { gap: 10px !important; }
           .metric-val { font-size: 20px !important; }
@@ -432,7 +434,7 @@ export function Landing() {
       <div style={{ minHeight: "100vh", background: "var(--bg-tertiary)" }}>
 
         {/* Nav */}
-        <nav style={{
+        <nav className="hero-nav" style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "0 2rem", height: 56,
           background: "var(--bg-primary)", borderBottom: "0.5px solid var(--border-subtle)",
@@ -460,7 +462,7 @@ export function Landing() {
         </nav>
 
         {/* Hero */}
-        <main style={{ maxWidth: 1440, margin: "0 auto", padding: "4rem max(2rem, 6%) 6rem" }}>
+        <main className="hero-main" style={{ maxWidth: 1440, margin: "0 auto", padding: "4rem max(2rem, 6%) 6rem" }}>
 
           {/* Logo mark — centered */}
           <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
