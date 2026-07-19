@@ -383,6 +383,14 @@ export function Landing() {
     return buildChartData(chartSeries, selectedYear, effectiveStart, effectiveEnd) ?? FALLBACK_CHART_DATA;
   }, [chartSeries, selectedYear, effectiveStart, effectiveEnd]);
 
+  const yDomain = useMemo<[number, number]>(() => {
+    if (!activeChartData?.length) return [0, 70000];
+    const vals = activeChartData.flatMap(d => [d.quantin, d.sp500]);
+    const lo = Math.min(...vals), hi = Math.max(...vals);
+    const pad = Math.max((hi - lo) * 0.04, 200);
+    return [Math.floor((lo - pad) / 100) * 100, Math.ceil((hi + pad) / 100) * 100];
+  }, [activeChartData]);
+
   const activeMetrics = useMemo<MetricData[]>(() => {
     if (selectedYear === "all" || !chartSeries.length) return ALL_TIME_METRICS;
     return buildRangeMetrics(chartSeries, selectedYear, effectiveStart, effectiveEnd);
@@ -586,7 +594,7 @@ export function Landing() {
                   <LineChart data={activeChartData ?? []} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
                     <CartesianGrid stroke="var(--border-subtle)" vertical={false} />
                     <XAxis dataKey="period" tick={{ fontSize: 11, fill: "var(--text-tertiary)" }} axisLine={false} tickLine={false} />
-                    <YAxis tickFormatter={formatY} tick={{ fontSize: 11, fill: "var(--text-tertiary)" }} axisLine={false} tickLine={false} width={42} domain={['auto', 'auto']} />
+                    <YAxis tickFormatter={formatY} tick={{ fontSize: 11, fill: "var(--text-tertiary)" }} axisLine={false} tickLine={false} width={42} domain={yDomain} />
                     <Tooltip content={<CustomTooltip />} />
                     <Line type="monotone" dataKey="quantin" name="Quantin" stroke="#185FA5" strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: "#185FA5" }} />
                     <Line type="monotone" dataKey="sp500" name="S&P 500" stroke="#888780" strokeWidth={1.5} strokeDasharray="5 4" dot={false} activeDot={{ r: 4, fill: "#888780" }} />
