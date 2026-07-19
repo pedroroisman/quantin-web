@@ -586,7 +586,7 @@ export function Landing() {
                   <LineChart data={activeChartData ?? []} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
                     <CartesianGrid stroke="var(--border-subtle)" vertical={false} />
                     <XAxis dataKey="period" tick={{ fontSize: 11, fill: "var(--text-tertiary)" }} axisLine={false} tickLine={false} />
-                    <YAxis tickFormatter={formatY} tick={{ fontSize: 11, fill: "var(--text-tertiary)" }} axisLine={false} tickLine={false} width={42} />
+                    <YAxis tickFormatter={formatY} tick={{ fontSize: 11, fill: "var(--text-tertiary)" }} axisLine={false} tickLine={false} width={42} domain={['auto', 'auto']} />
                     <Tooltip content={<CustomTooltip />} />
                     <Line type="monotone" dataKey="quantin" name="Quantin" stroke="#185FA5" strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: "#185FA5" }} />
                     <Line type="monotone" dataKey="sp500" name="S&P 500" stroke="#888780" strokeWidth={1.5} strokeDasharray="5 4" dot={false} activeDot={{ r: 4, fill: "#888780" }} />
