@@ -74,15 +74,23 @@ function buildChartData(series: SeriesPoint[], year: YearSelection, cStart: stri
   if (!pts.length) return null;
   const bm = pts[0].model, bs = pts[0].spy;
   const multiYear = pts.some(p => new Date(p.date).getFullYear() !== new Date(pts[0].date).getFullYear());
+  let lastLabelMonth = -1;
+  let lastLabelYear  = -1;
   return pts.map(p => {
     const d = new Date(p.date);
     let period: string;
     if (year === "all") {
       period = d.getFullYear() === 2018 && d.getMonth() === 1 ? "Feb '18" : String(d.getFullYear());
     } else if (multiYear) {
-      period = `${MONTHS[d.getMonth()]} '${String(d.getFullYear()).slice(2)}`;
+      const mo = d.getMonth(), yr = d.getFullYear();
+      if (mo !== lastLabelMonth || yr !== lastLabelYear) {
+        period = `${MONTHS[mo]} '${String(yr).slice(2)}`;
+        lastLabelMonth = mo; lastLabelYear = yr;
+      } else { period = ""; }
     } else {
-      period = MONTHS[d.getMonth()];
+      const mo = d.getMonth();
+      period = mo !== lastLabelMonth ? MONTHS[mo] : "";
+      lastLabelMonth = mo;
     }
     return { period, quantin: Math.round(p.model / bm * 10000), sp500: Math.round(p.spy / bs * 10000) };
   });
