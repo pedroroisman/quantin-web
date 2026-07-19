@@ -75,10 +75,10 @@ function buildChartData(series: SeriesPoint[], year: YearSelection, cStart: stri
       if (yr !== lastLabelYear) {
         period = String(yr);
         lastLabelYear = yr;
-      } else { period = ""; }
+      } else { period = p.date; }
     } else {
       const mo = d.getMonth();
-      period = mo !== lastLabelMonth ? MONTHS[mo] : "";
+      period = mo !== lastLabelMonth ? MONTHS[mo] : p.date;
       lastLabelMonth = mo;
     }
     return { period, quantin: Math.round(p.model / bm * 10000), sp500: Math.round(p.spy / bs * 10000) };
@@ -593,7 +593,7 @@ export function Landing() {
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={activeChartData ?? []} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
                     <CartesianGrid stroke="var(--border-subtle)" vertical={false} />
-                    <XAxis dataKey="period" tick={{ fontSize: 11, fill: "var(--text-tertiary)" }} axisLine={false} tickLine={false} />
+                    <XAxis dataKey="period" tick={{ fontSize: 11, fill: "var(--text-tertiary)" }} axisLine={false} tickLine={false} interval={0} tickFormatter={(v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v) ? "" : v} />
                     <YAxis tickFormatter={formatY} tick={{ fontSize: 11, fill: "var(--text-tertiary)" }} axisLine={false} tickLine={false} width={42} domain={yDomain} />
                     <Tooltip content={<CustomTooltip />} />
                     <Line type="monotone" dataKey="quantin" name="Quantin" stroke="#185FA5" strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: "#185FA5" }} />
