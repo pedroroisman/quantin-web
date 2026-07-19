@@ -53,16 +53,7 @@ function fmtMonth(yyyyMM: string) {
 }
 
 function filterPts(series: SeriesPoint[], year: YearSelection, cStart: string, cEnd: string) {
-  if (year === "all") {
-    const byYear: Record<number, SeriesPoint[]> = {};
-    for (const p of series) (byYear[new Date(p.date).getFullYear()] ??= []).push(p);
-    const result = [series[0]];
-    for (const y of Object.keys(byYear).map(Number).sort()) {
-      const last = byYear[y][byYear[y].length - 1];
-      if (last.date !== series[0].date) result.push(last);
-    }
-    return result;
-  }
+  if (year === "all") return series;
   if (year === "custom") {
     return series.filter(p => p.date.slice(0, 7) >= cStart && p.date.slice(0, 7) <= cEnd);
   }
@@ -74,18 +65,16 @@ function buildChartData(series: SeriesPoint[], year: YearSelection, cStart: stri
   if (!pts.length) return null;
   const bm = pts[0].model, bs = pts[0].spy;
   const multiYear = pts.some(p => new Date(p.date).getFullYear() !== new Date(pts[0].date).getFullYear());
-  let lastLabelMonth = -1;
   let lastLabelYear  = -1;
+  let lastLabelMonth = -1;
   return pts.map(p => {
     const d = new Date(p.date);
     let period: string;
-    if (year === "all") {
-      period = d.getFullYear() === 2018 && d.getMonth() === 1 ? "Feb '18" : String(d.getFullYear());
-    } else if (multiYear) {
-      const mo = d.getMonth(), yr = d.getFullYear();
-      if (mo !== lastLabelMonth || yr !== lastLabelYear) {
-        period = `${MONTHS[mo]} '${String(yr).slice(2)}`;
-        lastLabelMonth = mo; lastLabelYear = yr;
+    if (year === "all" || multiYear) {
+      const yr = d.getFullYear();
+      if (yr !== lastLabelYear) {
+        period = String(yr);
+        lastLabelYear = yr;
       } else { period = ""; }
     } else {
       const mo = d.getMonth();
