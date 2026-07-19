@@ -34,11 +34,13 @@ const ALL_TIME_METRICS = [
     tooltip: "Largest peak-to-trough decline in portfolio value. Lower is better — the S&P 500 fell −33.7% in 2020 alone.",
   },
   {
-    val: "1.95", label: "Sharpe ratio", sub: "vs 0.80 S&P 500",
+    val: "+9.1pp", label: "vs S&P 500", sub: "annual outperformance",
     valueColor: "#185FA5",
-    tooltip: "Return earned per unit of risk taken. Above 1 is considered strong; above 2 is exceptional.",
+    tooltip: "Quantin's annualized return has exceeded the S&P 500's by 9.1 percentage points per year since Feb 2018.",
   },
 ];
+
+const ALL_TIME_INTERPRETATION = "Since Feb 2018, Quantin has compounded at +23.6%/yr — outperforming the S&P 500 by 9.1pp per year — while limiting its worst drawdown to just −8.4%, compared to −33.7% for the index during the 2020 crash.";
 
 interface SeriesPoint { date: string; model: number; spy: number; }
 interface MetricData  { val: string; label: string; sub: string; valueColor: string; tooltip: string; }
@@ -113,18 +115,42 @@ function buildRangeMetrics(series: SeriesPoint[], year: YearSelection, cStart: s
       tooltip: tip,
     },
     {
-      val: `${alpha >= 0 ? "+" : ""}${alpha.toFixed(1)}pp`,
-      label: "vs S&P 500", sub: "outperformance",
-      valueColor: alpha >= 0 ? "#185FA5" : "#B5621A",
-      tooltip: `Quantin ${alpha >= 0 ? "outperformed" : "underperformed"} the S&P 500 by ${Math.abs(alpha).toFixed(1)} percentage points.`,
-    },
-    {
       val: maxDD === 0 ? "0.0%" : `${maxDD.toFixed(1)}%`,
       label: "Max drawdown", sub: ddSub,
       valueColor: "#B5621A",
       tooltip: `Largest peak-to-trough decline within the selected period. Walk-forward validated.`,
     },
+    {
+      val: `${alpha >= 0 ? "+" : ""}${alpha.toFixed(1)}pp`,
+      label: "vs S&P 500", sub: "outperformance",
+      valueColor: alpha >= 0 ? "#185FA5" : "#B5621A",
+      tooltip: `Quantin ${alpha >= 0 ? "outperformed" : "underperformed"} the S&P 500 by ${Math.abs(alpha).toFixed(1)} percentage points.`,
+    },
   ];
+}
+
+function buildInterpretation(series: SeriesPoint[], year: YearSelection, cStart: string, cEnd: string): string {
+  if (year === "all" || !series.length) return ALL_TIME_INTERPRETATION;
+  const pts = filterPts(series, year, cStart, cEnd);
+  if (pts.length < 2) return ALL_TIME_INTERPRETATION;
+  const first = pts[0], last = pts[pts.length - 1];
+  const modelRet = (last.model / first.model - 1) * 100;
+  const spyRet   = (last.spy   / first.spy   - 1) * 100;
+  const alpha     = modelRet - spyRet;
+  let peak = first.model, maxDD = 0;
+  for (const p of pts) {
+    if (p.model > peak) peak = p.model;
+    const dd = (p.model - peak) / peak * 100;
+    if (dd < maxDD) maxDD = dd;
+  }
+  const fmt  = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
+  const fmtA = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}pp`;
+  const isPartial = typeof year === "number" && (year === 2018 || year === new Date().getFullYear());
+  const period = year === "custom"
+    ? `from ${fmtMonth(cStart)} to ${fmtMonth(cEnd)}`
+    : isPartial ? `in ${year} (YTD)` : `in ${year}`;
+  const ddClause = maxDD < -0.5 ? `, with a maximum drawdown of ${maxDD.toFixed(1)}%` : "";
+  return `Quantin returned ${fmt(modelRet)} ${period} vs ${fmt(spyRet)} for the S&P 500 — ${alpha >= 0 ? "outperforming" : "underperforming"} by ${fmtA(alpha)}${ddClause}.`;
 }
 
 function MetricCard({ val, label, sub, valueColor, tooltip }: MetricData) {
@@ -396,6 +422,10 @@ export function Landing() {
     return buildRangeMetrics(chartSeries, selectedYear, effectiveStart, effectiveEnd);
   }, [chartSeries, selectedYear, effectiveStart, effectiveEnd]);
 
+  const activeInterpretation = useMemo(() =>
+    buildInterpretation(chartSeries, selectedYear, effectiveStart, effectiveEnd),
+  [chartSeries, selectedYear, effectiveStart, effectiveEnd]);
+
   const legendNote = useMemo(() => {
     if (selectedYear === "all") return "$10,000 invested Feb 2018 · walk-forward, no lookahead";
     if (selectedYear === "custom") {
@@ -616,6 +646,14 @@ export function Landing() {
                   {legendNote}
                 </span>
               </div>
+
+              {/* Interpretation */}
+              <p style={{
+                fontSize: 13, lineHeight: 1.6, color: "var(--text-secondary)",
+                marginBottom: "1.5rem", fontStyle: "italic",
+              }}>
+                {activeInterpretation}
+              </p>
 
               {/* CTA */}
               <div className="cta-row" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", marginBottom: "0.9rem" }}>
