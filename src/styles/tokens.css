@@ -22,7 +22,18 @@
   --space-12: 48px;
   --space-16: 64px;
 
-  /* Blue scale */
+  /* Navy scale */
+  --navy-900: #0B1D33;
+  --navy-800: #0F2640;
+  --navy-700: #1A3A58;
+
+  /* Cyan scale */
+  --cyan-600: #007A8F;
+  --cyan-400: #00B8D4;
+  --cyan-200: #80E8F5;
+  --cyan-50:  #E5F9FD;
+
+  /* Blue scale (retained for semantic tokens) */
   --blue-50:  #E6F1FB;
   --blue-100: #B5D4F4;
   --blue-200: #85B7EB;
@@ -62,19 +73,19 @@
 /* Light mode */
 :root {
   --bg-primary:    #FFFFFF;
-  --bg-secondary:  #F7F6F3;
-  --bg-tertiary:   #EFEDE8;
+  --bg-secondary:  #F0F5FA;
+  --bg-tertiary:   #E6EEF7;
 
-  --text-primary:   #1A1A18;
-  --text-secondary: #5F5E5A;
-  --text-tertiary:  #888780;
+  --text-primary:   #0B1D33;
+  --text-secondary: #3D5469;
+  --text-tertiary:  #6B8299;
 
-  --border-subtle:  rgba(0,0,0,0.08);
-  --border-default: rgba(0,0,0,0.12);
-  --border-strong:  rgba(0,0,0,0.20);
+  --border-subtle:  rgba(11,29,51,0.08);
+  --border-default: rgba(11,29,51,0.13);
+  --border-strong:  rgba(11,29,51,0.22);
 
-  --accent:         #185FA5;
-  --accent-hover:   #0C447C;
+  --accent:         #007A8F;
+  --accent-hover:   #005B6B;
 
   --success-bg:     #EAF3DE;
   --success-border: #C0DD97;
@@ -88,28 +99,28 @@
   --warning-border: #FAC775;
   --warning-text:   #633806;
 
-  --info-bg:        #E6F1FB;
-  --info-border:    #B5D4F4;
-  --info-text:      #0C447C;
+  --info-bg:        #E5F9FD;
+  --info-border:    #80E8F5;
+  --info-text:      #005B6B;
 }
 
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg-primary:    #1A1A18;
-    --bg-secondary:  #222220;
-    --bg-tertiary:   #2A2A28;
+    --bg-primary:    #0F1E2F;
+    --bg-secondary:  #0B1D33;
+    --bg-tertiary:   #070F1C;
 
-    --text-primary:   #F1EFE8;
-    --text-secondary: #B4B2A9;
-    --text-tertiary:  #888780;
+    --text-primary:   #EEF3F8;
+    --text-secondary: #9BB5CC;
+    --text-tertiary:  #6B8299;
 
     --border-subtle:  rgba(255,255,255,0.06);
     --border-default: rgba(255,255,255,0.10);
     --border-strong:  rgba(255,255,255,0.18);
 
-    --accent:         #378ADD;
-    --accent-hover:   #85B7EB;
+    --accent:         #00C8E0;
+    --accent-hover:   #80E8F5;
 
     --success-bg:     #173404;
     --success-border: #3B6D11;
@@ -123,8 +134,8 @@
     --warning-border: #854F0B;
     --warning-text:   #FAC775;
 
-    --info-bg:        #042C53;
-    --info-border:    #185FA5;
-    --info-text:      #85B7EB;
+    --info-bg:        #062030;
+    --info-border:    #007A8F;
+    --info-text:      #00C8E0;
   }
 }
