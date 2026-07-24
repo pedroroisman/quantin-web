@@ -5,22 +5,22 @@ interface Props {
 }
 
 export function QuantinLogo({ iconSize = 20, showText = true, gap = 8 }: Props) {
-  const w = Math.round((44 / 36) * iconSize);
+  const w = Math.round((25 / 26) * iconSize);
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap }}>
-      <svg width={w} height={iconSize} viewBox="0 0 44 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <ellipse cx="22" cy="9"    rx="3"   ry="7"   fill="#0C447C" />
-        <ellipse cx="22" cy="20.5" rx="9.5" ry="3"   fill="#378ADD" fillOpacity="0.7" />
-        <ellipse cx="22" cy="27"   rx="15"  ry="2"   fill="#85B7EB" fillOpacity="0.55" />
+      <svg width={w} height={iconSize} viewBox="0 0 25 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="6,5 12,5 14,7 14,21 12,23 6,23 4,21 4,7" fill="#0B1D33"/>
+        <polygon points="11,5 17,5 19,7 19,21 17,23 11,23 9,21 9,7" fill="#00E5FF" transform="rotate(12,14,14)"/>
       </svg>
       {showText && (
         <span style={{
-          fontFamily: "'Outfit', sans-serif",
+          fontFamily: "'Cormorant Garamond', Garamond, Georgia, serif",
           fontWeight: 300,
-          fontSize: Math.round(iconSize * 0.78),
+          fontSize: Math.round(iconSize * 0.85),
           color: "#1e1e1c",
-          letterSpacing: 0,
+          letterSpacing: Math.max(1, Math.round(iconSize * 0.1)),
           lineHeight: 1,
+          textTransform: "uppercase",
         }}>
           quantin
         </span>
