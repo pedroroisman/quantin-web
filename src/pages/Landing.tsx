@@ -35,7 +35,7 @@ const ALL_TIME_METRICS = [
   },
   {
     val: "+9.1pp", label: "vs S&P 500", sub: "annual outperformance",
-    valueColor: "#007A8F",
+    valueColor: "#059669",
     tooltip: "Quantin's annualized return has exceeded the S&P 500's by 9.1 percentage points per year since Feb 2018.",
   },
 ];
@@ -123,7 +123,7 @@ function buildRangeMetrics(series: SeriesPoint[], year: YearSelection, cStart: s
     {
       val: `${alpha >= 0 ? "+" : ""}${alpha.toFixed(1)}pp`,
       label: "vs S&P 500", sub: "outperformance",
-      valueColor: alpha >= 0 ? "#007A8F" : "#B5621A",
+      valueColor: alpha >= 0 ? "#059669" : "#B5621A",
       tooltip: `Quantin ${alpha >= 0 ? "outperformed" : "underperformed"} the S&P 500 by ${Math.abs(alpha).toFixed(1)} percentage points.`,
     },
   ];
@@ -315,7 +315,7 @@ function TickerTape() {
         if (ml) {
           const b = document.createElement("span");
           Object.assign(b.style, {
-            display: "inline-block", background: "#0B1D33", color: "#00C8E0",
+            display: "inline-block", background: "#0B1D33", color: "#00D97E",
             fontSize: "8px", letterSpacing: "0.1em",
             padding: "1px 5px", borderRadius: "3px",
             verticalAlign: "2px", marginLeft: "4px",
@@ -622,7 +622,7 @@ export function Landing() {
                     <XAxis dataKey="period" tick={{ fontSize: 11, fill: "var(--text-tertiary)" }} axisLine={false} tickLine={false} interval={0} tickFormatter={(v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v) ? "" : v} />
                     <YAxis tickFormatter={formatY} tick={{ fontSize: 11, fill: "var(--text-tertiary)" }} axisLine={false} tickLine={false} width={42} domain={yDomain} />
                     <Tooltip content={<CustomTooltip />} />
-                    <Line type="monotone" dataKey="quantin" name="Quantin" stroke="#00B8D4" strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: "#00B8D4" }} />
+                    <Line type="monotone" dataKey="quantin" name="Quantin" stroke="#059669" strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: "#059669" }} />
                     <Line type="monotone" dataKey="sp500" name="S&P 500" stroke="#888780" strokeWidth={1.5} strokeDasharray="5 4" dot={false} activeDot={{ r: 4, fill: "#888780" }} />
                   </LineChart>
                 </ResponsiveContainer>
@@ -631,7 +631,7 @@ export function Landing() {
               {/* Chart legend */}
               <div className="chart-legend" style={{ display: "flex", gap: 18, alignItems: "center", marginBottom: "2rem", flexWrap: "wrap" }}>
                 <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-secondary)" }}>
-                  <span style={{ width: 18, height: 2.5, background: "#00B8D4", display: "inline-block", borderRadius: 1 }} />
+                  <span style={{ width: 18, height: 2.5, background: "#059669", display: "inline-block", borderRadius: 1 }} />
                   Quantin
                 </span>
                 <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-secondary)" }}>
