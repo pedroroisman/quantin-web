@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRegime } from "../hooks/useRegime";
 import { useNavigate } from "react-router-dom";
 import {
@@ -233,130 +233,6 @@ function CustomTooltip({ active, payload, label }: any) {
   );
 }
 
-const TICKER_LINES: { text: string; sec?: boolean; ml?: boolean; done?: boolean }[] = [
-  { text: "— parameters —", sec: true },
-  { text: "" },
-  { text: "Universe......  798 assets" },
-  { text: "Lookback......  3·6·9·12 months" },
-  { text: "Portfolio.....  15 positions" },
-  { text: "Weighting.....  equal" },
-  { text: "Rebalance.....  bi-monthly" },
-  { text: "" },
-  { text: "— strategy test —", sec: true },
-  { text: "" },
-  { text: "150 strategies backtested" },
-  { text: "8yr market data analyzed" },
-  { text: "Bias controls applied" },
-  { text: "" },
-  { text: "— regime detection —", sec: true, ml: true },
-  { text: "" },
-  { text: "Market conditions scanned" },
-  { text: "Regime classified" },
-  { text: "" },
-  { text: "— strategy match —", sec: true, ml: true },
-  { text: "" },
-  { text: "Best-fit strategy selected" },
-  { text: "Risk profile confirmed" },
-  { text: "" },
-  { text: "— portfolio build —", sec: true },
-  { text: "" },
-  { text: "50 walk-fwd. periods validated" },
-  { text: "798 assets momentum-ranked" },
-  { text: "Top 15 positions confirmed" },
-  { text: "" },
-  { text: "Portfolio ready  ●", done: true },
-];
-
-function TickerTape() {
-  const tapeRef = useRef<HTMLDivElement>(null);
-  const dotRef  = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    const tape: HTMLDivElement = tapeRef.current!;
-    const dot: HTMLSpanElement = dotRef.current!;
-    if (!tape || !dot) return;
-
-    let li = 0, ci = 0;
-    let lineEl: HTMLDivElement | null = null;
-    let cursorEl: HTMLSpanElement | null = null;
-    let timer: ReturnType<typeof setTimeout> | null = null;
-
-    function tick() {
-      if (li >= TICKER_LINES.length) {
-        if (cursorEl) cursorEl.remove();
-        dot.style.background = "#0B1D33";
-        return;
-      }
-      const { text = "", sec, ml, done } = TICKER_LINES[li];
-      if (ci === 0) {
-        if (cursorEl) cursorEl.remove();
-        lineEl = document.createElement("div");
-        Object.assign(lineEl.style, {
-          fontFamily: "monospace", fontSize: "11px", lineHeight: "1.8",
-          textTransform: "uppercase", whiteSpace: "pre", minHeight: "1.5em",
-          letterSpacing: sec ? "0.1em" : "0.04em",
-          color: done ? "#1D5C3A" : sec ? "#0A0A0A" : "#1A1209",
-          fontWeight: sec || done ? "500" : "400",
-        });
-        cursorEl = document.createElement("span");
-        Object.assign(cursorEl.style, {
-          display: "inline-block", width: "6px", height: "10px",
-          background: "#1A1209", verticalAlign: "-2px", marginLeft: "1px",
-          animation: "qtblink 0.7s step-end infinite",
-        });
-        lineEl.appendChild(cursorEl);
-        tape.appendChild(lineEl);
-      }
-      if (ci < text.length) {
-        lineEl!.insertBefore(document.createTextNode(text[ci]), cursorEl!);
-        ci++;
-        timer = setTimeout(tick, text[ci - 1] === "." ? 65 : 20);
-      } else {
-        if (ml) {
-          const b = document.createElement("span");
-          Object.assign(b.style, {
-            display: "inline-block", background: "#0B1D33", color: "#00D97E",
-            fontSize: "8px", letterSpacing: "0.1em",
-            padding: "1px 5px", borderRadius: "3px",
-            verticalAlign: "2px", marginLeft: "4px",
-          });
-          b.textContent = "ML";
-          lineEl!.insertBefore(b, cursorEl!);
-        }
-        ci = 0; li++;
-        timer = setTimeout(tick, text === "" ? 20 : li <= 8 ? 55 : 160);
-      }
-    }
-
-    dot.style.background = "#2D6A3F";
-    tick();
-    return () => { if (timer) clearTimeout(timer); };
-  }, []);
-
-  return (
-    <div>
-      <div style={{
-        fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase",
-        color: "var(--text-tertiary)", marginBottom: "0.5rem",
-      }}>
-        how the model works
-      </div>
-      <div style={{ background: "#1A1A1A", borderRadius: "8px 8px 0 0", padding: "9px 14px 8px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontFamily: "monospace", fontSize: 8, letterSpacing: "0.15em", color: "#555", textTransform: "uppercase" }}>
-            Quantin · Model v3
-          </span>
-          <span ref={dotRef} style={{ width: 5, height: 5, borderRadius: "50%", background: "#2D6A3F", display: "inline-block" }} />
-        </div>
-      </div>
-      <div style={{ height: 2, background: "#0A0A0A" }} />
-      <div ref={tapeRef} style={{ background: "#FFF8EE", padding: "10px 16px 4px" }} />
-      <div style={{ background: "#141414", borderRadius: "0 0 6px 6px", height: 6, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>
-        {[0, 1, 2].map(i => <div key={i} style={{ width: 3, height: 3, borderRadius: "50%", background: "#2a2a2a" }} />)}
-      </div>
-    </div>
-  );
-}
 
 type AuthState = "loading" | "none" | "subscribed" | "unsubscribed";
 
@@ -441,14 +317,12 @@ export function Landing() {
   return (
     <>
       <style>{`
-        @keyframes qtblink { 0%,100%{opacity:1} 50%{opacity:0} }
         @media (min-width: 900px) {
           .hero-headline { font-size: 48px !important; }
           .hero-chart    { height: 280px !important; }
         }
         @media (max-width: 860px) {
           .hero-cols   { flex-direction: column !important; align-items: stretch !important; }
-          .hero-ticker { display: none !important; }
         }
         @media (max-width: 600px) {
           .nav-secondary { display: none !important; }
@@ -683,14 +557,103 @@ export function Landing() {
 
             </div>
 
-            {/* Right: ticker tape grows downward */}
-            <div className="hero-ticker" style={{ flexShrink: 0, width: 260, paddingTop: "3.5rem" }}>
-              <TickerTape />
-            </div>
-
           </div>
 
         </main>
+
+        {/* How the model works */}
+        <section style={{ background: "var(--bg-primary)", borderTop: "0.5px solid var(--border-subtle)" }}>
+          <div style={{ maxWidth: 1440, margin: "0 auto", padding: "5rem max(2rem, 6%) 6rem" }}>
+
+            <header style={{ marginBottom: "3.5rem" }}>
+              <p style={{
+                fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.12em",
+                textTransform: "uppercase", color: "var(--text-tertiary)", marginBottom: "0.9rem",
+              }}>How the model works</p>
+              <h2 style={{ fontSize: 26, fontWeight: 500, color: "var(--text-primary)", lineHeight: 1.3, maxWidth: 480 }}>
+                Four layers. Two points of machine learning. Zero discretion.
+              </h2>
+            </header>
+
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+              gap: "2.5rem",
+            }}>
+              {([
+                {
+                  n: "01",
+                  title: "Universe screening",
+                  ml: false,
+                  desc: "Every two months, 798 US stocks and ETFs are screened for momentum across four lookback windows — 3, 6, 9, and 12 months. The full universe is ranked before any strategy is applied.",
+                  stats: ["798 assets", "4 lookback windows", "Bi-monthly cadence"],
+                },
+                {
+                  n: "02",
+                  title: "Strategy backtesting",
+                  ml: false,
+                  desc: "150 strategy combinations are tested across 8 years of daily market data. Walk-forward validation is applied throughout — no lookahead bias, no curve-fitting to past results.",
+                  stats: ["150 strategies tested", "8 years of market data", "No lookahead bias"],
+                },
+                {
+                  n: "03",
+                  title: "Regime detection",
+                  ml: true,
+                  desc: "A machine learning model classifies current market conditions — trending, mean-reverting, or risk-off. The regime label determines which strategy family is statistically best suited to deploy.",
+                  stats: ["ML classification", "3 regime states", "Updated every cycle"],
+                },
+                {
+                  n: "04",
+                  title: "Portfolio construction",
+                  ml: true,
+                  desc: "The best-fit strategy for the detected regime is selected and validated against 50 walk-forward periods. The top 15 momentum-ranked assets are assembled into an equal-weight portfolio.",
+                  stats: ["50 validation periods", "15 equal-weight positions", "Risk profile confirmed"],
+                },
+              ] as const).map(({ n, title, ml, desc, stats }) => (
+                <div key={n} style={{
+                  borderTop: `2px solid ${ml ? "var(--accent)" : "var(--border-strong)"}`,
+                  paddingTop: "1.5rem",
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: "1rem" }}>
+                    <span style={{
+                      fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.08em",
+                      color: "var(--text-tertiary)",
+                    }}>{n}</span>
+                    <span style={{ fontSize: 15, fontWeight: 500, color: "var(--text-primary)" }}>{title}</span>
+                    {ml && (
+                      <span style={{
+                        fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: "0.1em",
+                        background: "var(--text-primary)", color: "var(--bg-primary)",
+                        padding: "2px 6px", borderRadius: 3,
+                      }}>ML</span>
+                    )}
+                  </div>
+                  <p style={{
+                    fontSize: 13, lineHeight: 1.7, color: "var(--text-secondary)",
+                    marginBottom: "1.5rem",
+                  }}>{desc}</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {stats.map(s => (
+                      <span key={s} style={{
+                        fontSize: 11, color: "var(--text-tertiary)",
+                        display: "flex", alignItems: "center", gap: 7,
+                      }}>
+                        <span style={{
+                          width: 3, height: 3, borderRadius: "50%", flexShrink: 0,
+                          background: ml ? "var(--accent)" : "var(--text-tertiary)",
+                          display: "inline-block",
+                        }} />
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+          </div>
+        </section>
+
       </div>
     </>
   );
