@@ -12,14 +12,14 @@ import { track } from "../lib/analytics";
 // Fallback — shown while API loads
 const FALLBACK_CHART_DATA = [
   { period: "Feb '18", quantin: 10000, sp500: 10000  },
-  { period: "2019",    quantin: 12976, sp500: 12238  },
-  { period: "2020",    quantin: 22484, sp500: 14486  },
-  { period: "2021",    quantin: 27192, sp500: 18650  },
-  { period: "2022",    quantin: 26743, sp500: 15261  },
-  { period: "2023",    quantin: 30520, sp500: 19258  },
-  { period: "2024",    quantin: 36951, sp500: 24050  },
-  { period: "2025",    quantin: 46003, sp500: 28310  },
-  { period: "Jun '26", quantin: 58003, sp500: 30714  },
+  { period: "2019",    quantin: 12890, sp500: 12280  },
+  { period: "2020",    quantin: 24170, sp500: 14300  },
+  { period: "2021",    quantin: 29690, sp500: 18650  },
+  { period: "2022",    quantin: 30690, sp500: 15260  },
+  { period: "2023",    quantin: 35610, sp500: 19260  },
+  { period: "2024",    quantin: 43760, sp500: 24420  },
+  { period: "2025",    quantin: 58330, sp500: 28660  },
+  { period: "Jun '26", quantin: 70115, sp500: 30714  },
 ];
 
 const ALL_TIME_METRICS = [
@@ -45,7 +45,7 @@ const ALL_TIME_METRICS = [
   },
 ];
 
-const ALL_TIME_INTERPRETATION = "Since Feb 2018, Quantin has compounded at +23.6%/yr — outperforming the S&P 500 by 9.1pp per year — while limiting its worst drawdown to just −8.4%, compared to −33.7% for the index during the 2020 crash.";
+const ALL_TIME_INTERPRETATION = "Since Feb 2018, Quantin has compounded at +26.5%/yr — outperforming the S&P 500 by 12.0pp per year — while limiting its worst drawdown to just −9.5%, compared to −33.7% for the index during the 2020 crash.";
 
 interface SeriesPoint { date: string; model: number; spy: number; }
 interface MetricData  { val: string; label: string; sub: string; valueColor: string; tooltip: string; }
