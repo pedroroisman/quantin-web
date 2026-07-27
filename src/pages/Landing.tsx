@@ -571,7 +571,7 @@ export function Landing() {
                 textTransform: "uppercase", color: "var(--text-tertiary)", marginBottom: "0.9rem",
               }}>How the model works</p>
               <h2 style={{ fontSize: 26, fontWeight: 500, color: "var(--text-primary)", lineHeight: 1.3, maxWidth: 480 }}>
-                Four layers. Two points of machine learning. Zero discretion.
+                Five layers. Walk-forward validated. Zero discretion.
               </h2>
             </header>
 
@@ -583,31 +583,38 @@ export function Landing() {
               {([
                 {
                   n: "01",
-                  title: "Universe screening",
+                  title: "Universe & sector mapping",
                   ml: false,
-                  desc: "Every two months, 798 US stocks and ETFs are screened for momentum across four lookback windows — 3, 6, 9, and 12 months. The full universe is ranked before any strategy is applied.",
-                  stats: ["798 assets", "4 lookback windows", "Bi-monthly cadence"],
+                  desc: "798 US stocks and ETFs, each assigned to its own sector reference index — tech benchmarked against XLK, financials against XLF, and so on. This ensures regime detection happens within each asset's own market environment, not against a global index.",
+                  stats: ["798 assets", "23 sector references", "Sector-aware benchmarking"],
                 },
                 {
                   n: "02",
-                  title: "Strategy backtesting",
+                  title: "Strategy competition",
                   ml: false,
-                  desc: "150 strategy combinations are tested across 8 years of daily market data. Walk-forward validation is applied throughout — no lookahead bias, no curve-fitting to past results.",
-                  stats: ["150 strategies tested", "8 years of market data", "No lookahead bias"],
+                  desc: "171 timing strategies run simultaneously on 10 years of daily price data using strict walk-forward validation — the model never touches future data. Every rebalance, each strategy is scored on how it performed in conditions similar to today's regime.",
+                  stats: ["171 competing strategies", "10 years of data", "No lookahead bias"],
                 },
                 {
                   n: "03",
                   title: "Regime detection",
                   ml: true,
-                  desc: "A machine learning model classifies current market conditions — trending, mean-reverting, or risk-off. The regime label determines which strategy family is statistically best suited to deploy.",
-                  stats: ["ML classification", "3 regime states", "Updated every cycle"],
+                  desc: "A two-stage ensemble classifies the current market regime: KMeans unsupervised clustering identifies structural market patterns; technical rules add signal precision. Output: Bear, Bull Low Vol, or Bull High Vol — computed per sector, not globally.",
+                  stats: ["KMeans clustering", "3 regime states", "Sector-level detection"],
                 },
                 {
                   n: "04",
+                  title: "Smart selector",
+                  ml: false,
+                  desc: "The top 3 strategies for the detected regime cast weighted votes on each asset's position — long or cash. Each vote is proportional to the strategy's score in the current regime. A weighted majority above 50% keeps the asset long; below that, cash.",
+                  stats: ["Top 3 strategies vote", "Regime-weighted scoring", "Binary long / cash signal"],
+                },
+                {
+                  n: "05",
                   title: "Portfolio construction",
-                  ml: true,
-                  desc: "The best-fit strategy for the detected regime is selected and validated against 50 walk-forward periods. The top 15 momentum-ranked assets are assembled into an equal-weight portfolio.",
-                  stats: ["50 validation periods", "15 equal-weight positions", "Risk profile confirmed"],
+                  ml: false,
+                  desc: "Assets are ranked by ensemble Sharpe across 3, 6, 9, and 12-month windows — longer windows carry more weight. The top 15 by this score enter the portfolio at equal weight and are held until the next bi-monthly rebalance.",
+                  stats: ["15 equal-weight positions", "4 lookback windows", "Bi-monthly rebalance"],
                 },
               ] as const).map(({ n, title, ml, desc, stats }) => (
                 <div key={n} style={{
