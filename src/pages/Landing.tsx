@@ -24,19 +24,24 @@ const FALLBACK_CHART_DATA = [
 
 const ALL_TIME_METRICS = [
   {
-    val: "+23.6%", label: "Annual return", sub: "vs +14.5% S&P 500",
+    val: "+26.5%", label: "Annual return", sub: "vs +14.5% S&P 500",
     valueColor: "#1D9E75",
     tooltip: "Average yearly return compounded over the full backtest period (Feb 2018 – Jun 2026).",
   },
   {
-    val: "−8.4%", label: "Max drawdown", sub: "vs −33.7% S&P 500",
+    val: "−9.5%", label: "Max drawdown", sub: "vs −33.7% S&P 500",
     valueColor: "#B5621A",
     tooltip: "Largest peak-to-trough decline in portfolio value. Lower is better — the S&P 500 fell −33.7% in 2020 alone.",
   },
   {
-    val: "+9.1pp", label: "vs S&P 500", sub: "annual outperformance",
+    val: "2.05", label: "Sharpe ratio", sub: "vs 0.80 S&P 500",
     valueColor: "#059669",
-    tooltip: "Quantin's annualized return has exceeded the S&P 500's by 9.1 percentage points per year since Feb 2018.",
+    tooltip: "Risk-adjusted return: annual excess return divided by volatility. Above 1.0 is considered strong — Quantin's 2.05 means high return per unit of risk taken.",
+  },
+  {
+    val: "+12.0pp", label: "vs S&P 500", sub: "annual outperformance",
+    valueColor: "#059669",
+    tooltip: "Quantin's annualized return has exceeded the S&P 500's by 12.0 percentage points per year since Feb 2018.",
   },
 ];
 
@@ -87,6 +92,19 @@ function buildChartData(series: SeriesPoint[], year: YearSelection, cStart: stri
   });
 }
 
+function computeSharpe(pts: SeriesPoint[], key: 'model' | 'spy'): number | null {
+  if (pts.length < 4) return null;
+  const rets: number[] = [];
+  for (let i = 1; i < pts.length; i++) {
+    rets.push(pts[i][key] / pts[i - 1][key] - 1);
+  }
+  const mean = rets.reduce((a, b) => a + b, 0) / rets.length;
+  const variance = rets.reduce((a, b) => a + (b - mean) ** 2, 0) / rets.length;
+  const std = Math.sqrt(variance);
+  if (std < 1e-9) return null;
+  return (mean / std) * Math.sqrt(52);
+}
+
 function buildRangeMetrics(series: SeriesPoint[], year: YearSelection, cStart: string, cEnd: string): MetricData[] {
   const pts = filterPts(series, year, cStart, cEnd);
   if (pts.length < 2) return ALL_TIME_METRICS;
@@ -100,6 +118,8 @@ function buildRangeMetrics(series: SeriesPoint[], year: YearSelection, cStart: s
     const dd = (p.model - peak) / peak * 100;
     if (dd < maxDD) maxDD = dd;
   }
+  const modelSharpe = computeSharpe(pts, 'model');
+  const spySharpe   = computeSharpe(pts, 'spy');
   const fmt = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
   const isYearPartial = typeof year === "number" && (year === 2018 || year === new Date().getFullYear());
   const retLabel = year === "custom" ? "Period return" : isYearPartial ? "YTD return" : "Year return";
@@ -107,6 +127,8 @@ function buildRangeMetrics(series: SeriesPoint[], year: YearSelection, cStart: s
   const tip = typeof year === "number"
     ? `Quantin returned ${fmt(modelRet)} in ${year}, vs ${fmt(spyRet)} for the S&P 500.`
     : `Quantin returned ${fmt(modelRet)} from ${fmtMonth(cStart)} to ${fmtMonth(cEnd)}, vs ${fmt(spyRet)} for the S&P 500.`;
+  const sharpeVal = modelSharpe !== null ? modelSharpe.toFixed(2) : "—";
+  const sharpeSub = spySharpe !== null ? `vs ${spySharpe.toFixed(2)} S&P 500` : "S&P 500 n/a";
   return [
     {
       val: fmt(modelRet), label: retLabel,
@@ -119,6 +141,11 @@ function buildRangeMetrics(series: SeriesPoint[], year: YearSelection, cStart: s
       label: "Max drawdown", sub: ddSub,
       valueColor: "#B5621A",
       tooltip: `Largest peak-to-trough decline within the selected period. Walk-forward validated.`,
+    },
+    {
+      val: sharpeVal, label: "Sharpe ratio", sub: sharpeSub,
+      valueColor: "#059669",
+      tooltip: `Risk-adjusted return for the selected period. Above 1.0 is considered strong.`,
     },
     {
       val: `${alpha >= 0 ? "+" : ""}${alpha.toFixed(1)}pp`,
@@ -329,7 +356,7 @@ export function Landing() {
           .hero-nav  { padding: 0 1.25rem !important; }
           .hero-main { padding: 2.5rem 1.25rem 4rem !important; }
           .hero-headline { font-size: 28px !important; }
-          .metric-grid { gap: 10px !important; }
+          .metric-grid { gap: 8px !important; grid-template-columns: repeat(2, 1fr) !important; }
           .metric-val { font-size: 20px !important; }
           .metric-label { font-size: 9px !important; }
           .metric-sub { display: none !important; }
@@ -423,7 +450,7 @@ export function Landing() {
 
               {/* Metrics */}
               <div className="metric-grid" style={{
-                display: "grid", gridTemplateColumns: "repeat(3, 1fr)",
+                display: "grid", gridTemplateColumns: "repeat(4, 1fr)",
                 gap: 10, marginBottom: "2rem",
               }}>
                 {activeMetrics.map((m) => <MetricCard key={m.label} {...m} />)}
