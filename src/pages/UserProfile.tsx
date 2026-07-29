@@ -17,6 +17,7 @@ interface SeriesPoint { date: string; model: number; spy: number; }
 interface PortfolioSummary {
   count: number;
   as_of: string;
+  since: string;          // date used as baseline
   modelReturn: number;   // % since subscribed
   spyReturn: number;     // % since subscribed
 }
@@ -76,6 +77,7 @@ export function UserProfile() {
           setPortfolio({
             count: portfolio?.portfolio?.length ?? 0,
             as_of: portfolio?.as_of ?? last.date,
+            since: base.date,
             modelReturn,
             spyReturn,
           });
@@ -209,9 +211,16 @@ export function UserProfile() {
             background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)",
             borderRadius: "var(--radius-lg)", padding: "1.5rem", marginBottom: "1.25rem",
           }}>
-            <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--accent)", marginBottom: "1rem" }}>
-              Portfolio performance
-            </p>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "1rem" }}>
+              <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--accent)" }}>
+                Portfolio performance
+              </p>
+              {portfolio && (
+                <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 11, color: "var(--text-tertiary)" }}>
+                  Since {fmt(portfolio.since)}
+                </p>
+              )}
+            </div>
 
             {portfolio ? (
               <>
