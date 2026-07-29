@@ -162,7 +162,7 @@ export function Checkout() {
         </button>
         {session
           ? <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "var(--text-tertiary)" }}>{session.email}</span>
-          : <Button variant="outline" size="sm" onClick={() => navigate("/signin")}>Sign in</Button>
+          : <Button variant="secondary" size="sm" onClick={() => navigate("/signin")}>Sign in</Button>
         }
       </nav>
 
@@ -323,7 +323,7 @@ export function Checkout() {
                 Tailored to your organization
               </p>
               <Button
-                variant="outline"
+                variant="secondary"
                 size="lg"
                 style={{ width: "100%", justifyContent: "center" }}
                 onClick={() => setShowEnt(v => !v)}
