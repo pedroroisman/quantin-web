@@ -162,7 +162,7 @@ export function Checkout() {
           <QuantinLogo iconSize={22} />
         </button>
         {session
-          ? <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "var(--text-tertiary)" }}>{session.email}</span>
+          ? <button onClick={() => navigate("/user")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "var(--text-tertiary)", padding: "4px 8px", borderRadius: 6 }}>{session.email}</button>
           : <Button variant="secondary" size="sm" onClick={() => navigate("/signin")}>Sign in</Button>
         }
       </nav>

@@ -467,8 +467,8 @@ export function Dashboard() {
           <QuantinLogo iconSize={22} />
         </button>
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <Button variant="ghost" size="sm" onClick={handleSignOut}>
-            Sign out
+          <Button variant="ghost" size="sm" onClick={() => navigate("/user")}>
+            Account
           </Button>
         </div>
       </nav>
