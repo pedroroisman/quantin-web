@@ -437,7 +437,7 @@ export function Landing() {
                 fontSize: 36, marginBottom: "0.75rem",
                 color: "var(--text-primary)", lineHeight: 1.2,
               }}>
-                Math picks your stocks.<br />You just invest.
+                Systematic alpha.<br />No quant team required.
               </h1>
 
               <p style={{
