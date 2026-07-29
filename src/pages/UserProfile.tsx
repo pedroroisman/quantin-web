@@ -17,9 +17,9 @@ interface SeriesPoint { date: string; model: number; spy: number; }
 interface PortfolioSummary {
   count: number;
   as_of: string;
-  since: string;          // date used as baseline
-  modelReturn: number;   // % since subscribed
-  spyReturn: number;     // % since subscribed
+  since: string;
+  modelReturn: number | null;
+  spyReturn: number | null;
 }
 
 function fmt(d: string) {
@@ -67,11 +67,20 @@ export function UserProfile() {
         ]).then(([portfolio, chart]) => {
           const series: SeriesPoint[] = chart?.series ?? [];
           if (!series.length) return;
-          // Find the series point at or just after subscription date
-          const subDate = since;
-          const subIdx = series.findIndex(p => p.date >= subDate);
-          const base = subIdx >= 0 ? series[subIdx] : series[0];
           const last = series[series.length - 1];
+          const subIdx = series.findIndex(p => p.date >= since);
+          // If subscription is newer than all series data, no period data yet
+          if (subIdx === -1) {
+            setPortfolio({
+              count: portfolio?.portfolio?.length ?? 0,
+              as_of: portfolio?.as_of ?? last.date,
+              since: since,
+              modelReturn: null,
+              spyReturn: null,
+            });
+            return;
+          }
+          const base = series[subIdx];
           const modelReturn = (last.model / base.model - 1) * 100;
           const spyReturn   = (last.spy   / base.spy   - 1) * 100;
           setPortfolio({
@@ -224,23 +233,36 @@ export function UserProfile() {
 
             {portfolio ? (
               <>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem", marginBottom: "1rem" }}>
-                  {[
-                    { val: sign(portfolio.modelReturn), label: "Portfolio return", highlight: true },
-                    { val: sign(portfolio.spyReturn),   label: "S&P 500 (same period)", highlight: false },
-                  ].map(({ val, label, highlight }) => (
-                    <div key={label}>
-                      <p style={{ fontFamily: playfair, fontWeight: 400, fontSize: 28, color: highlight ? "var(--accent)" : "var(--text-secondary)", lineHeight: 1.1, marginBottom: 4 }}>{val}</p>
-                      <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 11, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</p>
-                    </div>
-                  ))}
-                </div>
-                {portfolio.modelReturn > portfolio.spyReturn && (
-                  <div style={{ marginBottom: "1rem", padding: "8px 12px", background: "var(--info-bg)", border: "0.5px solid var(--info-border)", borderRadius: "var(--radius-md)" }}>
-                    <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--info-text)" }}>
-                      +{(portfolio.modelReturn - portfolio.spyReturn).toFixed(1)}pp outperformance vs S&P 500 since you subscribed
-                    </span>
+                {portfolio.modelReturn === null ? (
+                  <div style={{ padding: "1rem 0", marginBottom: "1rem" }}>
+                    <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "var(--text-secondary)", marginBottom: 6 }}>
+                      Performance data not yet available.
+                    </p>
+                    <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)" }}>
+                      The next monthly data point will be computed at the end of the current period. Check back soon.
+                    </p>
                   </div>
+                ) : (
+                  <>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem", marginBottom: "1rem" }}>
+                      {[
+                        { val: sign(portfolio.modelReturn), label: "Portfolio return", highlight: true },
+                        { val: sign(portfolio.spyReturn!),  label: "S&P 500 (same period)", highlight: false },
+                      ].map(({ val, label, highlight }) => (
+                        <div key={label}>
+                          <p style={{ fontFamily: playfair, fontWeight: 400, fontSize: 28, color: highlight ? "var(--accent)" : "var(--text-secondary)", lineHeight: 1.1, marginBottom: 4 }}>{val}</p>
+                          <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 11, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</p>
+                        </div>
+                      ))}
+                    </div>
+                    {portfolio.modelReturn > portfolio.spyReturn! && (
+                      <div style={{ marginBottom: "1rem", padding: "8px 12px", background: "var(--info-bg)", border: "0.5px solid var(--info-border)", borderRadius: "var(--radius-md)" }}>
+                        <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--info-text)" }}>
+                          +{(portfolio.modelReturn - portfolio.spyReturn!).toFixed(1)}pp outperformance vs S&P 500 since you subscribed
+                        </span>
+                      </div>
+                    )}
+                  </>
                 )}
                 <div style={{ borderTop: "0.5px solid var(--border-subtle)", paddingTop: "0.75rem", display: "flex", justifyContent: "space-between" }}>
                   <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)" }}>
