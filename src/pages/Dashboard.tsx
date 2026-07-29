@@ -195,6 +195,22 @@ const td: React.CSSProperties = {
 };
 const tdL: React.CSSProperties = { ...td, textAlign: "left" as const };
 
+const thPos: React.CSSProperties = {
+  ...th, paddingRight: "1.25rem",
+  background: "rgba(29,158,117,0.07)",
+  borderLeft: "2px solid rgba(29,158,117,0.3)",
+};
+const tdPos: React.CSSProperties = {
+  ...td, paddingRight: "1.25rem",
+  background: "rgba(29,158,117,0.07)",
+  borderLeft: "2px solid rgba(29,158,117,0.3)",
+};
+
+const fmtMonthYear = (d: string) => {
+  const dt = new Date(d + "T00:00:00");
+  return dt.toLocaleString("en-US", { month: "short", year: "numeric" }).toUpperCase();
+};
+
 const outfit = "'Outfit', sans-serif";
 const playfair = "'Playfair Display', serif";
 
@@ -557,7 +573,7 @@ export function Dashboard() {
                 <th style={th}>In portfolio since</th>
                 <th style={th}>Performance since entry</th>
                 {subscribedSince && <th style={th}>Since subscribed</th>}
-                <th style={{ ...th, paddingRight: "1.25rem" }}>Position</th>
+                <th style={thPos}>Position</th>
               </tr>
             </thead>
             <tbody>
@@ -583,7 +599,7 @@ export function Dashboard() {
                     </td>
                     <td style={{ ...td }}>
                       {h.entry_date
-                        ? <span style={{ fontSize: 13 }}>{h.entry_date}</span>
+                        ? <span style={{ fontSize: 13 }}>{fmtMonthYear(h.entry_date)}</span>
                         : <span style={{ color: "var(--text-tertiary)" }}>—</span>}
                     </td>
                     <td style={{ ...td }}>
@@ -600,7 +616,7 @@ export function Dashboard() {
                           : <span style={{ color: "var(--text-tertiary)" }}>—</span>}
                       </td>
                     )}
-                    <td style={{ ...td, paddingRight: "1.25rem" }}>
+                    <td style={tdPos}>
                       <span style={{ fontSize: 11, fontWeight: 600, color: pos === "long" ? "#1D9E75" : "#8A8F9A" }}>
                         {pos === "long" ? "Long" : "Cash"}
                       </span>

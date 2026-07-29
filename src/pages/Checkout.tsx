@@ -39,7 +39,9 @@ export function Checkout() {
   const [session, setSession]       = useState<{ email: string } | null>(null);
 
   // B2B
-  const [b2bLoading, setB2bLoading] = useState(false);
+  const [b2bLoading, setB2bLoading]         = useState(false);
+  const [b2bPayMethod, setB2bPayMethod]     = useState<"now" | "invoice" | null>(null);
+  const [b2bInvoiceSent, setB2bInvoiceSent] = useState(false);
 
   // Enterprise form
   const [showEnt, setShowEnt]       = useState(false);
@@ -104,6 +106,25 @@ export function Checkout() {
       window.location.href = url;
     } catch (err) {
       console.error(err);
+      setB2bLoading(false);
+    }
+  };
+
+  const handleB2BInvoice = async () => {
+    if (!session) { requireAuth(); return; }
+    setB2bLoading(true);
+    try {
+      track("checkout_started", { plan: "b2b_invoice", billing, seats, email: session.email });
+      const res = await fetch(`${apiUrl}/api/request-b2b-invoice`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: session.email, company: "", seats, billing }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setB2bInvoiceSent(true);
+    } catch (err) {
+      console.error(err);
+    } finally {
       setB2bLoading(false);
     }
   };
@@ -266,12 +287,60 @@ export function Checkout() {
                 </div>
               </div>
 
-              <Button size="lg" style={{ width: "100%", justifyContent: "center" }} disabled={b2bLoading} onClick={handleB2B}>
-                {b2bLoading ? "Processing…" : session ? "Get started →" : "Get started →"}
-              </Button>
-              <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 11, color: "var(--text-tertiary)", textAlign: "center", marginTop: 8 }}>
-                An invoice will be sent after each billing period
-              </p>
+              {/* Payment method selector */}
+              <div style={{ display: "flex", gap: 8, marginBottom: "1rem" }}>
+                {(["now", "invoice"] as const).map(method => {
+                  const label = method === "now" ? "Pay now" : "Invoice me";
+                  const active = b2bPayMethod === method;
+                  return (
+                    <button
+                      key={method}
+                      type="button"
+                      onClick={() => setB2bPayMethod(method)}
+                      style={{
+                        flex: 1, padding: "8px 0", cursor: "pointer",
+                        fontFamily: outfit, fontWeight: active ? 500 : 300, fontSize: 12,
+                        borderRadius: "var(--radius-md)",
+                        border: active ? "1.5px solid #1D9E75" : "0.5px solid var(--border-default)",
+                        background: active ? "rgba(29,158,117,0.1)" : "var(--bg-secondary)",
+                        color: active ? "#1D9E75" : "var(--text-secondary)",
+                        transition: "all 0.15s",
+                      }}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {b2bInvoiceSent ? (
+                <div style={{ textAlign: "center", padding: "0.75rem 0 0.25rem" }}>
+                  <p style={{ fontFamily: playfair, fontWeight: 400, fontSize: 18, color: "var(--text-primary)", marginBottom: 6 }}>Invoice on its way.</p>
+                  <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)" }}>Check your inbox — payment due in 30 days.</p>
+                </div>
+              ) : (
+                <>
+                  <Button
+                    size="lg"
+                    style={{ width: "100%", justifyContent: "center" }}
+                    disabled={b2bLoading || b2bPayMethod === null}
+                    onClick={b2bPayMethod === "invoice" ? handleB2BInvoice : handleB2B}
+                  >
+                    {b2bLoading
+                      ? "Processing…"
+                      : b2bPayMethod === "invoice"
+                        ? "Request invoice →"
+                        : "Get started →"}
+                  </Button>
+                  <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 11, color: "var(--text-tertiary)", textAlign: "center", marginTop: 8 }}>
+                    {b2bPayMethod === "invoice"
+                      ? "We'll email you a Stripe invoice · net 30"
+                      : b2bPayMethod === "now"
+                        ? "Secure checkout via Stripe"
+                        : "Choose a payment method above"}
+                  </p>
+                </>
+              )}
             </div>
             <div style={{ borderTop: "0.5px solid var(--border-subtle)", padding: "1.5rem 1.75rem" }}>
               <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)", marginBottom: "0.75rem" }}>
