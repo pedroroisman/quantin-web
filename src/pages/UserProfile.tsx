@@ -12,18 +12,13 @@ interface SubData {
   stripe_subscription_id: string | null;
 }
 
-interface PortfolioMetrics {
-  total_return: number;
-  cagr: number;
-  sharpe: number;
-  max_dd: number;
-}
+interface SeriesPoint { date: string; model: number; spy: number; }
 
 interface PortfolioSummary {
   count: number;
   as_of: string;
-  metrics: PortfolioMetrics;
-  spy_ratio: number;
+  modelReturn: number;   // % since subscribed
+  spyReturn: number;     // % since subscribed
 }
 
 function fmt(d: string) {
@@ -65,18 +60,26 @@ export function UserProfile() {
       if (data?.active) {
         const since = data.created_at.split("T")[0];
         const apiUrl = import.meta.env.VITE_API_URL || "";
-        fetch(`${apiUrl}/api/portfolio_optimizer?since=${since}`)
-          .then(r => r.json())
-          .then(d => {
-            if (!d?.validation) return;
-            setPortfolio({
-              count: d.portfolio?.length ?? 0,
-              as_of: d.as_of ?? "",
-              metrics: d.validation.metrics,
-              spy_ratio: d.validation.dollar_simulation.final_model / d.validation.dollar_simulation.final_spy,
-            });
-          })
-          .catch(() => {});
+        Promise.all([
+          fetch(`${apiUrl}/api/portfolio_optimizer?since=${since}`).then(r => r.json()),
+          fetch(`${apiUrl}/api/portfolio_optimizer/chart`).then(r => r.json()),
+        ]).then(([portfolio, chart]) => {
+          const series: SeriesPoint[] = chart?.series ?? [];
+          if (!series.length) return;
+          // Find the series point at or just after subscription date
+          const subDate = since;
+          const subIdx = series.findIndex(p => p.date >= subDate);
+          const base = subIdx >= 0 ? series[subIdx] : series[0];
+          const last = series[series.length - 1];
+          const modelReturn = (last.model / base.model - 1) * 100;
+          const spyReturn   = (last.spy   / base.spy   - 1) * 100;
+          setPortfolio({
+            count: portfolio?.portfolio?.length ?? 0,
+            as_of: portfolio?.as_of ?? last.date,
+            modelReturn,
+            spyReturn,
+          });
+        }).catch(() => {});
       }
     });
   }, [navigate]);
@@ -214,17 +217,22 @@ export function UserProfile() {
               <>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem", marginBottom: "1rem" }}>
                   {[
-                    { val: sign(portfolio.metrics.total_return), label: "Total return (since 2018)" },
-                    { val: `×${portfolio.spy_ratio.toFixed(1)}`, label: "vs S&P 500" },
-                    { val: sign(portfolio.metrics.cagr * 100), label: "Ann. return (CAGR)" },
-                    { val: `−${Math.abs(portfolio.metrics.max_dd).toFixed(1)}%`, label: "Max drawdown" },
-                  ].map(({ val, label }) => (
+                    { val: sign(portfolio.modelReturn), label: "Portfolio return", highlight: true },
+                    { val: sign(portfolio.spyReturn),   label: "S&P 500 (same period)", highlight: false },
+                  ].map(({ val, label, highlight }) => (
                     <div key={label}>
-                      <p style={{ fontFamily: playfair, fontWeight: 400, fontSize: 28, color: "var(--text-primary)", lineHeight: 1.1, marginBottom: 4 }}>{val}</p>
+                      <p style={{ fontFamily: playfair, fontWeight: 400, fontSize: 28, color: highlight ? "var(--accent)" : "var(--text-secondary)", lineHeight: 1.1, marginBottom: 4 }}>{val}</p>
                       <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 11, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</p>
                     </div>
                   ))}
                 </div>
+                {portfolio.modelReturn > portfolio.spyReturn && (
+                  <div style={{ marginBottom: "1rem", padding: "8px 12px", background: "var(--info-bg)", border: "0.5px solid var(--info-border)", borderRadius: "var(--radius-md)" }}>
+                    <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--info-text)" }}>
+                      +{(portfolio.modelReturn - portfolio.spyReturn).toFixed(1)}pp outperformance vs S&P 500 since you subscribed
+                    </span>
+                  </div>
+                )}
                 <div style={{ borderTop: "0.5px solid var(--border-subtle)", paddingTop: "0.75rem", display: "flex", justifyContent: "space-between" }}>
                   <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)" }}>
                     {portfolio.count} active positions
