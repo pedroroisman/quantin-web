@@ -74,17 +74,17 @@
 
 /* Dark mode — default */
 :root {
-  --bg-primary:    #0F1E2F;
-  --bg-secondary:  #0B1D33;
-  --bg-tertiary:   #070F1C;
+  --bg-primary:    #293F5C;
+  --bg-secondary:  #213250;
+  --bg-tertiary:   #192742;
 
-  --text-primary:   #EEF3F8;
-  --text-secondary: #9BB5CC;
-  --text-tertiary:  #6B8299;
+  --text-primary:   #E8EFF6;
+  --text-secondary: #8BA4BD;
+  --text-tertiary:  #5D7A94;
 
-  --border-subtle:  rgba(255,255,255,0.06);
-  --border-default: rgba(255,255,255,0.10);
-  --border-strong:  rgba(255,255,255,0.18);
+  --border-subtle:  rgba(255,255,255,0.07);
+  --border-default: rgba(255,255,255,0.12);
+  --border-strong:  rgba(255,255,255,0.20);
 
   --accent:         #34D399;
   --accent-hover:   #6EE7B7;

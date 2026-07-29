@@ -212,9 +212,9 @@ export function FreePreview() {
         <div style={{ marginBottom: "1.25rem" }}>
           <span style={{
             display: "inline-flex", alignItems: "center", gap: 6,
-            background: "#f0f8f4", border: "0.5px solid #c0e0d4",
+            background: "var(--info-bg)", border: "0.5px solid var(--info-border)",
             borderRadius: 100, padding: "3px 10px",
-            fontFamily: outfit, fontWeight: 300, fontSize: 11, color: "#0F6E56",
+            fontFamily: outfit, fontWeight: 300, fontSize: 11, color: "var(--info-text)",
           }}>
             Free preview · 90 days ago
           </span>

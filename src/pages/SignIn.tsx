@@ -106,7 +106,7 @@ export function SignIn() {
         <p style={{
           fontFamily: outfit, fontWeight: 300, fontSize: 11,
           letterSpacing: "0.12em", textTransform: "uppercase",
-          color: "#0F6E56", marginBottom: "0.75rem",
+          color: "var(--accent)", marginBottom: "0.75rem",
         }}>
           {mode === "signup" ? "Create account" : "Subscriber access"}
         </p>
@@ -177,7 +177,7 @@ export function SignIn() {
             <button
               type="submit" disabled={loading}
               style={{
-                width: "100%", background: "#0C447C", color: "#fff",
+                width: "100%", background: "var(--accent)", color: "#07160E",
                 border: "none", borderRadius: 8, padding: "13px 0",
                 fontFamily: outfit, fontWeight: 300, fontSize: 15,
                 cursor: loading ? "not-allowed" : "pointer",

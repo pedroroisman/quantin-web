@@ -301,7 +301,7 @@ export function Dashboard() {
       }}>
         <div style={{
           width: 48, height: 48, borderRadius: "50%",
-          border: "1px solid #c0e0d4",
+          border: "1px solid var(--info-border)",
           display: "flex", alignItems: "center", justifyContent: "center",
           marginBottom: "2rem",
         }}>
@@ -310,7 +310,7 @@ export function Dashboard() {
         <p style={{
           fontFamily: outfit, fontWeight: 300, fontSize: 11,
           letterSpacing: "0.12em", textTransform: "uppercase",
-          color: "#0F6E56", marginBottom: "0.75rem",
+          color: "var(--accent)", marginBottom: "0.75rem",
         }}>
           Account ready
         </p>
@@ -481,7 +481,7 @@ export function Dashboard() {
           {/* Regime pill */}
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 8,
-            background: "#f0f8f4", border: "0.5px solid #c0e0d4",
+            background: "var(--info-bg)", border: "0.5px solid var(--info-border)",
             borderRadius: 100, padding: "5px 13px", marginBottom: "1.5rem",
           }}>
             <div style={{ width: 7, height: 7, background: regimeColors.dot, borderRadius: "50%", flexShrink: 0 }} />
@@ -625,7 +625,7 @@ export function Dashboard() {
         {/* Sector composition */}
         {portfolio && portfolio.portfolio.length > 0 && (
           <>
-            <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1D9E75", marginBottom: "0.75rem" }}>
+            <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--accent)", marginBottom: "0.75rem" }}>
               Sector composition
             </p>
             <div style={{
@@ -638,7 +638,7 @@ export function Dashboard() {
         )}
 
         {/* Alert settings */}
-        <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1D9E75", marginBottom: "0.75rem" }}>
+        <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--accent)", marginBottom: "0.75rem" }}>
           Alert settings
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: "3rem" }}>
