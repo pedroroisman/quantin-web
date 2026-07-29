@@ -72,72 +72,37 @@
   --amber-800: #633806;
 }
 
-/* Light mode */
+/* Dark mode — default */
 :root {
-  --bg-primary:    #FFFFFF;
-  --bg-secondary:  #F0F5FA;
-  --bg-tertiary:   #E6EEF7;
+  --bg-primary:    #0F1E2F;
+  --bg-secondary:  #0B1D33;
+  --bg-tertiary:   #070F1C;
 
-  --text-primary:   #0B1D33;
-  --text-secondary: #3D5469;
+  --text-primary:   #EEF3F8;
+  --text-secondary: #9BB5CC;
   --text-tertiary:  #6B8299;
 
-  --border-subtle:  rgba(11,29,51,0.08);
-  --border-default: rgba(11,29,51,0.13);
-  --border-strong:  rgba(11,29,51,0.22);
+  --border-subtle:  rgba(255,255,255,0.06);
+  --border-default: rgba(255,255,255,0.10);
+  --border-strong:  rgba(255,255,255,0.18);
 
-  --accent:         #059669;
-  --accent-hover:   #047857;
+  --accent:         #34D399;
+  --accent-hover:   #6EE7B7;
 
-  --success-bg:     #EAF3DE;
-  --success-border: #C0DD97;
-  --success-text:   #27500A;
+  --success-bg:     #173404;
+  --success-border: #3B6D11;
+  --success-text:   #C0DD97;
 
-  --danger-bg:      #FCEBEB;
-  --danger-border:  #F7C1C1;
-  --danger-text:    #791F1F;
+  --danger-bg:      #501313;
+  --danger-border:  #A32D2D;
+  --danger-text:    #F7C1C1;
 
-  --warning-bg:     #FAEEDA;
-  --warning-border: #FAC775;
-  --warning-text:   #633806;
+  --warning-bg:     #412402;
+  --warning-border: #854F0B;
+  --warning-text:   #FAC775;
 
-  --info-bg:        #ECFDF5;
-  --info-border:    #6EE7B7;
-  --info-text:      #047857;
+  --info-bg:        #0D2B1F;
+  --info-border:    #1D9E75;
+  --info-text:      #34D399;
 }
 
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-primary:    #0F1E2F;
-    --bg-secondary:  #0B1D33;
-    --bg-tertiary:   #070F1C;
-
-    --text-primary:   #EEF3F8;
-    --text-secondary: #9BB5CC;
-    --text-tertiary:  #6B8299;
-
-    --border-subtle:  rgba(255,255,255,0.06);
-    --border-default: rgba(255,255,255,0.10);
-    --border-strong:  rgba(255,255,255,0.18);
-
-    --accent:         #34D399;
-    --accent-hover:   #6EE7B7;
-
-    --success-bg:     #173404;
-    --success-border: #3B6D11;
-    --success-text:   #C0DD97;
-
-    --danger-bg:      #501313;
-    --danger-border:  #A32D2D;
-    --danger-text:    #F7C1C1;
-
-    --warning-bg:     #412402;
-    --warning-border: #854F0B;
-    --warning-text:   #FAC775;
-
-    --info-bg:        #022C22;
-    --info-border:    #059669;
-    --info-text:      #34D399;
-  }
-}
