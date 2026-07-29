@@ -5,6 +5,13 @@ import { QuantinLogo } from "../components/ui";
 
 const outfit = "'Outfit', sans-serif";
 
+async function routeAfterAuth(email: string, navigate: (path: string) => void) {
+  const { data } = await supabase
+    .from("subscribers").select("id")
+    .eq("email", email.trim().toLowerCase()).maybeSingle();
+  navigate(data ? "/portfolio" : "/subscribe");
+}
+
 export function AuthCallback() {
   const navigate = useNavigate();
 
@@ -13,9 +20,9 @@ export function AuthCallback() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
-      if (event === "SIGNED_IN" && session) {
+      if (event === "SIGNED_IN" && session?.user?.email) {
         subscription.unsubscribe();
-        navigate("/portfolio");
+        routeAfterAuth(session.user.email, navigate);
       }
     });
 
@@ -31,7 +38,11 @@ export function AuthCallback() {
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (!mounted) return;
         subscription.unsubscribe();
-        navigate(session ? "/portfolio" : "/signin");
+        if (session?.user?.email) {
+          routeAfterAuth(session.user.email, navigate);
+        } else {
+          navigate("/signin");
+        }
       });
     }
 
