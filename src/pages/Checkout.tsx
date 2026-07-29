@@ -145,6 +145,11 @@ export function Checkout() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-tertiary)" }}>
+      <style>{`
+        @media (max-width: 680px) {
+          .pricing-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
 
       {/* Nav */}
       <nav style={{
@@ -191,7 +196,7 @@ export function Checkout() {
         </div>
 
         {/* Plan cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.25rem", alignItems: "start" }}>
+        <div className="pricing-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.25rem", alignItems: "start" }}>
 
           {/* ── Individual ── */}
           <div style={{
@@ -378,6 +383,9 @@ export function Checkout() {
             </span>
           ))}
         </div>
+        <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 11, color: "var(--text-tertiary)", textAlign: "center", marginTop: "1rem", letterSpacing: "0.04em" }}>
+          Quantin LLC · Incorporated in Delaware, USA
+        </p>
       </main>
     </div>
   );
