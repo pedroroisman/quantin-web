@@ -38,11 +38,8 @@ export function Checkout() {
   const [seats, setSeats]           = useState(5);
   const [session, setSession]       = useState<{ email: string } | null>(null);
 
-  // B2B form
-  const [b2bCompany, setB2bCompany] = useState("");
+  // B2B
   const [b2bLoading, setB2bLoading] = useState(false);
-  const [b2bSuccess, setB2bSuccess] = useState(false);
-  const [showB2BForm, setShowB2BForm] = useState(false);
 
   // Enterprise form
   const [showEnt, setShowEnt]       = useState(false);
@@ -92,8 +89,7 @@ export function Checkout() {
     }
   };
 
-  const handleB2BSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleB2B = async () => {
     if (!session) { requireAuth(); return; }
     setB2bLoading(true);
     try {
@@ -101,13 +97,13 @@ export function Checkout() {
       const res = await fetch(`${apiUrl}/api/create-b2b-checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: session.email, company: b2bCompany, seats, billing }),
+        body: JSON.stringify({ email: session.email, company: "", seats, billing }),
       });
       if (!res.ok) throw new Error(await res.text());
-      setB2bSuccess(true);
+      const { url } = await res.json();
+      window.location.href = url;
     } catch (err) {
       console.error(err);
-    } finally {
       setB2bLoading(false);
     }
   };
@@ -254,47 +250,23 @@ export function Checkout() {
                 {billing === "annual" ? `Billed $${b2bPrice * 12}/seat/yr` : "Min 5 seats · invoice billing"}
               </p>
 
-              {!showB2BForm ? (
-                <>
-                  <Button
-                    size="lg"
-                    style={{ width: "100%", justifyContent: "center" }}
-                    onClick={() => { if (!session) { requireAuth(); return; } setShowB2BForm(true); }}
-                  >
-                    Get invoice →
-                  </Button>
-                  <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 11, color: "var(--text-tertiary)", textAlign: "center", marginTop: 8 }}>
-                    Invoice sent to your email · net 30
-                  </p>
-                </>
-              ) : b2bSuccess ? (
-                <div style={{ textAlign: "center", padding: "0.5rem 0 1rem" }}>
-                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#e8f7f2", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px" }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
-                  </div>
-                  <p style={{ fontFamily: outfit, fontWeight: 400, fontSize: 14, color: "var(--text-primary)", marginBottom: 4 }}>Invoice sent</p>
-                  <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)" }}>Check {session?.email} · payment due in 30 days</p>
+              {/* Seat selector */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: "1rem" }}>
+                <label style={{ ...fieldLabel, margin: 0, whiteSpace: "nowrap" }}>Seats (min 5)</label>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginLeft: "auto" }}>
+                  <button type="button" onClick={() => setSeats(s => Math.max(5, s - 1))} style={{ width: 30, height: 30, border: "0.5px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-secondary)", cursor: "pointer", fontSize: 16, color: "var(--text-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+                  <span style={{ fontFamily: outfit, fontWeight: 400, fontSize: 16, minWidth: 24, textAlign: "center" }}>{seats}</span>
+                  <button type="button" onClick={() => setSeats(s => s + 1)} style={{ width: 30, height: 30, border: "0.5px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-secondary)", cursor: "pointer", fontSize: 16, color: "var(--text-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+                  <span style={{ fontFamily: outfit, fontWeight: 500, fontSize: 13, color: "var(--text-primary)" }}>${b2bPrice * seats}/mo</span>
                 </div>
-              ) : (
-                <form onSubmit={handleB2BSubmit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <div>
-                    <label style={fieldLabel}>Company name</label>
-                    <input style={inp} placeholder="Acme Capital" required value={b2bCompany} onChange={e => setB2bCompany(e.target.value)} />
-                  </div>
-                  <div>
-                    <label style={fieldLabel}>Number of seats (min 5)</label>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <button type="button" onClick={() => setSeats(s => Math.max(5, s - 1))} style={{ width: 32, height: 32, border: "0.5px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-secondary)", cursor: "pointer", fontSize: 16, color: "var(--text-primary)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>−</button>
-                      <span style={{ fontFamily: outfit, fontWeight: 400, fontSize: 16, minWidth: 24, textAlign: "center" }}>{seats}</span>
-                      <button type="button" onClick={() => setSeats(s => s + 1)} style={{ width: 32, height: 32, border: "0.5px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-secondary)", cursor: "pointer", fontSize: 16, color: "var(--text-primary)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>+</button>
-                      <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "var(--text-tertiary)" }}>= <strong style={{ color: "var(--text-primary)" }}>${b2bPrice * seats}/mo</strong></span>
-                    </div>
-                  </div>
-                  <Button type="submit" size="lg" style={{ width: "100%", justifyContent: "center", marginTop: 4 }} disabled={b2bLoading}>
-                    {b2bLoading ? "Sending…" : "Send invoice request →"}
-                  </Button>
-                </form>
-              )}
+              </div>
+
+              <Button size="lg" style={{ width: "100%", justifyContent: "center" }} disabled={b2bLoading} onClick={handleB2B}>
+                {b2bLoading ? "Processing…" : session ? "Get started →" : "Get started →"}
+              </Button>
+              <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 11, color: "var(--text-tertiary)", textAlign: "center", marginTop: 8 }}>
+                An invoice will be sent after each billing period
+              </p>
             </div>
             <div style={{ borderTop: "0.5px solid var(--border-subtle)", padding: "1.5rem 1.75rem" }}>
               <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)", marginBottom: "0.75rem" }}>
