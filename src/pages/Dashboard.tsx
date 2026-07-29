@@ -554,6 +554,7 @@ export function Dashboard() {
             <thead>
               <tr style={{ background: "var(--bg-secondary)" }}>
                 <th style={{ ...thL, padding: "10px 8px 10px 1.25rem", width: "40%" }}>Stock</th>
+                <th style={th}>In portfolio since</th>
                 <th style={th}>Performance since entry</th>
                 {subscribedSince && <th style={th}>Since subscribed</th>}
                 <th style={{ ...th, paddingRight: "1.25rem" }}>Position</th>
@@ -581,11 +582,13 @@ export function Dashboard() {
                       )}
                     </td>
                     <td style={{ ...td }}>
+                      {h.entry_date
+                        ? <span style={{ fontSize: 13 }}>{h.entry_date}</span>
+                        : <span style={{ color: "var(--text-tertiary)" }}>—</span>}
+                    </td>
+                    <td style={{ ...td }}>
                       {perf != null
-                        ? <>
-                            <span style={{ fontWeight: 500, color: perf >= 0 ? "#1D9E75" : "#B5621A" }}>{perf >= 0 ? "+" : ""}{perf.toFixed(1)}%</span>
-                            {h.entry_date && <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 1 }}>since {h.entry_date}</div>}
-                          </>
+                        ? <span style={{ fontWeight: 500, color: perf >= 0 ? "#1D9E75" : "#B5621A" }}>{perf >= 0 ? "+" : ""}{perf.toFixed(1)}%</span>
                         : <span style={{ color: "var(--text-tertiary)" }}>—</span>}
                     </td>
                     {subscribedSince && (
