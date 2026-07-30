@@ -74,9 +74,9 @@
 
 /* Dark mode — default */
 :root {
-  --bg-primary:    #293F5C;
-  --bg-secondary:  #213250;
-  --bg-tertiary:   #192742;
+  --bg-primary:    #232540;
+  --bg-secondary:  #1C1E35;
+  --bg-tertiary:   #15172A;
 
   --text-primary:   #E8EFF6;
   --text-secondary: #8BA4BD;

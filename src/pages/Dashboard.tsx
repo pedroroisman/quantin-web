@@ -195,16 +195,6 @@ const td: React.CSSProperties = {
 };
 const tdL: React.CSSProperties = { ...td, textAlign: "left" as const };
 
-const thPos: React.CSSProperties = {
-  ...th, paddingRight: "1.25rem",
-  background: "rgba(29,158,117,0.07)",
-  borderLeft: "2px solid rgba(29,158,117,0.3)",
-};
-const tdPos: React.CSSProperties = {
-  ...td, paddingRight: "1.25rem",
-  background: "rgba(29,158,117,0.07)",
-  borderLeft: "2px solid rgba(29,158,117,0.3)",
-};
 
 const fmtMonthYear = (d: string) => {
   const dt = new Date(d + "T00:00:00");
@@ -572,7 +562,7 @@ export function Dashboard() {
                 <th style={{ ...thL, padding: "10px 8px 10px 1.25rem", width: "40%" }}>Stock</th>
                 <th style={th}>In portfolio since</th>
                 <th style={th}>Performance since entry</th>
-                <th style={thPos}>Position</th>
+                <th style={{ ...th, paddingRight: "1.25rem" }}>Position</th>
               </tr>
             </thead>
             <tbody>
@@ -606,8 +596,18 @@ export function Dashboard() {
                         ? <span style={{ fontWeight: 500, color: perf >= 0 ? "#1D9E75" : "#B5621A" }}>{perf >= 0 ? "+" : ""}{perf.toFixed(1)}%</span>
                         : <span style={{ color: "var(--text-tertiary)" }}>—</span>}
                     </td>
-                    <td style={tdPos}>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: pos === "long" ? "#1D9E75" : "#8A8F9A" }}>
+                    <td style={{ ...td, paddingRight: "1.25rem" }}>
+                      <span style={{
+                        display: "inline-block",
+                        fontSize: 11, fontWeight: 600,
+                        padding: "3px 10px",
+                        borderRadius: "var(--radius-full)",
+                        background: pos === "long" ? "rgba(52,211,153,0.15)" : "rgba(255,255,255,0.06)",
+                        color: pos === "long" ? "#34D399" : "var(--text-tertiary)",
+                        border: pos === "long" ? "1px solid rgba(52,211,153,0.35)" : "1px solid var(--border-subtle)",
+                        letterSpacing: "0.04em",
+                        textTransform: "uppercase",
+                      }}>
                         {pos === "long" ? "Long" : "Cash"}
                       </span>
                     </td>
