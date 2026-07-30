@@ -5,6 +5,19 @@ import { Button, QuantinLogo } from "../components/ui";
 const outfit   = "'Outfit', sans-serif";
 const playfair = "'Playfair Display', serif";
 
+const SECTOR_COLORS: Record<string, string> = {
+  Technology:  "#378ADD",
+  ETF:         "#34D399",
+  Commodity:   "#D97706",
+  Healthcare:  "#A78BFA",
+  Financials:  "#F472B6",
+  Energy:      "#FB923C",
+  Industrials: "#94A3B8",
+  Consumer:    "#E879F9",
+  Utilities:   "#22D3EE",
+  Other:       "#8A8F9A",
+};
+
 const TICKER_NAMES: Record<string, { name: string; sector: string }> = {
   AAPL:  { name: "Apple",                    sector: "Technology"  },
   AMAT:  { name: "Applied Materials",         sector: "Technology"  },
@@ -76,6 +89,108 @@ function fmtDate(iso: string) {
   return `${d}/${m}/${y}`;
 }
 
+function fmtMonthYear(d: string) {
+  const dt = new Date(d + "T00:00:00");
+  return dt.toLocaleString("en-US", { month: "short", year: "numeric" }).toUpperCase();
+}
+
+function SectorPieChart({ holdings }: { holdings: PreviewHolding[] }) {
+  const [hovered, setHovered] = useState<string | null>(null);
+
+  const sectorMap: Record<string, string[]> = {};
+  holdings.forEach(h => {
+    const s = TICKER_NAMES[h.ticker]?.sector ?? "Other";
+    if (!sectorMap[s]) sectorMap[s] = [];
+    sectorMap[s].push(h.ticker);
+  });
+  const total = holdings.length;
+  const entries = Object.entries(sectorMap).sort((a, b) => b[1].length - a[1].length);
+
+  const cx = 100, cy = 100, r = 82, inner = 48;
+  let angle = -Math.PI / 2;
+  const slices = entries.map(([sector, tickers]) => {
+    const pct = tickers.length / total;
+    const sweep = pct * 2 * Math.PI;
+    const midAngle = angle + sweep / 2;
+    const x1 = cx + r * Math.cos(angle);
+    const y1 = cy + r * Math.sin(angle);
+    angle += sweep;
+    const x2 = cx + r * Math.cos(angle);
+    const y2 = cy + r * Math.sin(angle);
+    const xi1 = cx + inner * Math.cos(angle - sweep);
+    const yi1 = cy + inner * Math.sin(angle - sweep);
+    const xi2 = cx + inner * Math.cos(angle);
+    const yi2 = cy + inner * Math.sin(angle);
+    const large = sweep > Math.PI ? 1 : 0;
+    const pop = 6;
+    const tx = Math.cos(midAngle) * pop;
+    const ty = Math.sin(midAngle) * pop;
+    return { sector, tickers, pct, large, x1, y1, x2, y2, xi1, yi1, xi2, yi2, tx, ty, color: SECTOR_COLORS[sector] ?? "#8A8F9A" };
+  });
+
+  const hovSlice = slices.find(s => s.sector === hovered);
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 32, flexWrap: "wrap" }}>
+      <svg width="200" height="200" viewBox="0 0 200 200" style={{ flexShrink: 0 }}>
+        {slices.map(s => {
+          const isHov = hovered === s.sector;
+          const dim   = hovered && !isHov;
+          return (
+            <path key={s.sector}
+              d={`M ${s.xi1} ${s.yi1} L ${s.x1} ${s.y1} A ${r} ${r} 0 ${s.large} 1 ${s.x2} ${s.y2} L ${s.xi2} ${s.yi2} A ${inner} ${inner} 0 ${s.large} 0 ${s.xi1} ${s.yi1} Z`}
+              fill={s.color} stroke="var(--bg-secondary)" strokeWidth="2"
+              transform={isHov ? `translate(${s.tx}, ${s.ty})` : undefined}
+              style={{ cursor: "pointer", opacity: dim ? 0.35 : 1, transition: "opacity 0.18s, transform 0.18s" }}
+              onMouseEnter={() => setHovered(s.sector)}
+              onMouseLeave={() => setHovered(null)}
+            />
+          );
+        })}
+      </svg>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 160 }}>
+        {slices.map(s => {
+          const isHov = hovered === s.sector;
+          const dim   = hovered && !isHov;
+          return (
+            <div key={s.sector}
+              onMouseEnter={() => setHovered(s.sector)}
+              onMouseLeave={() => setHovered(null)}
+              style={{ cursor: "default", opacity: dim ? 0.35 : 1, transition: "opacity 0.18s" }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: s.color, flexShrink: 0 }} />
+                <span style={{ fontSize: 12, color: isHov ? "var(--text-primary)" : "var(--text-secondary)", fontWeight: isHov ? 500 : 300, transition: "color 0.15s" }}>
+                  {s.sector}
+                </span>
+                <span style={{ fontSize: 12, color: "var(--text-tertiary)", marginLeft: "auto", minWidth: 32, textAlign: "right" }}>
+                  {Math.round(s.pct * 100)}%
+                </span>
+              </div>
+              {isHov && (
+                <div style={{ marginTop: 5, marginLeft: 16, display: "flex", flexWrap: "wrap", gap: 4 }}>
+                  {s.tickers.map(t => (
+                    <span key={t} style={{
+                      fontSize: 10, fontWeight: 500, letterSpacing: "0.03em",
+                      padding: "2px 7px", borderRadius: "var(--radius-full)",
+                      background: `${s.color}22`, border: `1px solid ${s.color}55`, color: s.color,
+                    }}>{t}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {hovSlice && (
+          <div style={{ marginTop: 4, paddingTop: 8, borderTop: "0.5px solid var(--border-subtle)", fontSize: 11, color: "var(--text-tertiary)" }}>
+            {hovSlice.tickers.length} stock{hovSlice.tickers.length !== 1 ? "s" : ""} · {Math.round(hovSlice.pct * 100)}% of portfolio
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function InfoIcon() {
   return (
     <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style={{ opacity: 0.35, display: "block", flexShrink: 0 }}>
@@ -91,7 +206,7 @@ function MetricCard({ val, label, tooltip, dimmed }: { val: string; label: strin
     <div>
       <div style={{
         fontFamily: outfit, fontWeight: 200, fontSize: 26,
-        color: dimmed ? "var(--text-secondary)" : "#1e1e1c",
+        color: dimmed ? "var(--text-secondary)" : "var(--text-primary)",
         letterSpacing: "-0.02em", marginBottom: 4,
       }}>
         {val}
@@ -260,7 +375,8 @@ export function FreePreview() {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "var(--bg-secondary)" }}>
-                <th style={{ ...thL, padding: "10px 8px 10px 1.25rem", width: "50%" }}>Stock</th>
+                <th style={{ ...thL, padding: "10px 8px 10px 1.25rem", width: "40%" }}>Stock</th>
+                <th style={th}>In portfolio since</th>
                 <th style={th}>Performance since entry</th>
                 <th style={{ ...th, paddingRight: "1.25rem" }}>Position</th>
               </tr>
@@ -287,21 +403,26 @@ export function FreePreview() {
                       )}
                     </td>
                     <td style={td}>
+                      {h.entry_date
+                        ? <span style={{ fontSize: 13 }}>{fmtMonthYear(h.entry_date)}</span>
+                        : <span style={{ color: "var(--text-tertiary)" }}>—</span>}
+                    </td>
+                    <td style={td}>
                       {perf != null
-                        ? <>
-                            <span style={{ fontWeight: 500, color: perf >= 0 ? "#1D9E75" : "#B5621A" }}>
-                              {perf >= 0 ? "+" : ""}{perf.toFixed(1)}%
-                            </span>
-                            {h.entry_date && (
-                              <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 1 }}>
-                                since {h.entry_date}
-                              </div>
-                            )}
-                          </>
+                        ? <span style={{ fontWeight: 500, color: perf >= 0 ? "#1D9E75" : "#B5621A" }}>
+                            {perf >= 0 ? "+" : ""}{perf.toFixed(1)}%
+                          </span>
                         : <span style={{ color: "var(--text-tertiary)" }}>—</span>}
                     </td>
                     <td style={{ ...td, paddingRight: "1.25rem" }}>
-                      <span style={{ fontSize: 11, fontWeight: 600, color: pos === "long" ? "#1D9E75" : "#8A8F9A" }}>
+                      <span style={{
+                        display: "inline-block", fontSize: 11, fontWeight: 600,
+                        padding: "3px 10px", borderRadius: "var(--radius-full)",
+                        background: pos === "long" ? "rgba(52,211,153,0.15)" : "rgba(255,255,255,0.06)",
+                        color: pos === "long" ? "#34D399" : "var(--text-tertiary)",
+                        border: pos === "long" ? "1px solid rgba(52,211,153,0.35)" : "1px solid var(--border-subtle)",
+                        letterSpacing: "0.04em", textTransform: "uppercase" as const,
+                      }}>
                         {pos === "long" ? "Long" : "Cash"}
                       </span>
                     </td>
@@ -309,7 +430,7 @@ export function FreePreview() {
                 );
               }) : (
                 <tr>
-                  <td colSpan={3} style={{ ...td, textAlign: "center", color: "var(--text-tertiary)", padding: "2rem" }}>
+                  <td colSpan={4} style={{ ...td, textAlign: "center", color: "var(--text-tertiary)", padding: "2rem" }}>
                     {error ? "Unable to load preview data." : "Loading…"}
                   </td>
                 </tr>
@@ -321,6 +442,22 @@ export function FreePreview() {
             <span>{asOf ? `Snapshot as of ${asOf}` : ""}</span>
           </div>
         </div>
+
+        {/* Sector composition */}
+        {data && data.holdings.length > 0 && (
+          <div style={{
+            background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)",
+            borderRadius: "var(--radius-lg)", padding: "1.5rem", marginBottom: "2rem",
+          }}>
+            <h2 style={{
+              fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 400, fontSize: 17,
+              color: "var(--text-primary)", margin: "0 0 1.25rem",
+            }}>
+              Sector composition
+            </h2>
+            <SectorPieChart holdings={data.holdings} />
+          </div>
+        )}
 
         {/* Paywall CTA */}
         <div style={{
