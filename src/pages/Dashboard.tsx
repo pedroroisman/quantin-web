@@ -572,7 +572,6 @@ export function Dashboard() {
                 <th style={{ ...thL, padding: "10px 8px 10px 1.25rem", width: "40%" }}>Stock</th>
                 <th style={th}>In portfolio since</th>
                 <th style={th}>Performance since entry</th>
-                {subscribedSince && <th style={th}>Since subscribed</th>}
                 <th style={thPos}>Position</th>
               </tr>
             </thead>
@@ -607,15 +606,6 @@ export function Dashboard() {
                         ? <span style={{ fontWeight: 500, color: perf >= 0 ? "#1D9E75" : "#B5621A" }}>{perf >= 0 ? "+" : ""}{perf.toFixed(1)}%</span>
                         : <span style={{ color: "var(--text-tertiary)" }}>—</span>}
                     </td>
-                    {subscribedSince && (
-                      <td style={{ ...td }}>
-                        {h.performance_since_subscribed != null
-                          ? <span style={{ fontWeight: 500, color: h.performance_since_subscribed >= 0 ? "#1D9E75" : "#B5621A" }}>
-                              {h.performance_since_subscribed >= 0 ? "+" : ""}{h.performance_since_subscribed.toFixed(1)}%
-                            </span>
-                          : <span style={{ color: "var(--text-tertiary)" }}>—</span>}
-                      </td>
-                    )}
                     <td style={tdPos}>
                       <span style={{ fontSize: 11, fontWeight: 600, color: pos === "long" ? "#1D9E75" : "#8A8F9A" }}>
                         {pos === "long" ? "Long" : "Cash"}
