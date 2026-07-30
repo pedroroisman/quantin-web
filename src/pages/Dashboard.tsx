@@ -533,7 +533,7 @@ export function Dashboard() {
                   <div key={label} style={{ paddingRight: i < 3 ? "1.5rem" : 0 }}>
                     <div style={{
                       fontFamily: outfit, fontWeight: 200, fontSize: 26,
-                      color: val.startsWith("−") ? "var(--text-secondary)" : "#1e1e1c",
+                      color: val.startsWith("−") ? "var(--text-secondary)" : "var(--text-primary)",
                       letterSpacing: "-0.02em", marginBottom: 5,
                     }}>
                       {val}

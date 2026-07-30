@@ -10,10 +10,10 @@ const REGIME_LABEL: Record<string, string> = {
 };
 
 const REGIME_COLOR: Record<string, { text: string; dot: string; bg: string; border: string }> = {
-  BULL_LOW_VOL:  { text: "#0F6E56", dot: "#1D9E75", bg: "#f0f8f4", border: "#c0e0d4" },
-  BULL_HIGH_VOL: { text: "#7C5A00", dot: "#D97706", bg: "#fffbeb", border: "#fde68a" },
-  BEAR:          { text: "#7C1D1D", dot: "#B5621A", bg: "#fff5f0", border: "#fecaca" },
-  SIDEWAYS:      { text: "#374151", dot: "#6B7280", bg: "#f9fafb", border: "#e5e7eb" },
+  BULL_LOW_VOL:  { text: "#34D399", dot: "#34D399", bg: "rgba(52,211,153,0.10)",  border: "rgba(52,211,153,0.25)"  },
+  BULL_HIGH_VOL: { text: "#FAC775", dot: "#D97706", bg: "rgba(217,119,6,0.12)",   border: "rgba(217,119,6,0.30)"   },
+  BEAR:          { text: "#F7C1C1", dot: "#B5621A", bg: "rgba(181,98,26,0.12)",   border: "rgba(181,98,26,0.30)"   },
+  SIDEWAYS:      { text: "#9BA4BE", dot: "#6B7280", bg: "rgba(107,114,128,0.10)", border: "rgba(107,114,128,0.25)" },
 };
 
 export function useRegime() {
