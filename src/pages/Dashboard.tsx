@@ -211,7 +211,6 @@ export function Dashboard() {
   const toggle = (k: AlertKey) => setAlerts(a => ({ ...a, [k]: !a[k] }));
   const [authReady, setAuthReady] = useState(false);
   const [isSubscriber, setIsSubscriber] = useState<boolean | null>(null);
-  const [subscribedSince, setSubscribedSince] = useState<string | null>(null);
   const [portfolio, setPortfolio] = useState<PortfolioData | null>(null);
   const [cancelState, setCancelState] = useState<"idle" | "confirming" | "loading" | "done">("idle");
   const [cancelEndsOn, setCancelEndsOn] = useState<string | null>(null);
@@ -232,8 +231,6 @@ export function Dashboard() {
       if (!mounted) return;
       setIsSubscriber(error ? true : !!data);
       const since = data?.created_at ? data.created_at.split("T")[0] : null;
-      if (since) setSubscribedSince(since);
-
       // Fetch portfolio now that we have the subscription date
       const apiUrl = import.meta.env.VITE_API_URL || "";
       const url = since
