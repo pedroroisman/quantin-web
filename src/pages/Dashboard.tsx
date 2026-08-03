@@ -327,25 +327,118 @@ function drawPerfChart(
   }
 }
 
-function drawGeoDonut(canvas: HTMLCanvasElement, segs: GeoSeg[]) {
-  const SZ = 120, dpr = window.devicePixelRatio || 1;
+type DonutSeg = { label: string; pct: number; color: string; tickers: string[] };
+
+function drawDonut(canvas: HTMLCanvasElement, segs: DonutSeg[], hovIdx: number | null) {
+  const SZ = 130, R = 52, RHOV = 57, inner = 30;
+  const dpr = window.devicePixelRatio || 1;
   canvas.width = SZ * dpr; canvas.height = SZ * dpr;
   canvas.style.width = `${SZ}px`; canvas.style.height = `${SZ}px`;
   const ctx = canvas.getContext("2d")!; ctx.scale(dpr, dpr);
-  const dark = isDark(), cx = SZ / 2, cy = SZ / 2, R = 50, inner = 30;
+  const dark = isDark(), cx = SZ / 2, cy = SZ / 2;
+  const bgColor = getComputedStyle(document.documentElement).getPropertyValue("--bg-primary").trim() || (dark ? "#111822" : "#ffffff");
   let angle = -Math.PI / 2;
-  segs.forEach(s => {
+  segs.forEach((s, i) => {
     const sw = (s.pct / 100) * Math.PI * 2;
-    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, R, angle, angle + sw); ctx.closePath();
-    ctx.fillStyle = s.color; ctx.fill(); angle += sw;
+    const r = i === hovIdx ? RHOV : R;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, r, angle, angle + sw); ctx.closePath();
+    ctx.fillStyle = s.color + (hovIdx !== null && i !== hovIdx ? "99" : "");
+    ctx.fill();
+    if (i === hovIdx) { ctx.strokeStyle = bgColor; ctx.lineWidth = 1.5; ctx.stroke(); }
+    angle += sw;
   });
   ctx.beginPath(); ctx.arc(cx, cy, inner, 0, Math.PI * 2);
-  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--bg-primary").trim() || (dark ? "#111822" : "#ffffff"); ctx.fill();
+  ctx.fillStyle = bgColor; ctx.fill();
+  const total = segs.reduce((n, s) => n + s.tickers.length, 0);
   ctx.fillStyle = dark ? "#C4D2E6" : "#091628";
   ctx.font = "bold 12px ui-monospace, monospace"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  ctx.fillText(`${segs.reduce((n, s) => n + s.tickers.length, 0)}`, cx, cy - 4);
-  ctx.font = "8px system-ui, sans-serif"; ctx.fillStyle = dark ? "rgba(200,220,240,0.45)" : "rgba(0,0,0,0.35)";
+  ctx.fillText(`${total}`, cx, cy - 4);
+  ctx.font = "8px system-ui, sans-serif";
+  ctx.fillStyle = dark ? "rgba(200,220,240,0.45)" : "rgba(0,0,0,0.35)";
   ctx.fillText("positions", cx, cy + 7);
+}
+
+function hitTestDonut(e: React.MouseEvent<HTMLCanvasElement>, segs: DonutSeg[]): number | null {
+  const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
+  const SZ = 130, R = 57, inner = 30;
+  const cx = SZ / 2, cy = SZ / 2;
+  const dx = e.clientX - rect.left - cx, dy = e.clientY - rect.top - cy;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist < inner || dist > R) return null;
+  let theta = Math.atan2(dy, dx) + Math.PI / 2;
+  if (theta < 0) theta += Math.PI * 2;
+  let a = 0;
+  for (let i = 0; i < segs.length; i++) {
+    const sw = (segs[i].pct / 100) * Math.PI * 2;
+    if (theta >= a && theta < a + sw) return i;
+    a += sw;
+  }
+  return null;
+}
+
+// ── DonutChart (shared interactive component) ─────────────────────────────────
+function DonutChart({ title, segs }: { title: string; segs: DonutSeg[] }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [hovIdx, setHovIdx] = useState<number | null>(null);
+  const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    if (canvasRef.current && segs.length) drawDonut(canvasRef.current, segs, hovIdx);
+  }, [segs, hovIdx]);
+
+  const dark = isDark();
+
+  return (
+    <div style={{ background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", padding: "1.25rem", borderRadius: "var(--radius-lg)", position: "relative" }}>
+      <p style={{ fontFamily: outfit, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--accent)", marginBottom: 14, marginTop: 0 }}>{title}</p>
+      <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+        <div style={{ position: "relative", flexShrink: 0 }}>
+          <canvas
+            ref={canvasRef}
+            style={{ display: "block", cursor: "default" }}
+            onMouseMove={e => {
+              const idx = hitTestDonut(e, segs);
+              setHovIdx(idx);
+              setTooltip(idx !== null ? { x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY } : null);
+            }}
+            onMouseLeave={() => { setHovIdx(null); setTooltip(null); }}
+          />
+          {hovIdx !== null && tooltip && segs[hovIdx] && (
+            <div style={{
+              position: "absolute",
+              left: tooltip.x + 10, top: tooltip.y - 10,
+              background: dark ? "rgba(15,22,35,0.95)" : "rgba(255,255,255,0.97)",
+              border: "0.5px solid var(--border-subtle)",
+              borderRadius: 6, padding: "6px 9px",
+              pointerEvents: "none", zIndex: 10, whiteSpace: "nowrap",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
+            }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: segs[hovIdx].color, marginBottom: 3, letterSpacing: "0.02em" }}>{segs[hovIdx].label}</div>
+              <div style={{ display: "flex", gap: 5, flexWrap: "wrap", maxWidth: 180 }}>
+                {segs[hovIdx].tickers.map(t => (
+                  <span key={t} style={{ fontFamily: "ui-monospace, monospace", fontSize: 9, fontWeight: 600, color: "var(--text-secondary)", background: "var(--bg-secondary)", borderRadius: 3, padding: "1px 4px" }}>{t}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
+          {segs.map((s, i) => (
+            <div
+              key={s.label}
+              style={{ display: "flex", alignItems: "center", gap: 8, opacity: hovIdx !== null && i !== hovIdx ? 0.4 : 1, transition: "opacity 0.12s" }}
+              onMouseEnter={() => setHovIdx(i)}
+              onMouseLeave={() => setHovIdx(null)}
+            >
+              <div style={{ width: 8, height: 8, borderRadius: 2, background: s.color, flexShrink: 0 }} />
+              <span style={{ fontSize: 11, color: "var(--text-secondary)", flex: 1 }}>{s.label}</span>
+              <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, fontWeight: 600, color: "var(--text-primary)", fontVariantNumeric: "tabular-nums" }}>{s.pct.toFixed(1)}%</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function drawExpandChart(
@@ -701,26 +794,8 @@ function HoldingsGrid({ holdings, series, cumrets }: {
 
 // ── GeoComposition ────────────────────────────────────────────────────────────
 function GeoComposition({ holdings }: { holdings: PortfolioHolding[] }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const segs = useMemo(() => computeGeo(holdings), [holdings]);
-  useEffect(() => { if (canvasRef.current && segs.length) drawGeoDonut(canvasRef.current, segs); }, [segs]);
-  return (
-    <div style={{ background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", padding: "1.25rem", borderRadius: "var(--radius-lg)" }}>
-      <p style={{ fontFamily: outfit, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--accent)", marginBottom: 14, marginTop: 0 }}>Geographic Exposure</p>
-      <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-        <canvas ref={canvasRef} style={{ flexShrink: 0 }} />
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
-          {segs.map(s => (
-            <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 8, height: 8, borderRadius: 2, background: s.color, flexShrink: 0 }} />
-              <span style={{ fontSize: 11, color: "var(--text-secondary)", flex: 1 }}>{s.label}</span>
-              <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{s.pct.toFixed(1)}%</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+  return <DonutChart title="Geographic Exposure" segs={segs} />;
 }
 
 // ── IndustryBars ──────────────────────────────────────────────────────────────
@@ -733,17 +808,17 @@ function IndustryBars({ holdings }: { holdings: PortfolioHolding[] }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {segs.map(s => (
           <div key={s.label}>
-            <div style={{ display: "grid", gridTemplateColumns: "100px 1fr 36px", gap: 8, alignItems: "center" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "110px 1fr 38px", gap: 8, alignItems: "center" }}>
               <div style={{ fontSize: 11, color: "var(--text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.label}</div>
               <div style={{ height: 4, background: "var(--border-subtle)", position: "relative", borderRadius: 1 }}>
                 <div style={{ position: "absolute", left: 0, top: 0, height: "100%", width: `${(s.pct / maxP) * 100}%`, background: s.color, borderRadius: 1 }} />
               </div>
-              <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 10, fontWeight: 600, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{s.pct.toFixed(1)}%</div>
+              <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 10, fontWeight: 600, textAlign: "right", color: "var(--text-primary)", fontVariantNumeric: "tabular-nums" }}>{s.pct.toFixed(1)}%</div>
             </div>
-            <div style={{ marginLeft: 108, display: "flex", gap: 5, paddingTop: 3, flexWrap: "wrap" }}>
+            <div style={{ marginLeft: 118, display: "flex", gap: 5, paddingTop: 3, flexWrap: "wrap" }}>
               {s.tickers.map((t, ti) => (
-                <span key={t} style={{ fontFamily: "ui-monospace, monospace", fontSize: 9, fontWeight: 600, color: "var(--text-tertiary)", letterSpacing: "0.03em" }}>
-                  {t}{ti < s.tickers.length - 1 ? "·" : ""}
+                <span key={t} style={{ fontFamily: "ui-monospace, monospace", fontSize: 9, fontWeight: 600, color: "var(--text-secondary)", letterSpacing: "0.03em" }}>
+                  {t}{ti < s.tickers.length - 1 ? " ·" : ""}
                 </span>
               ))}
             </div>
@@ -756,26 +831,8 @@ function IndustryBars({ holdings }: { holdings: PortfolioHolding[] }) {
 
 // ── SectorComposition ─────────────────────────────────────────────────────────
 function SectorComposition({ holdings }: { holdings: PortfolioHolding[] }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const segs = useMemo(() => computeSec(holdings), [holdings]);
-  useEffect(() => { if (canvasRef.current && segs.length) drawGeoDonut(canvasRef.current, segs); }, [segs]);
-  return (
-    <div style={{ background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", padding: "1.25rem", borderRadius: "var(--radius-lg)" }}>
-      <p style={{ fontFamily: outfit, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--accent)", marginBottom: 14, marginTop: 0 }}>Sector</p>
-      <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-        <canvas ref={canvasRef} style={{ flexShrink: 0 }} />
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
-          {segs.map(s => (
-            <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 8, height: 8, borderRadius: 2, background: s.color, flexShrink: 0 }} />
-              <span style={{ fontSize: 11, color: "var(--text-secondary)", flex: 1 }}>{s.label}</span>
-              <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{s.pct.toFixed(1)}%</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+  return <DonutChart title="Sector" segs={segs} />;
 }
 
 // ── RebalanceTimeline ─────────────────────────────────────────────────────────
@@ -1005,12 +1062,10 @@ export function Dashboard() {
         )}
 
         {portfolio && portfolio.portfolio.length > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "2rem" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              <GeoComposition    holdings={portfolio.portfolio} />
-              <SectorComposition holdings={portfolio.portfolio} />
-            </div>
-            <IndustryBars holdings={portfolio.portfolio} />
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginBottom: "2rem" }}>
+            <SectorComposition holdings={portfolio.portfolio} />
+            <GeoComposition    holdings={portfolio.portfolio} />
+            <IndustryBars      holdings={portfolio.portfolio} />
           </div>
         )}
 
