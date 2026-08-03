@@ -648,14 +648,10 @@ export function Dashboard() {
                     </td>
                     <td style={{ ...td }}>
                       {perf != null
-                        ? <span style={{ fontWeight: 500, color: perf >= 0 ? "#1D9E75" : "#B5621A" }}>
+                        ? <span style={{ fontWeight: 500, color: perf >= 0 ? "#1D9E75" : "#B5621A" }}
+                            title={!perfExact ? "Approximate — does not yet account for Cash periods or re-entries" : undefined}>
+                            {!perfExact && <span style={{ fontWeight: 300, opacity: 0.6, marginRight: 1 }}>~</span>}
                             {perf >= 0 ? "+" : ""}{perf.toFixed(1)}%
-                            {!perfExact && (
-                              <span title="Approximate — does not yet account for Cash periods or re-entries"
-                                style={{ fontSize: 9, fontWeight: 400, color: "var(--text-tertiary)", marginLeft: 3, verticalAlign: "super" }}>
-                                ~
-                              </span>
-                            )}
                           </span>
                         : <span style={{ color: "var(--text-tertiary)" }}>—</span>}
                     </td>
