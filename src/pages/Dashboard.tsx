@@ -214,10 +214,6 @@ const playfair = "'Playfair Display', serif";
 const fmtMonthYear = (d: string) => new Date(d + "T00:00:00").toLocaleString("en-US", { month: "short", year: "numeric" }).toUpperCase();
 const fmtDate  = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
-function isDark() {
-  const th = document.documentElement.getAttribute("data-theme");
-  return th === "dark" || (th !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
-}
 
 function spyPerfSince(series: ChartSeries[], entryDateStr: string | null | undefined): number | null {
   if (!series.length || !entryDateStr) return null;
