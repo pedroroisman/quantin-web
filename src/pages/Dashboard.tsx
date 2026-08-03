@@ -623,6 +623,7 @@ export function Dashboard() {
               {portfolio ? portfolio.portfolio.map((h, i) => {
                 const info = TICKER_NAMES[h.ticker] ?? { name: "", sector: "" };
                 const pos  = h.position ?? "long";
+                const perfExact = h.performance != null;
                 const perf = h.performance ?? h.performance_since_subscribed;
                 return (
                   <tr key={h.ticker} style={{ background: i % 2 === 0 ? "var(--bg-primary)" : "transparent" }}>
@@ -647,7 +648,15 @@ export function Dashboard() {
                     </td>
                     <td style={{ ...td }}>
                       {perf != null
-                        ? <span style={{ fontWeight: 500, color: perf >= 0 ? "#1D9E75" : "#B5621A" }}>{perf >= 0 ? "+" : ""}{perf.toFixed(1)}%</span>
+                        ? <span style={{ fontWeight: 500, color: perf >= 0 ? "#1D9E75" : "#B5621A" }}>
+                            {perf >= 0 ? "+" : ""}{perf.toFixed(1)}%
+                            {!perfExact && (
+                              <span title="Approximate — does not yet account for Cash periods or re-entries"
+                                style={{ fontSize: 9, fontWeight: 400, color: "var(--text-tertiary)", marginLeft: 3, verticalAlign: "super" }}>
+                                ~
+                              </span>
+                            )}
+                          </span>
                         : <span style={{ color: "var(--text-tertiary)" }}>—</span>}
                     </td>
                     <td style={{ ...td, paddingRight: "1.25rem" }}>
