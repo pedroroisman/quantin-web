@@ -63,7 +63,6 @@ const TICKER_NAMES: Record<string, { name: string; sector: string }> = {
 };
 
 const TICKER_GEO: Record<string, string> = {
-  // United States
   AAPL:"United States", AMAT:"United States", AMZN:"United States",
   ANET:"United States", AVLV:"United States", CEG:"United States",
   COP:"United States",  CRWD:"United States", CSCO:"United States",
@@ -78,11 +77,10 @@ const TICKER_GEO: Record<string, string> = {
   SPXL:"United States", TRGP:"United States", VDE:"United States",
   VLUE:"United States", VST:"United States",  WDC:"United States",
   XLK:"United States",  XOM:"United States",
-  // Non-US
   ASML:"Netherlands", AVDV:"Intl Dev. ex-US", EWT:"Taiwan",
-  EWY:"South Korea",  GRID:"Global",           ITUB:"Brazil",
-  NOK:"Finland",      PBR:"Brazil",            RYDAF:"Netherlands",
-  SPDW:"Intl Dev. ex-US", TSM:"Taiwan",        VWO:"Emerging Markets",
+  EWY:"South Korea",  GRID:"Global",          ITUB:"Brazil",
+  NOK:"Finland",      PBR:"Brazil",           RYDAF:"Netherlands",
+  SPDW:"Intl Dev. ex-US", TSM:"Taiwan",       VWO:"Emerging Markets",
 };
 
 const TICKER_IND: Record<string, string> = {
@@ -120,15 +118,15 @@ const TICKER_IND: Record<string, string> = {
 };
 
 const GEO_COLORS: Record<string, string> = {
-  "United States":      "#185FA5",
-  "Intl Dev. ex-US":   "#1D9E75",
-  "Taiwan":             "#D4963A",
-  "South Korea":        "#8B5CC7",
-  "Global":             "#5EAB72",
-  "Netherlands":        "#D97706",
-  "Brazil":             "#B5621A",
-  "Finland":            "#7090AA",
-  "Emerging Markets":   "#C05080",
+  "United States":    "#185FA5",
+  "Intl Dev. ex-US": "#1D9E75",
+  "Taiwan":           "#D4963A",
+  "South Korea":      "#8B5CC7",
+  "Global":           "#5EAB72",
+  "Netherlands":      "#D97706",
+  "Brazil":           "#B5621A",
+  "Finland":          "#7090AA",
+  "Emerging Markets": "#C05080",
 };
 
 const IND_COLORS: Record<string, string> = {
@@ -181,6 +179,7 @@ interface PortfolioData {
   portfolio: PortfolioHolding[]; as_of: string;
   validation: { metrics: { cagr: number; sharpe: number; max_dd: number; total_return: number }; dollar_simulation: { final_model: number; final_spy: number } };
   period_metrics: Record<string, { model: { total: number } }>;
+  ticker_cumrets?: Record<string, Record<string, number>>;
 }
 interface ChartSeries  { date: string; model: number; spy: number; }
 interface RebEvent     { date: string; added: string[]; dropped: string[]; held: string[]; total: number; }
@@ -218,31 +217,21 @@ function spyPerfSince(series: ChartSeries[], entryDateStr: string | null | undef
 
 function computeGeo(holdings: PortfolioHolding[]): GeoSeg[] {
   const counts: Record<string, string[]> = {};
-  holdings.forEach(h => {
-    const g = TICKER_GEO[h.ticker] ?? "Other";
-    (counts[g] ??= []).push(h.ticker);
-  });
-  return Object.entries(counts)
-    .sort((a, b) => b[1].length - a[1].length)
+  holdings.forEach(h => { const g = TICKER_GEO[h.ticker] ?? "Other"; (counts[g] ??= []).push(h.ticker); });
+  return Object.entries(counts).sort((a, b) => b[1].length - a[1].length)
     .map(([label, tickers]) => ({ label, pct: (tickers.length / holdings.length) * 100, tickers, color: GEO_COLORS[label] ?? "#8A8F9A" }));
 }
 
 function computeInd(holdings: PortfolioHolding[]): IndSeg[] {
   const counts: Record<string, string[]> = {};
-  holdings.forEach(h => {
-    const g = TICKER_IND[h.ticker] ?? "Other";
-    (counts[g] ??= []).push(h.ticker);
-  });
-  return Object.entries(counts)
-    .sort((a, b) => b[1].length - a[1].length)
+  holdings.forEach(h => { const g = TICKER_IND[h.ticker] ?? "Other"; (counts[g] ??= []).push(h.ticker); });
+  return Object.entries(counts).sort((a, b) => b[1].length - a[1].length)
     .map(([label, tickers]) => ({ label, pct: (tickers.length / holdings.length) * 100, tickers, color: IND_COLORS[label] ?? "#8A8F9A" }));
 }
 
+// ── Chart drawing helpers ─────────────────────────────────────────────────────
 function drawPerfChart(
-  canvas: HTMLCanvasElement,
-  data: ChartSeries[],
-  rebalances: RebEvent[],
-  hovIdx: number | null
+  canvas: HTMLCanvasElement, data: ChartSeries[], rebalances: RebEvent[], hovIdx: number | null
 ) {
   const W = canvas.clientWidth, H = canvas.clientHeight;
   if (!W || !H || data.length < 2) return;
@@ -252,55 +241,41 @@ function drawPerfChart(
   ctx.scale(dpr, dpr);
 
   const dark = isDark();
-  const ACC   = "#1D9E75", SPY = "#7090AA";
-  const BG    = dark ? "#111822" : "#ffffff";
-  const GRID  = dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)";
-  const LABEL = dark ? "rgba(200,220,240,0.45)"  : "rgba(0,0,0,0.32)";
-  const REB   = dark ? "rgba(255,255,255,0.07)"  : "rgba(0,0,0,0.07)";
-  const PAD   = { t: 16, r: 16, b: 36, l: 52 };
-  const CW    = W - PAD.l - PAD.r, CH = H - PAD.t - PAD.b;
-
+  const ACC = "#1D9E75", SPY = "#7090AA";
+  const BG   = dark ? "#111822" : "#ffffff";
+  const GRID = dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)";
+  const LBL  = dark ? "rgba(200,220,240,0.45)"  : "rgba(0,0,0,0.32)";
+  const REB  = dark ? "rgba(255,255,255,0.07)"  : "rgba(0,0,0,0.07)";
+  const PAD  = { t: 16, r: 16, b: 36, l: 52 };
+  const CW   = W - PAD.l - PAD.r, CH = H - PAD.t - PAD.b;
   const allV = data.flatMap(d => [d.model, d.spy]);
   const minV = Math.min(...allV) * 0.97, maxV = Math.max(...allV) * 1.03;
   const xOf  = (i: number) => PAD.l + (i / (data.length - 1)) * CW;
   const yOf  = (v: number) => PAD.t + CH - ((v - minV) / (maxV - minV)) * CH;
 
   ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H);
-
-  // Gridlines + y-axis
   ctx.font = "10px ui-monospace, monospace"; ctx.textAlign = "right"; ctx.setLineDash([]);
   for (let i = 0; i <= 4; i++) {
     const v = minV + (i / 4) * (maxV - minV), y = yOf(v);
     ctx.strokeStyle = GRID; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(PAD.l + CW, y); ctx.stroke();
-    const pct = (v / 100 - 1) * 100;
-    ctx.fillStyle = LABEL;
-    ctx.fillText(`${pct >= 0 ? "+" : ""}${pct.toFixed(0)}%`, PAD.l - 6, y + 3.5);
+    ctx.fillStyle = LBL;
+    ctx.fillText(`${(v / 100 - 1) * 100 >= 0 ? "+" : ""}${((v / 100 - 1) * 100).toFixed(0)}%`, PAD.l - 6, y + 3.5);
   }
-
-  // X-axis labels
   const nL = data.length > 200 ? 7 : 5;
   ctx.textAlign = "center"; ctx.font = "10px system-ui, sans-serif";
   for (let i = 0; i <= nL; i++) {
     const idx = Math.round((i / nL) * (data.length - 1));
-    const d = new Date(data[idx].date);
-    ctx.fillStyle = LABEL;
-    ctx.fillText(d.toLocaleDateString("en-US", { month: "short", year: "2-digit" }), xOf(idx), PAD.t + CH + 22);
+    ctx.fillStyle = LBL;
+    ctx.fillText(new Date(data[idx].date).toLocaleDateString("en-US", { month: "short", year: "2-digit" }), xOf(idx), PAD.t + CH + 22);
   }
-
-  // Rebalance markers
-  const rebMs = rebalances.map(r => new Date(r.date).getTime());
-  rebMs.forEach(ms => {
-    const idx = data.reduce((b, d, i) =>
-      Math.abs(new Date(d.date).getTime() - ms) < Math.abs(new Date(data[b].date).getTime() - ms) ? i : b, 0);
+  rebalances.map(r => new Date(r.date).getTime()).forEach(ms => {
+    const idx = data.reduce((b, d, i) => Math.abs(new Date(d.date).getTime() - ms) < Math.abs(new Date(data[b].date).getTime() - ms) ? i : b, 0);
     if (Math.abs(new Date(data[idx].date).getTime() - ms) > 40 * 86400000) return;
     const x = xOf(idx);
     ctx.strokeStyle = REB; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
-    ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, PAD.t + CH); ctx.stroke();
-    ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, PAD.t + CH); ctx.stroke(); ctx.setLineDash([]);
   });
-
-  // SPY area + line
   ctx.beginPath(); ctx.moveTo(xOf(0), yOf(data[0].spy));
   data.forEach((d, i) => ctx.lineTo(xOf(i), yOf(d.spy)));
   ctx.lineTo(xOf(data.length - 1), PAD.t + CH); ctx.lineTo(xOf(0), PAD.t + CH); ctx.closePath();
@@ -308,11 +283,8 @@ function drawPerfChart(
   ctx.beginPath(); ctx.moveTo(xOf(0), yOf(data[0].spy));
   data.forEach((d, i) => ctx.lineTo(xOf(i), yOf(d.spy)));
   ctx.strokeStyle = SPY; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]); ctx.stroke(); ctx.setLineDash([]);
-
-  // Portfolio area + line
   const g = ctx.createLinearGradient(0, PAD.t, 0, PAD.t + CH);
-  g.addColorStop(0, dark ? "rgba(29,158,117,0.22)" : "rgba(29,158,117,0.14)");
-  g.addColorStop(1, "rgba(29,158,117,0)");
+  g.addColorStop(0, dark ? "rgba(29,158,117,0.22)" : "rgba(29,158,117,0.14)"); g.addColorStop(1, "rgba(29,158,117,0)");
   ctx.beginPath(); ctx.moveTo(xOf(0), yOf(data[0].model));
   data.forEach((d, i) => ctx.lineTo(xOf(i), yOf(d.model)));
   ctx.lineTo(xOf(data.length - 1), PAD.t + CH); ctx.lineTo(xOf(0), PAD.t + CH); ctx.closePath();
@@ -320,13 +292,9 @@ function drawPerfChart(
   ctx.beginPath(); ctx.moveTo(xOf(0), yOf(data[0].model));
   data.forEach((d, i) => ctx.lineTo(xOf(i), yOf(d.model)));
   ctx.strokeStyle = ACC; ctx.lineWidth = 2; ctx.stroke();
-
-  // Endpoint dot
   const lx = xOf(data.length - 1), ly = yOf(data[data.length - 1].model);
   ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI * 2); ctx.fillStyle = ACC; ctx.fill();
   ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI * 2); ctx.strokeStyle = BG; ctx.lineWidth = 2; ctx.stroke();
-
-  // Hover crosshair
   if (hovIdx !== null) {
     const hx = xOf(hovIdx);
     ctx.strokeStyle = dark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)";
@@ -337,8 +305,6 @@ function drawPerfChart(
     ctx.beginPath(); ctx.arc(hx, hyP, 4, 0, Math.PI * 2); ctx.strokeStyle = BG; ctx.lineWidth = 1.5; ctx.stroke();
     ctx.beginPath(); ctx.arc(hx, hyS, 3, 0, Math.PI * 2); ctx.fillStyle = SPY; ctx.fill();
   }
-
-  (canvas as HTMLCanvasElement & { _cm: unknown })._cm = { data, PAD, CW };
 }
 
 function drawGeoDonut(canvas: HTMLCanvasElement, segs: GeoSeg[]) {
@@ -351,17 +317,121 @@ function drawGeoDonut(canvas: HTMLCanvasElement, segs: GeoSeg[]) {
   segs.forEach(s => {
     const sw = (s.pct / 100) * Math.PI * 2;
     ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, R, angle, angle + sw); ctx.closePath();
-    ctx.fillStyle = s.color; ctx.fill();
-    angle += sw;
+    ctx.fillStyle = s.color; ctx.fill(); angle += sw;
   });
   ctx.beginPath(); ctx.arc(cx, cy, inner, 0, Math.PI * 2);
   ctx.fillStyle = dark ? "#111822" : "#ffffff"; ctx.fill();
   ctx.fillStyle = dark ? "#C4D2E6" : "#091628";
   ctx.font = "bold 12px ui-monospace, monospace"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  const total = segs.reduce((n, s) => n + s.tickers.length, 0);
-  ctx.fillText(`${total}`, cx, cy - 4);
+  ctx.fillText(`${segs.reduce((n, s) => n + s.tickers.length, 0)}`, cx, cy - 4);
   ctx.font = "8px system-ui, sans-serif"; ctx.fillStyle = dark ? "rgba(200,220,240,0.45)" : "rgba(0,0,0,0.35)";
   ctx.fillText("positions", cx, cy + 7);
+}
+
+function drawExpandChart(
+  canvas: HTMLCanvasElement,
+  tickerCumrets: Record<string, number>,
+  series: ChartSeries[],
+  entryDateStr: string
+) {
+  const W = canvas.clientWidth, H = canvas.clientHeight;
+  if (!W || !H) return;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  const ctx = canvas.getContext("2d")!; ctx.scale(dpr, dpr);
+
+  const dark = isDark();
+  const ACC = "#1D9E75", SPY = "#7090AA";
+  const BG   = dark ? "#111822" : "#ffffff";
+  const GRID = dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)";
+  const LBL  = dark ? "rgba(200,220,240,0.45)" : "rgba(0,0,0,0.32)";
+  const PAD  = { t: 10, r: 12, b: 28, l: 40 };
+  const CW   = W - PAD.l - PAD.r, CH = H - PAD.t - PAD.b;
+
+  ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H);
+
+  const entry = new Date(entryDateStr).getTime();
+  const tPts = Object.entries(tickerCumrets)
+    .map(([d, v]) => ({ ms: new Date(d).getTime(), v }))
+    .filter(p => p.ms >= entry)
+    .sort((a, b) => a.ms - b.ms);
+
+  if (tPts.length === 0) {
+    ctx.fillStyle = LBL; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.font = "11px system-ui, sans-serif";
+    ctx.fillText("No data yet", W / 2, H / 2);
+    return;
+  }
+
+  const vBase = tPts[0].v;
+  const tNorm = tPts.map(p => ({ ms: p.ms, v: (p.v / vBase) * 100 }));
+
+  const sAfter = series.filter(d => new Date(d.date).getTime() >= entry);
+  const sNorm  = sAfter.length >= 1
+    ? sAfter.map(d => ({ ms: new Date(d.date).getTime(), v: (d.spy / sAfter[0].spy) * 100 }))
+    : [];
+
+  const allMs = [...tNorm, ...sNorm].map(p => p.ms);
+  const allV  = [...tNorm, ...sNorm].map(p => p.v);
+  if (!allMs.length) return;
+
+  const msMin = Math.min(...allMs), msMax = Math.max(...allMs);
+  const vMin  = Math.min(95, ...allV) * 0.99, vMax = Math.max(105, ...allV) * 1.01;
+
+  const xOf = (ms: number) => PAD.l + ((ms - msMin) / Math.max(msMax - msMin, 1)) * CW;
+  const yOf = (v: number)  => PAD.t + CH - ((v - vMin) / (vMax - vMin)) * CH;
+
+  // Baseline 100% (entry) gridline
+  ctx.strokeStyle = GRID; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+  ctx.beginPath(); ctx.moveTo(PAD.l, yOf(100)); ctx.lineTo(PAD.l + CW, yOf(100)); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Y-axis labels
+  ctx.font = "9px ui-monospace, monospace"; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  for (let i = 0; i <= 2; i++) {
+    const v = vMin + (i / 2) * (vMax - vMin), pct = v - 100;
+    ctx.fillStyle = LBL;
+    ctx.fillText(`${pct >= 0 ? "+" : ""}${pct.toFixed(0)}%`, PAD.l - 4, yOf(v));
+  }
+
+  // X-axis labels
+  ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"; ctx.font = "9px system-ui, sans-serif";
+  [0, 0.5, 1].forEach(frac => {
+    const ms = msMin + frac * (msMax - msMin), d = new Date(ms);
+    ctx.fillStyle = LBL;
+    ctx.fillText(d.toLocaleDateString("en-US", { month: "short", year: frac === 0 || frac === 1 ? "2-digit" : undefined }), xOf(ms), PAD.t + CH + 18);
+  });
+
+  // SPY
+  if (sNorm.length >= 2) {
+    ctx.beginPath(); ctx.moveTo(xOf(sNorm[0].ms), yOf(sNorm[0].v));
+    sNorm.forEach(p => ctx.lineTo(xOf(p.ms), yOf(p.v)));
+    ctx.strokeStyle = SPY; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]); ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  // Ticker line + fill
+  if (tNorm.length >= 2) {
+    const g = ctx.createLinearGradient(0, PAD.t, 0, PAD.t + CH);
+    g.addColorStop(0, dark ? "rgba(29,158,117,0.20)" : "rgba(29,158,117,0.12)");
+    g.addColorStop(1, "rgba(29,158,117,0)");
+    ctx.beginPath(); ctx.moveTo(xOf(tNorm[0].ms), yOf(tNorm[0].v));
+    tNorm.forEach(p => ctx.lineTo(xOf(p.ms), yOf(p.v)));
+    ctx.lineTo(xOf(tNorm[tNorm.length - 1].ms), PAD.t + CH);
+    ctx.lineTo(xOf(tNorm[0].ms), PAD.t + CH); ctx.closePath();
+    ctx.fillStyle = g; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(xOf(tNorm[0].ms), yOf(tNorm[0].v));
+    tNorm.forEach(p => ctx.lineTo(xOf(p.ms), yOf(p.v)));
+    ctx.strokeStyle = ACC; ctx.lineWidth = 2; ctx.stroke();
+  }
+
+  // Endpoint dot
+  const last = tNorm[tNorm.length - 1];
+  if (last) {
+    ctx.beginPath(); ctx.arc(xOf(last.ms), yOf(last.v), 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = ACC; ctx.fill();
+    ctx.beginPath(); ctx.arc(xOf(last.ms), yOf(last.v), 3.5, 0, Math.PI * 2);
+    ctx.strokeStyle = BG; ctx.lineWidth = 1.5; ctx.stroke();
+  }
 }
 
 // ── MetricTooltip ─────────────────────────────────────────────────────────────
@@ -375,13 +445,9 @@ function MetricTooltip({ text }: { text: string }) {
         <text x="8" y="12" textAnchor="middle" fontSize="9" fill="currentColor" fontFamily="sans-serif">i</text>
       </svg>
       {show && (
-        <div style={{
-          position: "absolute", bottom: "calc(100% + 8px)", left: 0,
-          background: "var(--bg-primary)", border: "0.5px solid var(--border-default)",
-          borderRadius: 8, padding: "8px 11px", width: 200, zIndex: 20,
-          fontSize: 11, lineHeight: 1.55, color: "var(--text-secondary)",
-          boxShadow: "0 4px 16px rgba(0,0,0,0.08)", pointerEvents: "none",
-        }}>{text}</div>
+        <div style={{ position: "absolute", bottom: "calc(100% + 8px)", left: 0, background: "var(--bg-primary)", border: "0.5px solid var(--border-default)", borderRadius: 8, padding: "8px 11px", width: 200, zIndex: 20, fontSize: 11, lineHeight: 1.55, color: "var(--text-secondary)", boxShadow: "0 4px 16px rgba(0,0,0,0.08)", pointerEvents: "none" }}>
+          {text}
+        </div>
       )}
     </div>
   );
@@ -390,14 +456,8 @@ function MetricTooltip({ text }: { text: string }) {
 // ── Toggle ────────────────────────────────────────────────────────────────────
 function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   return (
-    <div onClick={onToggle} style={{
-      width: 36, height: 20, borderRadius: 10, cursor: "pointer", flexShrink: 0,
-      background: on ? "#185FA5" : "var(--border-default)", position: "relative", transition: "background 0.2s",
-    }}>
-      <div style={{
-        width: 16, height: 16, borderRadius: "50%", background: "white",
-        position: "absolute", top: 2, left: on ? 18 : 2, transition: "left 0.2s",
-      }} />
+    <div onClick={onToggle} style={{ width: 36, height: 20, borderRadius: 10, cursor: "pointer", flexShrink: 0, background: on ? "#185FA5" : "var(--border-default)", position: "relative", transition: "background 0.2s" }}>
+      <div style={{ width: 16, height: 16, borderRadius: "50%", background: "white", position: "absolute", top: 2, left: on ? 18 : 2, transition: "left 0.2s" }} />
     </div>
   );
 }
@@ -435,18 +495,15 @@ function PerfChart({ series, rebalances }: { series: ChartSeries[]; rebalances: 
     const canvas = canvasRef.current;
     if (!canvas || filtered.length < 2) return;
     const rect = canvas.getBoundingClientRect(), mx = e.clientX - rect.left;
-    const PAD_L = 52, PAD_R = 16, CW = canvas.clientWidth - PAD_L - PAD_R;
+    const PAD_L = 52, CW = canvas.clientWidth - PAD_L - 16;
     if (mx < PAD_L || mx > PAD_L + CW) { setHovIdx(null); setTip(null); return; }
     const idx = Math.max(0, Math.min(Math.round((mx - PAD_L) / CW * (filtered.length - 1)), filtered.length - 1));
-    setHovIdx(idx);
-    redraw(idx);
+    setHovIdx(idx); redraw(idx);
     const pt = filtered[idx];
-    const tx = Math.min(mx + 12, canvas.clientWidth - 160);
-    setTip({ x: tx, port: (pt.model / 100 - 1) * 100, spy: (pt.spy / 100 - 1) * 100, date: pt.date });
+    setTip({ x: Math.min(mx + 12, canvas.clientWidth - 160), port: (pt.model / 100 - 1) * 100, spy: (pt.spy / 100 - 1) * 100, date: pt.date });
   }, [filtered, redraw]);
 
   const handleLeave = useCallback(() => { setHovIdx(null); setTip(null); redraw(null); }, [redraw]);
-
   const pctStr = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
 
   return (
@@ -455,28 +512,15 @@ function PerfChart({ series, rebalances }: { series: ChartSeries[]; rebalances: 
         <p style={{ fontFamily: outfit, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--accent)", margin: 0 }}>Performance</p>
         <div style={{ display: "flex", background: "var(--bg-secondary)", padding: 2 }}>
           {(["3m","6m","1y","all"] as const).map(r => (
-            <button key={r} onClick={() => setRange(r)} style={{
-              padding: "3px 11px", fontSize: 11, fontWeight: 500, fontFamily: outfit,
-              color: range === r ? "var(--text-primary)" : "var(--text-tertiary)",
-              background: range === r ? "var(--bg-primary)" : "none",
-              border: "none", cursor: "pointer", letterSpacing: "0.04em",
-              transition: "color .12s, background .12s",
-            }}>{r.toUpperCase()}</button>
+            <button key={r} onClick={() => setRange(r)} style={{ padding: "3px 11px", fontSize: 11, fontWeight: 500, fontFamily: outfit, color: range === r ? "var(--text-primary)" : "var(--text-tertiary)", background: range === r ? "var(--bg-primary)" : "none", border: "none", cursor: "pointer", letterSpacing: "0.04em", transition: "color .12s, background .12s" }}>{r.toUpperCase()}</button>
           ))}
         </div>
       </div>
       <div style={{ background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", position: "relative" }}>
-        <canvas ref={canvasRef} style={{ display: "block", width: "100%", height: 260, cursor: "crosshair" }}
-          onMouseMove={handleMouseMove} onMouseLeave={handleLeave} />
+        <canvas ref={canvasRef} style={{ display: "block", width: "100%", height: 260, cursor: "crosshair" }} onMouseMove={handleMouseMove} onMouseLeave={handleLeave} />
         {tip && (
-          <div style={{
-            position: "absolute", top: 14, left: tip.x, pointerEvents: "none",
-            background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)",
-            padding: "8px 12px", fontSize: 11, minWidth: 148, zIndex: 10,
-          }}>
-            <div style={{ color: "var(--text-tertiary)", marginBottom: 6, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              {fmtDate(tip.date)}
-            </div>
+          <div style={{ position: "absolute", top: 14, left: tip.x, pointerEvents: "none", background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", padding: "8px 12px", fontSize: 11, minWidth: 148, zIndex: 10 }}>
+            <div style={{ color: "var(--text-tertiary)", marginBottom: 6, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.06em" }}>{fmtDate(tip.date)}</div>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 14, marginBottom: 3 }}>
               <span style={{ color: "var(--text-secondary)" }}>Portfolio</span>
               <span style={{ fontFamily: "ui-monospace, monospace", fontWeight: 600, color: "#1D9E75" }}>{pctStr(tip.port)}</span>
@@ -496,8 +540,7 @@ function PerfChart({ series, rebalances }: { series: ChartSeries[]; rebalances: 
             <div key={label} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 11, color: "var(--text-secondary)" }}>
               {vert
                 ? <svg width="12" height="10"><line x1="6" y1="0" x2="6" y2="10" stroke={stroke} strokeWidth="1" strokeDasharray={dash}/></svg>
-                : <svg width="20" height="10"><line x1="0" y1="5" x2="20" y2="5" stroke={stroke} strokeWidth={dash ? 1.5 : 2} strokeDasharray={dash}/></svg>
-              }
+                : <svg width="20" height="10"><line x1="0" y1="5" x2="20" y2="5" stroke={stroke} strokeWidth={dash ? 1.5 : 2} strokeDasharray={dash}/></svg>}
               {label}
             </div>
           ))}
@@ -507,8 +550,78 @@ function PerfChart({ series, rebalances }: { series: ChartSeries[]; rebalances: 
   );
 }
 
+// ── ExpandPanel ───────────────────────────────────────────────────────────────
+function ExpandPanel({ h, series, cumrets, onClose }: {
+  h: PortfolioHolding;
+  series: ChartSeries[];
+  cumrets: Record<string, Record<string, number>>;
+  onClose: () => void;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !h.entry_date) return;
+    const draw = () => drawExpandChart(canvas, cumrets[h.ticker] ?? {}, series, h.entry_date!);
+    draw();
+    const obs = new ResizeObserver(draw);
+    obs.observe(canvas);
+    return () => obs.disconnect();
+  }, [h, series, cumrets]);
+
+  const perf     = h.performance ?? h.performance_since_subscribed;
+  const spySince = spyPerfSince(series, h.entry_date);
+  const pos      = h.position ?? "long";
+  const pct      = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
+
+  const stats = [
+    { label: "Since entry", val: perf != null ? pct(perf) : "—",          c: perf != null && perf > 0 ? "#1D9E75" : perf != null && perf < 0 ? "#B5621A" : undefined },
+    { label: "vs S&P 500",  val: spySince != null ? pct(spySince) : "—",  c: undefined },
+    { label: "Position",    val: pos.charAt(0).toUpperCase() + pos.slice(1), c: pos === "long" ? "#1D9E75" : "var(--text-tertiary)" },
+    { label: "Entry",       val: h.entry_date ? fmtMonthYear(h.entry_date) : "—", c: undefined },
+    { label: "Weight",      val: "6.67%",                                   c: undefined },
+  ];
+
+  return (
+    <div style={{ gridColumn: "1 / -1", background: "var(--bg-primary)", borderTop: "2px solid #1D9E75", display: "grid", gridTemplateColumns: "1fr 184px" }}>
+      {/* Chart side */}
+      <div style={{ padding: "14px 16px 12px 14px", borderRight: "0.5px solid var(--border-subtle)", position: "relative" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+          <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 13, fontWeight: 700, letterSpacing: "0.04em" }}>{h.ticker}</span>
+          <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>{TICKER_NAMES[h.ticker]?.name ?? ""}</span>
+          <div style={{ marginLeft: "auto", display: "flex", gap: 14, fontSize: 10, color: "var(--text-secondary)" }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <svg width="14" height="6"><line x1="0" y1="3" x2="14" y2="3" stroke="#1D9E75" strokeWidth="2"/></svg>
+              {h.ticker}
+            </span>
+            <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <svg width="14" height="6"><line x1="0" y1="3" x2="14" y2="3" stroke="#7090AA" strokeWidth="1.5" strokeDasharray="4,3"/></svg>
+              S&P 500
+            </span>
+          </div>
+        </div>
+        <canvas ref={canvasRef} style={{ display: "block", width: "100%", height: 150 }} />
+        <button onClick={e => { e.stopPropagation(); onClose(); }} style={{ position: "absolute", top: 10, right: 12, background: "none", border: "none", color: "var(--text-tertiary)", cursor: "pointer", fontSize: 14, padding: "4px 8px", fontFamily: outfit }}>✕</button>
+      </div>
+      {/* Stats side */}
+      <div style={{ padding: "14px" }}>
+        {stats.map(({ label, val, c }, i) => (
+          <div key={label} style={{ paddingBottom: 10, marginBottom: 10, borderBottom: i < stats.length - 1 ? "0.5px solid var(--border-subtle)" : "none" }}>
+            <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text-tertiary)", marginBottom: 3 }}>{label}</div>
+            <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 14, fontWeight: 700, letterSpacing: "-0.02em", color: c ?? "var(--text-primary)" }}>{val}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── HoldingsGrid ──────────────────────────────────────────────────────────────
-function HoldingsGrid({ holdings, series }: { holdings: PortfolioHolding[]; series: ChartSeries[] }) {
+function HoldingsGrid({ holdings, series, cumrets }: {
+  holdings: PortfolioHolding[];
+  series: ChartSeries[];
+  cumrets: Record<string, Record<string, number>>;
+}) {
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
   const COLS = 5;
   const maxPerf = useMemo(() =>
@@ -520,100 +633,47 @@ function HoldingsGrid({ holdings, series }: { holdings: PortfolioHolding[]; seri
   const nodes: React.ReactNode[] = [];
   holdings.forEach((h, i) => {
     const active = i === activeIdx;
-    const perf = h.performance ?? h.performance_since_subscribed;
-    const pos  = h.position ?? "long";
+    const perf   = h.performance ?? h.performance_since_subscribed;
+    const pos    = h.position ?? "long";
     nodes.push(
-      <div
-        key={h.ticker}
-        onClick={() => handleClick(i)}
-        style={{
-          background: active ? "rgba(29,158,117,0.04)" : "var(--bg-primary)",
-          outline: active ? "1px solid rgba(29,158,117,0.35)" : "none",
-          outlineOffset: active ? "-1px" : 0,
-          padding: "14px", cursor: "pointer", userSelect: "none",
-          transition: "background 0.1s",
-        }}
-      >
-        <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 14, fontWeight: 700, letterSpacing: "0.05em", marginBottom: 2 }}>
-          {h.ticker}
-        </div>
-        <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginBottom: 10, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {TICKER_NAMES[h.ticker]?.name ?? ""}
-        </div>
+      <div key={h.ticker} onClick={() => handleClick(i)} style={{ background: active ? "rgba(29,158,117,0.04)" : "var(--bg-primary)", outline: active ? "1px solid rgba(29,158,117,0.35)" : "none", outlineOffset: active ? "-1px" : 0, padding: "14px", cursor: "pointer", userSelect: "none", transition: "background 0.1s" }}>
+        <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 14, fontWeight: 700, letterSpacing: "0.05em", marginBottom: 2 }}>{h.ticker}</div>
+        <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginBottom: 10, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{TICKER_NAMES[h.ticker]?.name ?? ""}</div>
         <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
           <div style={{ width: 5, height: 5, borderRadius: "50%", background: pos === "long" ? "#1D9E75" : "var(--text-tertiary)" }} />
-          <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: pos === "long" ? "#1D9E75" : "var(--text-tertiary)" }}>
-            {pos}
-          </span>
+          <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: pos === "long" ? "#1D9E75" : "var(--text-tertiary)" }}>{pos}</span>
         </div>
-        <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 7,
-          color: perf != null && perf > 0 ? "#1D9E75" : perf != null && perf < 0 ? "#B5621A" : "var(--text-tertiary)" }}>
+        <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 7, color: perf != null && perf > 0 ? "#1D9E75" : perf != null && perf < 0 ? "#B5621A" : "var(--text-tertiary)" }}>
           {perf != null ? `${perf >= 0 ? "+" : ""}${perf.toFixed(1)}%` : "—"}
         </div>
         {perf != null && (
           <div style={{ height: 3, background: "var(--border-subtle)", marginBottom: 8, position: "relative" }}>
-            <div style={{
-              position: "absolute", left: 0, top: 0, height: "100%",
-              width: `${Math.min((Math.abs(perf) / maxPerf) * 100, 100)}%`,
-              background: perf >= 0 ? "#1D9E75" : "#B5621A",
-            }} />
+            <div style={{ position: "absolute", left: 0, top: 0, height: "100%", width: `${Math.min((Math.abs(perf) / maxPerf) * 100, 100)}%`, background: perf >= 0 ? "#1D9E75" : "#B5621A" }} />
           </div>
         )}
-        <div style={{ fontSize: 10, color: "var(--text-tertiary)" }}>
-          Since <span style={{ color: "var(--text-secondary)" }}>{h.entry_date ? fmtMonthYear(h.entry_date) : "—"}</span>
-        </div>
+        <div style={{ fontSize: 10, color: "var(--text-tertiary)" }}>Since <span style={{ color: "var(--text-secondary)" }}>{h.entry_date ? fmtMonthYear(h.entry_date) : "—"}</span></div>
       </div>
     );
 
-    // Expand panel — inserted after last card in the active row
     if (activeIdx !== null) {
       const row = Math.floor(i / COLS), activeRow = Math.floor(activeIdx / COLS);
       const isLastInRow = i === holdings.length - 1 || Math.floor((i + 1) / COLS) !== row;
       if (row === activeRow && isLastInRow) {
-        const ah = holdings[activeIdx];
-        const aperf = ah.performance ?? ah.performance_since_subscribed;
-        const spySince = spyPerfSince(series, ah.entry_date);
-        const apos = ah.position ?? "long";
-        const pctStr = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
         nodes.push(
-          <div key="__expand" style={{
-            gridColumn: "1 / -1", background: "var(--bg-primary)", borderTop: "2px solid #1D9E75",
-            padding: "1rem 1.25rem", position: "relative",
-          }}>
-            <button onClick={e => { e.stopPropagation(); setActiveIdx(null); }} style={{
-              position: "absolute", top: 10, right: 12, background: "none", border: "none",
-              color: "var(--text-tertiary)", cursor: "pointer", fontSize: 14, padding: "4px 8px",
-              fontFamily: outfit,
-            }}>✕</button>
-            <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 12, fontWeight: 700, letterSpacing: "0.04em", color: "var(--text-secondary)", marginBottom: 12 }}>
-              {ah.ticker} · {TICKER_NAMES[ah.ticker]?.name ?? ""}
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem" }}>
-              {[
-                { label: "Since entry",  val: aperf != null ? pctStr(aperf) : "—",         c: aperf != null && aperf > 0 ? "#1D9E75" : aperf != null && aperf < 0 ? "#B5621A" : undefined },
-                { label: "vs S&P 500",   val: spySince != null ? pctStr(spySince) : "—",   c: undefined },
-                { label: "Position",     val: apos.charAt(0).toUpperCase() + apos.slice(1), c: apos === "long" ? "#1D9E75" : "var(--text-tertiary)" },
-                { label: "Entry date",   val: ah.entry_date ? fmtMonthYear(ah.entry_date) : "—", c: undefined },
-              ].map(({ label, val, c }) => (
-                <div key={label}>
-                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text-tertiary)", marginBottom: 4 }}>{label}</div>
-                  <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 15, fontWeight: 700, letterSpacing: "-0.02em", color: c ?? "var(--text-primary)" }}>{val}</div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <ExpandPanel
+            key="__expand"
+            h={holdings[activeIdx]}
+            series={series}
+            cumrets={cumrets}
+            onClose={() => setActiveIdx(null)}
+          />
         );
       }
     }
   });
 
   return (
-    <div style={{
-      display: "grid", gridTemplateColumns: `repeat(${COLS}, 1fr)`,
-      background: "var(--border-subtle)", gap: 1,
-      border: "0.5px solid var(--border-subtle)", borderRadius: "var(--radius-lg)",
-      overflow: "hidden", marginBottom: "2rem",
-    }}>
+    <div style={{ display: "grid", gridTemplateColumns: `repeat(${COLS}, 1fr)`, background: "var(--border-subtle)", gap: 1, border: "0.5px solid var(--border-subtle)", borderRadius: "var(--radius-lg)", overflow: "hidden", marginBottom: "2rem" }}>
       {nodes}
     </div>
   );
@@ -623,11 +683,7 @@ function HoldingsGrid({ holdings, series }: { holdings: PortfolioHolding[]; seri
 function GeoComposition({ holdings }: { holdings: PortfolioHolding[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const segs = useMemo(() => computeGeo(holdings), [holdings]);
-
-  useEffect(() => {
-    if (canvasRef.current && segs.length) drawGeoDonut(canvasRef.current, segs);
-  }, [segs]);
-
+  useEffect(() => { if (canvasRef.current && segs.length) drawGeoDonut(canvasRef.current, segs); }, [segs]);
   return (
     <div style={{ background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", padding: "1.25rem", borderRadius: "var(--radius-lg)" }}>
       <p style={{ fontFamily: outfit, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--accent)", marginBottom: 14, marginTop: 0 }}>Geographic Exposure</p>
@@ -651,7 +707,6 @@ function GeoComposition({ holdings }: { holdings: PortfolioHolding[] }) {
 function IndustryBars({ holdings }: { holdings: PortfolioHolding[] }) {
   const segs = useMemo(() => computeInd(holdings), [holdings]);
   const maxP = Math.max(...segs.map(s => s.pct));
-
   return (
     <div style={{ background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", padding: "1.25rem", borderRadius: "var(--radius-lg)" }}>
       <p style={{ fontFamily: outfit, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--accent)", marginBottom: 14, marginTop: 0 }}>Industry</p>
@@ -681,54 +736,40 @@ function IndustryBars({ holdings }: { holdings: PortfolioHolding[] }) {
 
 // ── RebalanceTimeline ─────────────────────────────────────────────────────────
 function RebalanceTimeline({ rebalances }: { rebalances: RebEvent[] }) {
+  // Last 10, most-recent first
+  const displayed = rebalances.slice(-10).reverse();
   return (
     <div style={{ marginBottom: "2rem" }}>
       <p style={{ fontFamily: outfit, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--accent)", marginBottom: 14 }}>Rebalance History</p>
       <div style={{ position: "relative", paddingLeft: 28 }}>
         <div style={{ position: "absolute", left: 6, top: 8, bottom: 8, width: 1, background: "var(--border-subtle)" }} />
-        {rebalances.map((r, idx) => {
+        {displayed.map((r, idx) => {
           const snapshot = [...r.added, ...r.held].sort();
-          const addSet = new Set(r.added);
+          const addSet   = new Set(r.added);
           return (
-            <div key={r.date} style={{ position: "relative", paddingBottom: idx < rebalances.length - 1 ? 28 : 0 }}>
-              <div style={{
-                position: "absolute", left: -28, top: 5, width: 12, height: 12, borderRadius: "50%",
-                background: idx === 0 ? "#1D9E75" : "var(--bg-secondary)",
-                border: `2px solid ${idx === 0 ? "#1D9E75" : "var(--border-default)"}`,
-              }} />
+            <div key={r.date} style={{ position: "relative", paddingBottom: idx < displayed.length - 1 ? 28 : 0 }}>
+              <div style={{ position: "absolute", left: -28, top: 5, width: 12, height: 12, borderRadius: "50%", background: idx === 0 ? "#1D9E75" : "var(--bg-secondary)", border: `2px solid ${idx === 0 ? "#1D9E75" : "var(--border-default)"}` }} />
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 12, fontWeight: 600, color: "var(--text-primary)" }}>
-                  {fmtDate(r.date)}
-                </span>
-                <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 7px", border: "0.5px solid var(--border-default)", color: "var(--text-secondary)", letterSpacing: "0.03em" }}>
-                  +{r.added.length} · −{r.dropped.length}
-                </span>
+                <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 12, fontWeight: 600, color: "var(--text-primary)" }}>{fmtDate(r.date)}</span>
+                <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 7px", border: "0.5px solid var(--border-default)", color: "var(--text-secondary)", letterSpacing: "0.03em" }}>+{r.added.length} · −{r.dropped.length}</span>
               </div>
               {r.added.length > 0 && (
                 <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 5 }}>
                   <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#1D9E75", width: 44, flexShrink: 0 }}>↑ In</span>
-                  {r.added.map(t => (
-                    <span key={t} style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, fontWeight: 600, padding: "2px 7px", background: "rgba(29,158,117,0.12)", color: "#1D9E75", letterSpacing: "0.04em" }}>{t}</span>
-                  ))}
+                  {r.added.map(t => <span key={t} style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, fontWeight: 600, padding: "2px 7px", background: "rgba(29,158,117,0.12)", color: "#1D9E75", letterSpacing: "0.04em" }}>{t}</span>)}
                 </div>
               )}
               {r.dropped.length > 0 && (
                 <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
                   <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#B5621A", width: 44, flexShrink: 0 }}>↓ Out</span>
-                  {r.dropped.map(t => (
-                    <span key={t} style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, fontWeight: 600, padding: "2px 7px", background: "rgba(181,98,26,0.10)", color: "#B5621A", letterSpacing: "0.04em" }}>{t}</span>
-                  ))}
+                  {r.dropped.map(t => <span key={t} style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, fontWeight: 600, padding: "2px 7px", background: "rgba(181,98,26,0.10)", color: "#B5621A", letterSpacing: "0.04em" }}>{t}</span>)}
                 </div>
               )}
               {snapshot.length > 0 && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 4, padding: "8px 12px", background: "var(--bg-secondary)", border: "0.5px solid var(--border-subtle)" }}>
                   <span style={{ fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em", marginRight: 4, alignSelf: "center" }}>After</span>
                   {snapshot.map(t => (
-                    <span key={t} style={{
-                      fontFamily: "ui-monospace, monospace", fontSize: 10, fontWeight: 600, padding: "2px 5px",
-                      color: addSet.has(t) ? "#1D9E75" : "var(--text-tertiary)",
-                      background: addSet.has(t) ? "rgba(29,158,117,0.10)" : "transparent",
-                    }}>{t}</span>
+                    <span key={t} style={{ fontFamily: "ui-monospace, monospace", fontSize: 10, fontWeight: 600, padding: "2px 5px", color: addSet.has(t) ? "#1D9E75" : "var(--text-tertiary)", background: addSet.has(t) ? "rgba(29,158,117,0.10)" : "transparent" }}>{t}</span>
                   ))}
                 </div>
               )}
@@ -784,17 +825,13 @@ export function Dashboard() {
     if (!session?.access_token) { setCancelState("idle"); return; }
     const apiUrl = import.meta.env.VITE_API_URL || "";
     try {
-      const res = await fetch(`${apiUrl}/api/cancel-subscription`, {
-        method: "POST", headers: { Authorization: `Bearer ${session.access_token}` },
-      });
+      const res = await fetch(`${apiUrl}/api/cancel-subscription`, { method: "POST", headers: { Authorization: `Bearer ${session.access_token}` } });
       if (!res.ok) throw new Error(await res.text());
       const { ends_on } = await res.json();
       setCancelEndsOn(ends_on ?? null);
       setCancelState("done");
       track("subscription_cancelled");
-    } catch {
-      setCancelState("confirming");
-    }
+    } catch { setCancelState("confirming"); }
   };
 
   const [showWelcome] = useState(() => {
@@ -833,12 +870,9 @@ export function Dashboard() {
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-tertiary)" }}>
 
-      {/* Welcome overlay */}
       {welcomeVisible && (
         <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "#ffffff", display: "flex", flexDirection: "column" }}>
-          <nav style={{ height: 56, borderBottom: "0.5px solid #eee", display: "flex", alignItems: "center", padding: "0 2rem" }}>
-            <QuantinLogo iconSize={22} />
-          </nav>
+          <nav style={{ height: 56, borderBottom: "0.5px solid #eee", display: "flex", alignItems: "center", padding: "0 2rem" }}><QuantinLogo iconSize={22} /></nav>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "4rem 2rem 6rem", textAlign: "center" }}>
             <div style={{ width: 48, height: 48, borderRadius: "50%", border: "1px solid #c0e0d4", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "2rem" }}>
               <div style={{ width: 14, height: 14, background: "#1D9E75", borderRadius: "50%" }} />
@@ -859,19 +893,14 @@ export function Dashboard() {
                 </div>
               ))}
             </div>
-            <button onClick={dismissWelcome} style={{ background: "#0C447C", color: "#fff", border: "none", borderRadius: 8, padding: "13px 32px", fontFamily: outfit, fontWeight: 300, fontSize: 15, cursor: "pointer", marginBottom: "1rem" }}>
-              View portfolio →
-            </button>
+            <button onClick={dismissWelcome} style={{ background: "#0C447C", color: "#fff", border: "none", borderRadius: 8, padding: "13px 32px", fontFamily: outfit, fontWeight: 300, fontSize: 15, cursor: "pointer", marginBottom: "1rem" }}>View portfolio →</button>
             <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "#b4b2a9" }}>A confirmation was sent to your email</p>
           </div>
         </div>
       )}
 
-      {/* Nav */}
       <nav style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 2rem", height: 56, background: "var(--bg-primary)", borderBottom: "0.5px solid var(--border-subtle)", position: "sticky", top: 0, zIndex: 10 }}>
-        <button onClick={() => navigate("/")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, lineHeight: 0 }}>
-          <QuantinLogo iconSize={22} />
-        </button>
+        <button onClick={() => navigate("/")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, lineHeight: 0 }}><QuantinLogo iconSize={22} /></button>
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
           <Button variant="ghost" size="sm" onClick={() => navigate("/user")}>Account</Button>
         </div>
@@ -879,24 +908,20 @@ export function Dashboard() {
 
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "2.5rem 2rem 6rem" }}>
 
-        {/* Regime pill */}
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "var(--info-bg)", border: "0.5px solid var(--info-border)", borderRadius: 100, padding: "5px 13px", marginBottom: "1.5rem" }}>
           <div style={{ width: 7, height: 7, background: regimeColors.dot, borderRadius: "50%", flexShrink: 0 }} />
           <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: regimeColors.text }}>{regimeLabel ?? "Loading…"}</span>
         </div>
 
-        {/* Title */}
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "1.75rem", flexWrap: "wrap", gap: 8 }}>
           <h1 style={{ fontFamily: playfair, fontWeight: 400, fontSize: 32, color: "var(--text-primary)", margin: 0, lineHeight: 1.2 }}>Active positions</h1>
           <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)", letterSpacing: "0.02em" }}>Next rebalance Aug 2026</span>
         </div>
 
-        {/* Metrics strip */}
         {(() => {
-          const v = portfolio?.validation;
-          const p6 = portfolio?.period_metrics?.["6m"];
-          const liveMetrics = v ? [
-            { val: `+${Math.round(v.metrics.total_return)}%`, label: "since inception", tooltip: "Total cumulative return since Feb 2018 backtest start." },
+          const v = portfolio?.validation, p6 = portfolio?.period_metrics?.["6m"];
+          const metrics = v ? [
+            { val: `+${Math.round(v.metrics.total_return)}%`, label: "since inception",  tooltip: "Total cumulative return since Feb 2018 backtest start." },
             { val: `×${(v.dollar_simulation.final_model / v.dollar_simulation.final_spy).toFixed(1)}`, label: "vs S&P 500", tooltip: "How many times more the portfolio returned compared to S&P 500." },
             { val: p6 ? `+${p6.model.total.toFixed(1)}%` : "—", label: "this period (6m)", tooltip: "Portfolio return over the last 6 months." },
             { val: `−${Math.abs(v.metrics.max_dd).toFixed(1)}%`, label: "max drawdown", tooltip: "Largest peak-to-trough decline since inception." },
@@ -905,13 +930,11 @@ export function Dashboard() {
             { val: "—", label: "this period (6m)", tooltip: "" }, { val: "—", label: "max drawdown", tooltip: "" },
           ];
           return (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", borderTop: "0.5px solid var(--border-subtle)", paddingTop: "1.5rem", marginBottom: "2rem", gap: 0 }}>
-              {liveMetrics.map(({ val, label, tooltip }, i) => (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", borderTop: "0.5px solid var(--border-subtle)", paddingTop: "1.5rem", marginBottom: "2rem" }}>
+              {metrics.map(({ val, label, tooltip }, i) => (
                 <div key={label} style={{ paddingRight: i < 3 ? "1.5rem" : 0 }}>
-                  <div style={{ fontFamily: outfit, fontWeight: 200, fontSize: 26, color: val.startsWith("−") ? "var(--text-secondary)" : "var(--text-primary)", letterSpacing: "-0.02em", marginBottom: 5 }}>
-                    {val}
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5, position: "relative" }}>
+                  <div style={{ fontFamily: outfit, fontWeight: 200, fontSize: 26, color: val.startsWith("−") ? "var(--text-secondary)" : "var(--text-primary)", letterSpacing: "-0.02em", marginBottom: 5 }}>{val}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                     <div style={{ fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</div>
                     {tooltip && <MetricTooltip text={tooltip} />}
                   </div>
@@ -921,17 +944,19 @@ export function Dashboard() {
           );
         })()}
 
-        {/* Performance chart */}
         {chartData && chartData.series.length > 1 && (
           <PerfChart series={chartData.series} rebalances={chartData.rebalances} />
         )}
 
-        {/* Holdings */}
         <p style={{ fontFamily: outfit, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--accent)", marginBottom: "0.75rem" }}>
           Holdings · {portfolio?.portfolio.length ?? "—"} positions · Equal weight
         </p>
         {portfolio && portfolio.portfolio.length > 0 && (
-          <HoldingsGrid holdings={portfolio.portfolio} series={chartData?.series ?? []} />
+          <HoldingsGrid
+            holdings={portfolio.portfolio}
+            series={chartData?.series ?? []}
+            cumrets={portfolio.ticker_cumrets ?? {}}
+          />
         )}
         {!portfolio && (
           <div style={{ height: 240, background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", borderRadius: "var(--radius-lg)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-tertiary)", fontSize: 13, marginBottom: "2rem" }}>
@@ -939,7 +964,6 @@ export function Dashboard() {
           </div>
         )}
 
-        {/* Composition */}
         {portfolio && portfolio.portfolio.length > 0 && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "2rem" }}>
             <GeoComposition holdings={portfolio.portfolio} />
@@ -947,12 +971,10 @@ export function Dashboard() {
           </div>
         )}
 
-        {/* Rebalance history */}
         {chartData && chartData.rebalances.length > 0 && (
           <RebalanceTimeline rebalances={chartData.rebalances} />
         )}
 
-        {/* Alert settings */}
         <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--accent)", marginBottom: "0.75rem" }}>Alert settings</p>
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: "3rem" }}>
           {alertDefs.map(({ key, label, sub }) => (
@@ -966,7 +988,6 @@ export function Dashboard() {
           ))}
         </div>
 
-        {/* Subscription */}
         <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-tertiary)", marginBottom: "0.75rem" }}>Subscription</p>
         <div style={{ background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", borderRadius: "var(--radius-md)", padding: "1.25rem" }}>
           {cancelState === "done" ? (
@@ -983,15 +1004,9 @@ export function Dashboard() {
               </div>
               <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
                 {cancelState === "confirming" && (
-                  <button onClick={() => setCancelState("idle")} style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, padding: "6px 14px", borderRadius: "var(--radius-md)", border: "0.5px solid var(--border-default)", background: "transparent", color: "var(--text-secondary)", cursor: "pointer" }}>
-                    Keep subscription
-                  </button>
+                  <button onClick={() => setCancelState("idle")} style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, padding: "6px 14px", borderRadius: "var(--radius-md)", border: "0.5px solid var(--border-default)", background: "transparent", color: "var(--text-secondary)", cursor: "pointer" }}>Keep subscription</button>
                 )}
-                <button
-                  onClick={cancelState === "idle" ? () => setCancelState("confirming") : handleCancelSubscription}
-                  disabled={cancelState === "loading"}
-                  style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, padding: "6px 14px", borderRadius: "var(--radius-md)", border: "0.5px solid var(--border-default)", background: cancelState === "confirming" ? "#B5621A" : "transparent", color: cancelState === "confirming" ? "#fff" : "var(--text-tertiary)", cursor: cancelState === "loading" ? "not-allowed" : "pointer", opacity: cancelState === "loading" ? 0.6 : 1, transition: "all 0.15s" }}
-                >
+                <button onClick={cancelState === "idle" ? () => setCancelState("confirming") : handleCancelSubscription} disabled={cancelState === "loading"} style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, padding: "6px 14px", borderRadius: "var(--radius-md)", border: "0.5px solid var(--border-default)", background: cancelState === "confirming" ? "#B5621A" : "transparent", color: cancelState === "confirming" ? "#fff" : "var(--text-tertiary)", cursor: cancelState === "loading" ? "not-allowed" : "pointer", opacity: cancelState === "loading" ? 0.6 : 1, transition: "all 0.15s" }}>
                   {cancelState === "loading" ? "Cancelling…" : cancelState === "confirming" ? "Yes, cancel" : "Cancel subscription"}
                 </button>
               </div>
