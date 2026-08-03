@@ -250,6 +250,7 @@ function computeSec(holdings: PortfolioHolding[]): SecSeg[] {
 }
 
 // ── Chart drawing helpers ─────────────────────────────────────────────────────
+const cv = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 function drawPerfChart(
   canvas: HTMLCanvasElement, data: ChartSeries[], rebalances: RebEvent[], hovIdx: number | null
 ) {
@@ -260,12 +261,11 @@ function drawPerfChart(
   const ctx = canvas.getContext("2d")!;
   ctx.scale(dpr, dpr);
 
-  const dark = isDark();
   const ACC = "#1D9E75", SPY = "#7090AA";
-  const BG   = getComputedStyle(document.documentElement).getPropertyValue("--bg-primary").trim() || (dark ? "#111822" : "#ffffff");
-  const GRID = dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)";
-  const LBL  = dark ? "rgba(200,220,240,0.45)"  : "rgba(0,0,0,0.32)";
-  const REB  = dark ? "rgba(255,255,255,0.07)"  : "rgba(0,0,0,0.07)";
+  const BG   = cv("--bg-primary")   || "#232540";
+  const GRID = cv("--border-subtle") || "rgba(255,255,255,0.07)";
+  const LBL  = cv("--text-tertiary") || "#5D7A94";
+  const REB  = cv("--border-subtle") || "rgba(255,255,255,0.07)";
   const PAD  = { t: 16, r: 16, b: 36, l: 52 };
   const CW   = W - PAD.l - PAD.r, CH = H - PAD.t - PAD.b;
   const allV = data.flatMap(d => [d.model, d.spy]);
@@ -299,12 +299,12 @@ function drawPerfChart(
   ctx.beginPath(); ctx.moveTo(xOf(0), yOf(data[0].spy));
   data.forEach((d, i) => ctx.lineTo(xOf(i), yOf(d.spy)));
   ctx.lineTo(xOf(data.length - 1), PAD.t + CH); ctx.lineTo(xOf(0), PAD.t + CH); ctx.closePath();
-  ctx.fillStyle = dark ? "rgba(112,144,170,0.08)" : "rgba(112,144,170,0.07)"; ctx.fill();
+  ctx.fillStyle = "rgba(112,144,170,0.08)"; ctx.fill();
   ctx.beginPath(); ctx.moveTo(xOf(0), yOf(data[0].spy));
   data.forEach((d, i) => ctx.lineTo(xOf(i), yOf(d.spy)));
   ctx.strokeStyle = SPY; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]); ctx.stroke(); ctx.setLineDash([]);
   const g = ctx.createLinearGradient(0, PAD.t, 0, PAD.t + CH);
-  g.addColorStop(0, dark ? "rgba(29,158,117,0.22)" : "rgba(29,158,117,0.14)"); g.addColorStop(1, "rgba(29,158,117,0)");
+  g.addColorStop(0, "rgba(29,158,117,0.22)"); g.addColorStop(1, "rgba(29,158,117,0)");
   ctx.beginPath(); ctx.moveTo(xOf(0), yOf(data[0].model));
   data.forEach((d, i) => ctx.lineTo(xOf(i), yOf(d.model)));
   ctx.lineTo(xOf(data.length - 1), PAD.t + CH); ctx.lineTo(xOf(0), PAD.t + CH); ctx.closePath();
@@ -317,7 +317,7 @@ function drawPerfChart(
   ctx.beginPath(); ctx.arc(lx, ly, 4, 0, Math.PI * 2); ctx.strokeStyle = BG; ctx.lineWidth = 2; ctx.stroke();
   if (hovIdx !== null) {
     const hx = xOf(hovIdx);
-    ctx.strokeStyle = dark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)";
+    ctx.strokeStyle = cv("--border-default") || "rgba(255,255,255,0.12)";
     ctx.lineWidth = 1; ctx.setLineDash([]);
     ctx.beginPath(); ctx.moveTo(hx, PAD.t); ctx.lineTo(hx, PAD.t + CH); ctx.stroke();
     const hyP = yOf(data[hovIdx].model), hyS = yOf(data[hovIdx].spy);
@@ -335,8 +335,8 @@ function drawDonut(canvas: HTMLCanvasElement, segs: DonutSeg[], hovIdx: number |
   canvas.width = SZ * dpr; canvas.height = SZ * dpr;
   canvas.style.width = `${SZ}px`; canvas.style.height = `${SZ}px`;
   const ctx = canvas.getContext("2d")!; ctx.scale(dpr, dpr);
-  const dark = isDark(), cx = SZ / 2, cy = SZ / 2;
-  const bgColor = getComputedStyle(document.documentElement).getPropertyValue("--bg-primary").trim() || (dark ? "#111822" : "#ffffff");
+  const cx = SZ / 2, cy = SZ / 2;
+  const bgColor = cv("--bg-primary") || "#232540";
   let angle = -Math.PI / 2;
   segs.forEach((s, i) => {
     const sw = (s.pct / 100) * Math.PI * 2;
@@ -350,11 +350,11 @@ function drawDonut(canvas: HTMLCanvasElement, segs: DonutSeg[], hovIdx: number |
   ctx.beginPath(); ctx.arc(cx, cy, inner, 0, Math.PI * 2);
   ctx.fillStyle = bgColor; ctx.fill();
   const total = segs.reduce((n, s) => n + s.tickers.length, 0);
-  ctx.fillStyle = dark ? "#C4D2E6" : "#091628";
+  ctx.fillStyle = cv("--text-primary") || "#E8EFF6";
   ctx.font = "bold 12px ui-monospace, monospace"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
   ctx.fillText(`${total}`, cx, cy - 4);
   ctx.font = "8px system-ui, sans-serif";
-  ctx.fillStyle = dark ? "rgba(200,220,240,0.45)" : "rgba(0,0,0,0.35)";
+  ctx.fillStyle = cv("--text-tertiary") || "#5D7A94";
   ctx.fillText("positions", cx, cy + 7);
 }
 
@@ -386,8 +386,6 @@ function DonutChart({ title, segs }: { title: string; segs: DonutSeg[] }) {
     if (canvasRef.current && segs.length) drawDonut(canvasRef.current, segs, hovIdx);
   }, [segs, hovIdx]);
 
-  const dark = isDark();
-
   return (
     <div style={{ background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", padding: "1.25rem", borderRadius: "var(--radius-lg)", position: "relative" }}>
       <p style={{ fontFamily: outfit, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--accent)", marginBottom: 14, marginTop: 0 }}>{title}</p>
@@ -407,7 +405,7 @@ function DonutChart({ title, segs }: { title: string; segs: DonutSeg[] }) {
             <div style={{
               position: "absolute",
               left: tooltip.x + 10, top: tooltip.y - 10,
-              background: dark ? "rgba(15,22,35,0.95)" : "rgba(255,255,255,0.97)",
+              background: "var(--bg-secondary)",
               border: "0.5px solid var(--border-subtle)",
               borderRadius: 6, padding: "6px 9px",
               pointerEvents: "none", zIndex: 10, whiteSpace: "nowrap",
@@ -453,11 +451,10 @@ function drawExpandChart(
   canvas.width = W * dpr; canvas.height = H * dpr;
   const ctx = canvas.getContext("2d")!; ctx.scale(dpr, dpr);
 
-  const dark = isDark();
   const ACC = "#1D9E75", SPY = "#7090AA";
-  const BG   = getComputedStyle(document.documentElement).getPropertyValue("--bg-primary").trim() || (dark ? "#111822" : "#ffffff");
-  const GRID = dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)";
-  const LBL  = dark ? "rgba(200,220,240,0.45)" : "rgba(0,0,0,0.32)";
+  const BG   = cv("--bg-primary")    || "#232540";
+  const GRID = cv("--border-subtle") || "rgba(255,255,255,0.07)";
+  const LBL  = cv("--text-tertiary") || "#5D7A94";
   const PAD  = { t: 10, r: 12, b: 28, l: 40 };
   const CW   = W - PAD.l - PAD.r, CH = H - PAD.t - PAD.b;
 
@@ -525,7 +522,7 @@ function drawExpandChart(
   // Ticker line + fill
   if (tNorm.length >= 2) {
     const g = ctx.createLinearGradient(0, PAD.t, 0, PAD.t + CH);
-    g.addColorStop(0, dark ? "rgba(29,158,117,0.20)" : "rgba(29,158,117,0.12)");
+    g.addColorStop(0, "rgba(29,158,117,0.20)");
     g.addColorStop(1, "rgba(29,158,117,0)");
     ctx.beginPath(); ctx.moveTo(xOf(tNorm[0].ms), yOf(tNorm[0].v));
     tNorm.forEach(p => ctx.lineTo(xOf(p.ms), yOf(p.v)));
