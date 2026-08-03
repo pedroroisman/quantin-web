@@ -262,7 +262,7 @@ function drawPerfChart(
 
   const dark = isDark();
   const ACC = "#1D9E75", SPY = "#7090AA";
-  const BG   = dark ? "#111822" : "#ffffff";
+  const BG   = getComputedStyle(document.documentElement).getPropertyValue("--bg-primary").trim() || (dark ? "#111822" : "#ffffff");
   const GRID = dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)";
   const LBL  = dark ? "rgba(200,220,240,0.45)"  : "rgba(0,0,0,0.32)";
   const REB  = dark ? "rgba(255,255,255,0.07)"  : "rgba(0,0,0,0.07)";
@@ -273,7 +273,7 @@ function drawPerfChart(
   const xOf  = (i: number) => PAD.l + (i / (data.length - 1)) * CW;
   const yOf  = (v: number) => PAD.t + CH - ((v - minV) / (maxV - minV)) * CH;
 
-  ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H);
+  ctx.clearRect(0, 0, W, H);
   ctx.font = "10px ui-monospace, monospace"; ctx.textAlign = "right"; ctx.setLineDash([]);
   for (let i = 0; i <= 4; i++) {
     const v = minV + (i / 4) * (maxV - minV), y = yOf(v);
@@ -340,7 +340,7 @@ function drawGeoDonut(canvas: HTMLCanvasElement, segs: GeoSeg[]) {
     ctx.fillStyle = s.color; ctx.fill(); angle += sw;
   });
   ctx.beginPath(); ctx.arc(cx, cy, inner, 0, Math.PI * 2);
-  ctx.fillStyle = dark ? "#111822" : "#ffffff"; ctx.fill();
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--bg-primary").trim() || (dark ? "#111822" : "#ffffff"); ctx.fill();
   ctx.fillStyle = dark ? "#C4D2E6" : "#091628";
   ctx.font = "bold 12px ui-monospace, monospace"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
   ctx.fillText(`${segs.reduce((n, s) => n + s.tickers.length, 0)}`, cx, cy - 4);
@@ -362,13 +362,13 @@ function drawExpandChart(
 
   const dark = isDark();
   const ACC = "#1D9E75", SPY = "#7090AA";
-  const BG   = dark ? "#111822" : "#ffffff";
+  const BG   = getComputedStyle(document.documentElement).getPropertyValue("--bg-primary").trim() || (dark ? "#111822" : "#ffffff");
   const GRID = dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)";
   const LBL  = dark ? "rgba(200,220,240,0.45)" : "rgba(0,0,0,0.32)";
   const PAD  = { t: 10, r: 12, b: 28, l: 40 };
   const CW   = W - PAD.l - PAD.r, CH = H - PAD.t - PAD.b;
 
-  ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H);
+  ctx.clearRect(0, 0, W, H);
 
   const entry = new Date(entryDateStr).getTime();
   const tPts = Object.entries(tickerCumrets)
@@ -988,10 +988,6 @@ export function Dashboard() {
           );
         })()}
 
-        {chartData && chartData.series.length > 1 && (
-          <PerfChart series={chartData.series} rebalances={chartData.rebalances} />
-        )}
-
         <p style={{ fontFamily: outfit, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--accent)", marginBottom: "0.75rem" }}>
           Holdings · {portfolio?.portfolio.length ?? "—"} positions · Equal weight
         </p>
@@ -1016,6 +1012,10 @@ export function Dashboard() {
             </div>
             <IndustryBars holdings={portfolio.portfolio} />
           </div>
+        )}
+
+        {chartData && chartData.series.length > 1 && (
+          <PerfChart series={chartData.series} rebalances={chartData.rebalances} />
         )}
 
         {chartData && chartData.rebalances.length > 0 && (
