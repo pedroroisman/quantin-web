@@ -186,6 +186,19 @@ interface RebEvent     { date: string; added: string[]; dropped: string[]; held:
 interface ChartData    { series: ChartSeries[]; rebalances: RebEvent[]; }
 interface GeoSeg       { label: string; pct: number; color: string; tickers: string[]; }
 interface IndSeg       { label: string; pct: number; color: string; tickers: string[]; }
+interface SecSeg       { label: string; pct: number; color: string; tickers: string[]; }
+
+const SEC_COLORS: Record<string, string> = {
+  "Technology":  "#185FA5",
+  "ETF":         "#1D9E75",
+  "Energy":      "#D4963A",
+  "Financials":  "#F59E0B",
+  "Utilities":   "#10B981",
+  "Consumer":    "#EC4899",
+  "Healthcare":  "#8B5CF6",
+  "Industrials": "#6B7280",
+  "Commodity":   "#C8A060",
+};
 
 type AlertKey = "exit" | "entry" | "position";
 const defaultAlerts: Record<AlertKey, boolean> = { exit: true, entry: true, position: true };
@@ -227,6 +240,13 @@ function computeInd(holdings: PortfolioHolding[]): IndSeg[] {
   holdings.forEach(h => { const g = TICKER_IND[h.ticker] ?? "Other"; (counts[g] ??= []).push(h.ticker); });
   return Object.entries(counts).sort((a, b) => b[1].length - a[1].length)
     .map(([label, tickers]) => ({ label, pct: (tickers.length / holdings.length) * 100, tickers, color: IND_COLORS[label] ?? "#8A8F9A" }));
+}
+
+function computeSec(holdings: PortfolioHolding[]): SecSeg[] {
+  const counts: Record<string, string[]> = {};
+  holdings.forEach(h => { const g = TICKER_NAMES[h.ticker]?.sector ?? "Other"; (counts[g] ??= []).push(h.ticker); });
+  return Object.entries(counts).sort((a, b) => b[1].length - a[1].length)
+    .map(([label, tickers]) => ({ label, pct: (tickers.length / holdings.length) * 100, tickers, color: SEC_COLORS[label] ?? "#8A8F9A" }));
 }
 
 // ── Chart drawing helpers ─────────────────────────────────────────────────────
@@ -734,6 +754,30 @@ function IndustryBars({ holdings }: { holdings: PortfolioHolding[] }) {
   );
 }
 
+// ── SectorComposition ─────────────────────────────────────────────────────────
+function SectorComposition({ holdings }: { holdings: PortfolioHolding[] }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const segs = useMemo(() => computeSec(holdings), [holdings]);
+  useEffect(() => { if (canvasRef.current && segs.length) drawGeoDonut(canvasRef.current, segs); }, [segs]);
+  return (
+    <div style={{ background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", padding: "1.25rem", borderRadius: "var(--radius-lg)" }}>
+      <p style={{ fontFamily: outfit, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--accent)", marginBottom: 14, marginTop: 0 }}>Sector</p>
+      <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+        <canvas ref={canvasRef} style={{ flexShrink: 0 }} />
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
+          {segs.map(s => (
+            <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ width: 8, height: 8, borderRadius: 2, background: s.color, flexShrink: 0 }} />
+              <span style={{ fontSize: 11, color: "var(--text-secondary)", flex: 1 }}>{s.label}</span>
+              <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{s.pct.toFixed(1)}%</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── RebalanceTimeline ─────────────────────────────────────────────────────────
 function RebalanceTimeline({ rebalances }: { rebalances: RebEvent[] }) {
   // Last 10, most-recent first
@@ -965,9 +1009,10 @@ export function Dashboard() {
         )}
 
         {portfolio && portfolio.portfolio.length > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "2rem" }}>
-            <GeoComposition holdings={portfolio.portfolio} />
-            <IndustryBars   holdings={portfolio.portfolio} />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem", marginBottom: "2rem" }}>
+            <GeoComposition    holdings={portfolio.portfolio} />
+            <SectorComposition holdings={portfolio.portfolio} />
+            <IndustryBars      holdings={portfolio.portfolio} />
           </div>
         )}
 
