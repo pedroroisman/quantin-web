@@ -400,9 +400,9 @@ export function Landing() {
         {/* Hero */}
         <main className="hero-main" style={{ maxWidth: 1440, margin: "0 auto", padding: "4rem max(2rem, 6%) 6rem" }}>
 
-          {/* Logo mark — centered */}
+          {/* Logo + wordmark — centered */}
           <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
-            <QuantinLogo iconSize={52} showText={false} />
+            <QuantinLogo iconSize={52} showText={true} gap={14} />
           </div>
 
           {/* Two-column: content left, ticker right */}

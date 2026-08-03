@@ -4,28 +4,23 @@
 
 ## What it is
 
-Quantin (quantin.finance) gives retail investors access to a systematic, data-driven stock portfolio. Every two months, a quantitative model screens 798 US stocks and ETFs, runs 150 backtested strategies against 8 years of real market data, detects the current market regime using machine learning, and selects the top 15 positions by risk-adjusted momentum.
+Quantin (quantin.finance) gives retail investors access to a systematic, data-driven stock portfolio. Every two months, a quantitative model screens US stocks and ETFs, runs backtested strategies against years of real market data, detects the current market regime using machine learning, and selects the top 15 positions by risk-adjusted momentum.
 
 Subscribers receive the current portfolio and email or push alerts every time the model adds a new pick, exits a position, or signals a move to cash.
 
 ## How the model works
 
-1. **Parameters**: 798 stocks and ETFs screened. 150 strategy combinations tested. Lookback windows from 3 to 12 months. Portfolio size: 15 stocks. Rebalance frequency: every 2 months. Equal weighting.
+1. **Universe screening**: A broad universe of US stocks and ETFs is screened every two months.
+2. **Backtesting**: Multiple strategies are tested against historical market data using walk-forward validation.
+3. **Regime detection**: A machine learning model classifies the current market environment.
+4. **Portfolio construction**: The top 15 positions are selected by risk-adjusted momentum, equally weighted.
 
-2. **Backtesting**: Each of the 150 strategies is tested against 8 years of real market data (2017–present) using walk-forward validation to avoid lookahead bias.
+## Historical performance (backtest, Feb 2018 – present)
 
-3. **Market regime detection**: A machine learning model classifies current market conditions to determine which type of environment the portfolio is operating in.
-
-4. **Strategy selection**: A second machine learning step matches the best-performing strategy to the current market regime.
-
-5. **Portfolio construction**: Walk-forward validation across 50 rebalance periods. Stocks ranked by risk-adjusted momentum. Top 15 selected with equal weight.
-
-## Historical performance (backtest, Feb 2018 – Jun 2026)
-
-- Annual return: +23.6% (S&P 500: +14.5%)
-- Maximum drawdown: −8.4% (S&P 500: −33.7%)
-- Sharpe ratio: 1.95 (S&P 500: 0.80)
-- $10,000 invested in Feb 2018 → $58,003 by Jun 2026 (S&P 500: $30,714)
+- Annual return: +26.5% (S&P 500: +14.5%)
+- Maximum drawdown: −9.5% (S&P 500: −33.7%)
+- Sharpe ratio: 2.05 (S&P 500: 0.80)
+- Annual outperformance vs S&P 500: +12.0pp
 
 All figures are walk-forward validated with no lookahead bias.
 
@@ -40,7 +35,7 @@ A free historical snapshot of the portfolio as it stood 90 days ago is available
 ## Key terms
 
 - **Walk-forward validation**: A backtesting method that simulates real-world conditions by training on past data and testing on future data in sequence, preventing overfitting.
-- **Sharpe ratio**: Return earned per unit of risk. Above 1 is considered strong; 1.95 means the model earns nearly twice as much return per unit of risk as the S&P 500.
+- **Sharpe ratio**: Return earned per unit of risk. Above 1 is considered strong; 2.05 means Quantin earns roughly twice as much return per unit of risk as the S&P 500.
 - **Max drawdown**: The largest peak-to-trough decline in portfolio value. A lower drawdown means less capital at risk during market downturns.
 - **Regime detection**: A machine learning technique that classifies the current market environment to adapt strategy selection accordingly.
 - **Equal weight**: Each of the 15 positions receives the same allocation (≈6.7% of portfolio), avoiding concentration risk.
