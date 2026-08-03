@@ -129,7 +129,6 @@ const GEO_COLORS: Record<string, string> = {
   "Brazil":             "#B5621A",
   "Finland":            "#7090AA",
   "Emerging Markets":   "#C05080",
-  "United States":      "#185FA5",
 };
 
 const IND_COLORS: Record<string, string> = {
