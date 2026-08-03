@@ -623,7 +623,7 @@ export function Dashboard() {
               {portfolio ? portfolio.portfolio.map((h, i) => {
                 const info = TICKER_NAMES[h.ticker] ?? { name: "", sector: "" };
                 const pos  = h.position ?? "long";
-                const perf = h.performance;
+                const perf = h.performance ?? h.performance_since_subscribed;
                 return (
                   <tr key={h.ticker} style={{ background: i % 2 === 0 ? "var(--bg-primary)" : "transparent" }}>
                     <td style={{ ...tdL, padding: "11px 8px 11px 1.25rem" }}>
