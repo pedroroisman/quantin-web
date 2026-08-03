@@ -1009,10 +1009,12 @@ export function Dashboard() {
         )}
 
         {portfolio && portfolio.portfolio.length > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem", marginBottom: "2rem" }}>
-            <GeoComposition    holdings={portfolio.portfolio} />
-            <SectorComposition holdings={portfolio.portfolio} />
-            <IndustryBars      holdings={portfolio.portfolio} />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "2rem" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <GeoComposition    holdings={portfolio.portfolio} />
+              <SectorComposition holdings={portfolio.portfolio} />
+            </div>
+            <IndustryBars holdings={portfolio.portfolio} />
           </div>
         )}
 
