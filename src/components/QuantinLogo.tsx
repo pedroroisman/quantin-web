@@ -14,17 +14,25 @@ export function QuantinLogo({ iconSize = 20, showText = true, gap = 8, fontWeigh
         <polygon points="11,5 17,5 19,7 19,21 17,23 11,23 9,21 9,7" fill="#00D97E" transform="rotate(12,14,14)"/>
       </svg>
       {showText && (
-        <span style={{
-          fontFamily: "'Cormorant Garamond', Garamond, Georgia, serif",
-          fontWeight,
-          fontSize: Math.round(iconSize * 0.85),
-          color: "var(--text-primary)",
-          letterSpacing: Math.max(1, Math.round(iconSize * 0.1)),
-          lineHeight: 1,
-          textTransform: "uppercase",
-        }}>
-          quantin
-        </span>
+        fontWeight >= 400 ? (
+          <img
+            src="/logo-quantin.png"
+            alt="QUANTIN"
+            style={{ height: Math.round(iconSize * 0.85), width: "auto", display: "block" }}
+          />
+        ) : (
+          <span style={{
+            fontFamily: "'Cormorant Garamond', Garamond, Georgia, serif",
+            fontWeight,
+            fontSize: Math.round(iconSize * 0.85),
+            color: "var(--text-primary)",
+            letterSpacing: Math.max(1, Math.round(iconSize * 0.1)),
+            lineHeight: 1,
+            textTransform: "uppercase",
+          }}>
+            quantin
+          </span>
+        )
       )}
     </span>
   );
