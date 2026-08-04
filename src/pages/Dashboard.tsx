@@ -5,6 +5,9 @@ import { supabase } from "../lib/supabase";
 import { useRegime } from "../hooks/useRegime";
 import { track, identify } from "../lib/analytics";
 
+// ── Maintenance banner — set to true to show, false to hide ──────────────────
+const SHOW_MAINTENANCE_BANNER = true;
+
 // ── Static metadata ───────────────────────────────────────────────────────────
 const TICKER_NAMES: Record<string, { name: string; sector: string }> = {
   AAPL: { name: "Apple",                    sector: "Technology"  },
@@ -1014,6 +1017,20 @@ export function Dashboard() {
       </nav>
 
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "2.5rem 2rem 6rem" }}>
+
+        {SHOW_MAINTENANCE_BANNER && (
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 12, background: "#FEF9EC", border: "0.5px solid #E8C84A", borderRadius: 8, padding: "12px 16px", marginBottom: "1.75rem" }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, marginTop: 1 }}>
+              <circle cx="8" cy="8" r="7" stroke="#C9A226" strokeWidth="1.2"/>
+              <rect x="7.3" y="4.5" width="1.4" height="4.5" rx="0.7" fill="#C9A226"/>
+              <rect x="7.3" y="10.5" width="1.4" height="1.4" rx="0.7" fill="#C9A226"/>
+            </svg>
+            <div>
+              <p style={{ fontFamily: outfit, fontWeight: 500, fontSize: 13, color: "#7A5C00", margin: "0 0 3px" }}>Model update in progress</p>
+              <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "#9A7C20", margin: 0, lineHeight: 1.5 }}>We're running a full portfolio recalculation. The data shown reflects the last validated state. Performance metrics and current holdings will be updated shortly.</p>
+            </div>
+          </div>
+        )}
 
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "var(--info-bg)", border: "0.5px solid var(--info-border)", borderRadius: 100, padding: "5px 13px", marginBottom: "1.5rem" }}>
           <div style={{ width: 7, height: 7, background: regimeColors.dot, borderRadius: "50%", flexShrink: 0 }} />
