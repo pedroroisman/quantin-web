@@ -2,9 +2,10 @@ interface Props {
   iconSize?: number;
   showText?: boolean;
   gap?: number;
+  fontWeight?: number;
 }
 
-export function QuantinLogo({ iconSize = 20, showText = true, gap = 8 }: Props) {
+export function QuantinLogo({ iconSize = 20, showText = true, gap = 8, fontWeight = 300 }: Props) {
   const w = Math.round((25 / 26) * iconSize);
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap }}>
@@ -15,7 +16,7 @@ export function QuantinLogo({ iconSize = 20, showText = true, gap = 8 }: Props) 
       {showText && (
         <span style={{
           fontFamily: "'Cormorant Garamond', Garamond, Georgia, serif",
-          fontWeight: 300,
+          fontWeight,
           fontSize: Math.round(iconSize * 0.85),
           color: "var(--text-primary)",
           letterSpacing: Math.max(1, Math.round(iconSize * 0.1)),
