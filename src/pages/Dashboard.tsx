@@ -60,6 +60,11 @@ const TICKER_NAMES: Record<string, { name: string; sector: string }> = {
   WDC:  { name: "Western Digital",           sector: "Technology"  },
   XLK:  { name: "SPDR Technology ETF",       sector: "ETF"         },
   XOM:  { name: "ExxonMobil",                sector: "Energy"      },
+  ACWI: { name: "iShares MSCI ACWI ETF",     sector: "ETF"         },
+  DFLV: { name: "Dimensional US Large Value", sector: "ETF"         },
+  HSIC: { name: "Henry Schein",              sector: "Healthcare"  },
+  RARE: { name: "Ultragenyx Pharmaceutical", sector: "Healthcare"  },
+  VTV:  { name: "Vanguard Value ETF",        sector: "ETF"         },
 };
 
 const TICKER_GEO: Record<string, string> = {
@@ -81,6 +86,8 @@ const TICKER_GEO: Record<string, string> = {
   EWY:"South Korea",  GRID:"Global",          ITUB:"Brazil",
   NOK:"Finland",      PBR:"Brazil",           RYDAF:"Netherlands",
   SPDW:"Intl Dev. ex-US", TSM:"Taiwan",       VWO:"Emerging Markets",
+  ACWI:"Global",      DFLV:"United States",   HSIC:"United States",
+  RARE:"United States", VTV:"United States",
 };
 
 const TICKER_IND: Record<string, string> = {
@@ -115,6 +122,9 @@ const TICKER_IND: Record<string, string> = {
   FNDB:"US Dividend ETF",         SCHD:"US Dividend ETF",
   DGRO:"US Dividend Growth ETF",  MGV:"US Mega Cap ETF",
   SPXL:"Leveraged US Equity",
+  DFLV:"US Value Factor ETF",     VTV:"US Value Factor ETF",
+  ACWI:"Global Equity ETF",
+  HSIC:"Healthcare Distribution", RARE:"Rare Disease Biotech",
 };
 
 const GEO_COLORS: Record<string, string> = {
@@ -167,6 +177,9 @@ const IND_COLORS: Record<string, string> = {
   "US Dividend Growth ETF":  "#1A5EA7",
   "US Mega Cap ETF":         "#0A4E97",
   "Leveraged US Equity":     "#9AAABB",
+  "Global Equity ETF":       "#2A8080",
+  "Healthcare Distribution": "#7B52AB",
+  "Rare Disease Biotech":    "#9B72CB",
 };
 
 // ── Types ─────────────────────────────────────────────────────────────────────
