@@ -3,7 +3,7 @@ import { useRegime } from "../hooks/useRegime";
 import { useNavigate } from "react-router-dom";
 
 // ── Maintenance banner — set to true to show, false to hide ──────────────────
-const SHOW_MAINTENANCE_BANNER = true;
+const SHOW_MAINTENANCE_BANNER = false;
 import {
   LineChart, Line, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid,
@@ -22,14 +22,14 @@ const FALLBACK_CHART_DATA = [
   { period: "2023",    quantin: 35610, sp500: 19260  },
   { period: "2024",    quantin: 43760, sp500: 24420  },
   { period: "2025",    quantin: 58330, sp500: 28660  },
-  { period: "Jun '26", quantin: 70115, sp500: 30714  },
+  { period: "Aug '26", quantin: 71210, sp500: 31099  },
 ];
 
 const ALL_TIME_METRICS = [
   {
-    val: "+26.5%", label: "Annual return", sub: "vs +14.5% S&P 500",
+    val: "+26.2%", label: "Annual return", sub: "vs +14.4% S&P 500",
     valueColor: "#1D9E75",
-    tooltip: "Average yearly return compounded over the full backtest period (Feb 2018 – Jun 2026).",
+    tooltip: "Average yearly return compounded over the full backtest period (Feb 2018 – Aug 2026).",
   },
   {
     val: "−9.5%", label: "Max drawdown", sub: "vs −33.7% S&P 500",
@@ -37,18 +37,18 @@ const ALL_TIME_METRICS = [
     tooltip: "Largest peak-to-trough decline in portfolio value. Lower is better — the S&P 500 fell −33.7% in 2020 alone.",
   },
   {
-    val: "2.05", label: "Sharpe ratio", sub: "vs 0.80 S&P 500",
+    val: "2.00", label: "Sharpe ratio", sub: "vs 0.80 S&P 500",
     valueColor: "#059669",
-    tooltip: "Risk-adjusted return: annual excess return divided by volatility. Above 1.0 is considered strong — Quantin's 2.05 means high return per unit of risk taken.",
+    tooltip: "Risk-adjusted return: annual excess return divided by volatility. Above 1.0 is considered strong — Quantin's 2.00 means high return per unit of risk taken.",
   },
   {
-    val: "+12.0pp", label: "vs S&P 500", sub: "annual outperformance",
+    val: "+11.8pp", label: "vs S&P 500", sub: "annual outperformance",
     valueColor: "#059669",
-    tooltip: "Quantin's annualized return has exceeded the S&P 500's by 12.0 percentage points per year since Feb 2018.",
+    tooltip: "Quantin's annualized return has exceeded the S&P 500's by 11.8 percentage points per year since Feb 2018.",
   },
 ];
 
-const ALL_TIME_INTERPRETATION = "Since Feb 2018, Quantin has compounded at +26.5%/yr — outperforming the S&P 500 by 12.0pp per year — while limiting its worst drawdown to just −9.5%, compared to −33.7% for the index during the 2020 crash.";
+const ALL_TIME_INTERPRETATION = "Since Feb 2018, Quantin has compounded at +26.2%/yr — outperforming the S&P 500 by 11.8pp per year — while limiting its worst drawdown to just −9.5%, compared to −33.7% for the index during the 2020 crash.";
 
 interface SeriesPoint { date: string; model: number; spy: number; }
 interface MetricData  { val: string; label: string; sub: string; valueColor: string; tooltip: string; }

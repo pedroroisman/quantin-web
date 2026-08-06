@@ -6,7 +6,7 @@ import { useRegime } from "../hooks/useRegime";
 import { track, identify } from "../lib/analytics";
 
 // ── Maintenance banner — set to true to show, false to hide ──────────────────
-const SHOW_MAINTENANCE_BANNER = true;
+const SHOW_MAINTENANCE_BANNER = false;
 
 // ── Static metadata ───────────────────────────────────────────────────────────
 const TICKER_NAMES: Record<string, { name: string; sector: string }> = {
@@ -996,7 +996,7 @@ export function Dashboard() {
             </div>
             <div style={{ width: 32, height: "0.5px", background: "#e0ddd8", marginBottom: "2.5rem" }} />
             <div style={{ display: "flex", gap: "2.5rem", justifyContent: "center", marginBottom: "3rem" }}>
-              {[{ label: "Current picks", val: "15 stocks" }, { label: "Next rebalance", val: "Aug 2026" }, { label: "Annual return", val: "+26.4%" }].map(({ label, val }) => (
+              {[{ label: "Current picks", val: "15 stocks" }, { label: "Next rebalance", val: "Sep 2026" }, { label: "Annual return", val: "+26.2%" }].map(({ label, val }) => (
                 <div key={label} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
                   <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 11, color: "#888780", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</span>
                   <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 15, color: "#1e1e1c" }}>{val}</span>

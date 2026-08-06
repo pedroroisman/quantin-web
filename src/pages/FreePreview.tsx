@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button, QuantinLogo } from "../components/ui";
 
 // ── Maintenance banner ────────────────────────────────────────────────────────
-const SHOW_MAINTENANCE_BANNER = true;
+const SHOW_MAINTENANCE_BANNER = false;
 
 const outfit   = "'Outfit', sans-serif";
 const playfair = "'Playfair Display', serif";
