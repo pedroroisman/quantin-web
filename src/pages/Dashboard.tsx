@@ -190,6 +190,7 @@ interface PortfolioHolding {
   ticker: string; weight: number; position?: string;
   performance?: number | null; entry_date?: string | null;
   performance_since_subscribed?: number | null;
+  strategy?: string | null; confidence?: number | null;
 }
 interface PortfolioData {
   portfolio: PortfolioHolding[]; as_of: string;
@@ -454,7 +455,6 @@ function DonutChart({ title, segs }: { title: string; segs: DonutSeg[] }) {
 function drawExpandChart(
   canvas: HTMLCanvasElement,
   tickerCumrets: Record<string, number>,
-  series: ChartSeries[],
   entryDateStr: string
 ) {
   const W = canvas.clientWidth, H = canvas.clientHeight;
@@ -463,7 +463,7 @@ function drawExpandChart(
   canvas.width = W * dpr; canvas.height = H * dpr;
   const ctx = canvas.getContext("2d")!; ctx.scale(dpr, dpr);
 
-  const ACC = "#1D9E75", SPY = "#7090AA";
+  const ACC  = "#1D9E75";
   const BG   = cv("--bg-primary")    || "#232540";
   const GRID = cv("--border-subtle") || "rgba(255,255,255,0.07)";
   const LBL  = cv("--text-tertiary") || "#5D7A94";
@@ -488,13 +488,8 @@ function drawExpandChart(
   const vBase = tPts[0].v;
   const tNorm = tPts.map(p => ({ ms: p.ms, v: (p.v / vBase) * 100 }));
 
-  const sAfter = series.filter(d => new Date(d.date).getTime() >= entry);
-  const sNorm  = sAfter.length >= 1
-    ? sAfter.map(d => ({ ms: new Date(d.date).getTime(), v: (d.spy / sAfter[0].spy) * 100 }))
-    : [];
-
-  const allMs = [...tNorm, ...sNorm].map(p => p.ms);
-  const allV  = [...tNorm, ...sNorm].map(p => p.v);
+  const allMs = tNorm.map(p => p.ms);
+  const allV  = tNorm.map(p => p.v);
   if (!allMs.length) return;
 
   const msMin = Math.min(...allMs), msMax = Math.max(...allMs);
@@ -523,13 +518,6 @@ function drawExpandChart(
     ctx.fillStyle = LBL;
     ctx.fillText(d.toLocaleDateString("en-US", { month: "short", year: frac === 0 || frac === 1 ? "2-digit" : undefined }), xOf(ms), PAD.t + CH + 18);
   });
-
-  // SPY
-  if (sNorm.length >= 2) {
-    ctx.beginPath(); ctx.moveTo(xOf(sNorm[0].ms), yOf(sNorm[0].v));
-    sNorm.forEach(p => ctx.lineTo(xOf(p.ms), yOf(p.v)));
-    ctx.strokeStyle = SPY; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]); ctx.stroke(); ctx.setLineDash([]);
-  }
 
   // Ticker line + fill
   if (tNorm.length >= 2) {
@@ -673,9 +661,8 @@ function PerfChart({ series, rebalances }: { series: ChartSeries[]; rebalances: 
 }
 
 // ── ExpandPanel ───────────────────────────────────────────────────────────────
-function ExpandPanel({ h, series, cumrets, onClose }: {
+function ExpandPanel({ h, cumrets, onClose }: {
   h: PortfolioHolding;
-  series: ChartSeries[];
   cumrets: Record<string, Record<string, number>>;
   onClose: () => void;
 }) {
@@ -684,24 +671,24 @@ function ExpandPanel({ h, series, cumrets, onClose }: {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !h.entry_date) return;
-    const draw = () => drawExpandChart(canvas, cumrets[h.ticker] ?? {}, series, h.entry_date!);
+    const draw = () => drawExpandChart(canvas, cumrets[h.ticker] ?? {}, h.entry_date!);
     draw();
     const obs = new ResizeObserver(draw);
     obs.observe(canvas);
     return () => obs.disconnect();
-  }, [h, series, cumrets]);
+  }, [h, cumrets]);
 
-  const perf     = h.performance ?? h.performance_since_subscribed;
-  const spySince = spyPerfSince(series, h.entry_date);
-  const pos      = h.position ?? "long";
-  const pct      = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
+  const perf = h.performance ?? h.performance_since_subscribed;
+  const pos  = h.position ?? "long";
+  const pct  = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
+  const confLabel = h.confidence != null ? `${Math.round(h.confidence * 100)}%` : "—";
 
   const stats = [
-    { label: "Since entry", val: perf != null ? pct(perf) : "—",          c: perf != null && perf > 0 ? "#1D9E75" : perf != null && perf < 0 ? "#B5621A" : undefined },
-    { label: "vs S&P 500",  val: spySince != null ? pct(spySince) : "—",  c: undefined },
+    { label: "Since entry", val: perf != null ? pct(perf) : "—", c: perf != null && perf > 0 ? "#1D9E75" : perf != null && perf < 0 ? "#B5621A" : undefined },
+    { label: "Strategy",    val: h.strategy ?? "—",               c: undefined, small: true },
+    { label: "Confidence",  val: confLabel,                        c: h.confidence != null && h.confidence >= 0.7 ? "#1D9E75" : h.confidence != null && h.confidence >= 0.5 ? "#B5621A" : "var(--text-tertiary)" },
     { label: "Position",    val: pos.charAt(0).toUpperCase() + pos.slice(1), c: pos === "long" ? "#1D9E75" : "var(--text-tertiary)" },
     { label: "Entry",       val: h.entry_date ? fmtMonthYear(h.entry_date) : "—", c: undefined },
-    { label: "Weight",      val: "6.67%",                                   c: undefined },
   ];
 
   return (
@@ -714,11 +701,7 @@ function ExpandPanel({ h, series, cumrets, onClose }: {
           <div style={{ marginLeft: "auto", display: "flex", gap: 14, fontSize: 10, color: "var(--text-secondary)" }}>
             <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
               <svg width="14" height="6"><line x1="0" y1="3" x2="14" y2="3" stroke="#1D9E75" strokeWidth="2"/></svg>
-              {h.ticker}
-            </span>
-            <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <svg width="14" height="6"><line x1="0" y1="3" x2="14" y2="3" stroke="#7090AA" strokeWidth="1.5" strokeDasharray="4,3"/></svg>
-              S&P 500
+              Strategy return since entry
             </span>
           </div>
         </div>
@@ -727,10 +710,10 @@ function ExpandPanel({ h, series, cumrets, onClose }: {
       </div>
       {/* Stats side */}
       <div style={{ padding: "14px" }}>
-        {stats.map(({ label, val, c }, i) => (
+        {stats.map(({ label, val, c, small }, i) => (
           <div key={label} style={{ paddingBottom: 10, marginBottom: 10, borderBottom: i < stats.length - 1 ? "0.5px solid var(--border-subtle)" : "none" }}>
             <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text-tertiary)", marginBottom: 3 }}>{label}</div>
-            <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 14, fontWeight: 700, letterSpacing: "-0.02em", color: c ?? "var(--text-primary)" }}>{val}</div>
+            <div style={{ fontFamily: small ? "inherit" : "ui-monospace, monospace", fontSize: small ? 10 : 14, fontWeight: 700, letterSpacing: small ? 0 : "-0.02em", color: c ?? "var(--text-primary)", lineHeight: 1.3 }}>{val}</div>
           </div>
         ))}
       </div>
@@ -785,7 +768,6 @@ function HoldingsGrid({ holdings, series, cumrets }: {
           <ExpandPanel
             key="__expand"
             h={holdings[activeIdx]}
-            series={series}
             cumrets={cumrets}
             onClose={() => setActiveIdx(null)}
           />
