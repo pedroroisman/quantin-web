@@ -483,7 +483,7 @@ export function FreePreview() {
         <button onClick={() => navigate("/")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, lineHeight: 0 }}>
           <QuantinLogo iconSize={22} />
         </button>
-        <Button size="sm" onClick={() => navigate("/subscribe")}>Get the portfolio — $25/mo</Button>
+        <Button size="sm" onClick={() => navigate("/signin?mode=signup")}>Get the portfolio — $25/mo</Button>
       </nav>
 
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "2.5rem 2rem 6rem" }}>
@@ -570,7 +570,7 @@ export function FreePreview() {
             <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "var(--text-tertiary)", margin: 0 }}>Updated every 2 months · email alert on every change</p>
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
-            <Button size="md" onClick={() => navigate("/subscribe")}>Get the portfolio — $25/mo</Button>
+            <Button size="md" onClick={() => navigate("/signin?mode=signup")}>Get the portfolio — $25/mo</Button>
             <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)" }}>Cancel anytime · no commitment</span>
           </div>
         </div>

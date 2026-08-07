@@ -20,10 +20,13 @@ export function SignIn() {
   const [mode, setMode] = useState<"signin" | "signup">(
     params.get("mode") === "signup" ? "signup" : "signin"
   );
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [name, setName]           = useState("");
+  const [company, setCompany]     = useState("");
+  const [email, setEmail]         = useState("");
+  const [password, setPassword]   = useState("");
+  const [confirm, setConfirm]     = useState("");
+  const [loading, setLoading]     = useState(false);
+  const [error, setError]         = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -45,7 +48,15 @@ export function SignIn() {
     setError("");
 
     if (mode === "signup") {
-      const { error } = await supabase.auth.signUp({ email, password });
+      if (password !== confirm) {
+        setError("Passwords don't match.");
+        setLoading(false);
+        return;
+      }
+      const { error } = await supabase.auth.signUp({
+        email, password,
+        options: { data: { full_name: name.trim(), company: company.trim() } },
+      });
       if (error) {
         setError(error.message === "User already registered"
           ? "This email already has an account. Sign in instead."
@@ -148,6 +159,28 @@ export function SignIn() {
 
           {/* Email + password */}
           <form onSubmit={handleSubmit} style={{ textAlign: "left" }}>
+            {mode === "signup" && (
+              <>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={labelStyle}>Name</label>
+                  <input
+                    type="text" required value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="Jane Smith"
+                    style={inputStyle}
+                  />
+                </div>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={labelStyle}>Company <span style={{ color: "var(--text-tertiary)", textTransform: "none", letterSpacing: 0, fontSize: 10 }}>(optional)</span></label>
+                  <input
+                    type="text" value={company}
+                    onChange={e => setCompany(e.target.value)}
+                    placeholder="Acme Capital"
+                    style={inputStyle}
+                  />
+                </div>
+              </>
+            )}
             <div style={{ marginBottom: 12 }}>
               <label style={labelStyle}>Email</label>
               <input
@@ -157,7 +190,7 @@ export function SignIn() {
                 style={inputStyle}
               />
             </div>
-            <div style={{ marginBottom: 16 }}>
+            <div style={{ marginBottom: mode === "signup" ? 12 : 16 }}>
               <label style={labelStyle}>Password</label>
               <input
                 type="password" required value={password}
@@ -167,6 +200,17 @@ export function SignIn() {
                 style={inputStyle}
               />
             </div>
+            {mode === "signup" && (
+              <div style={{ marginBottom: 16 }}>
+                <label style={labelStyle}>Confirm password</label>
+                <input
+                  type="password" required value={confirm}
+                  onChange={e => setConfirm(e.target.value)}
+                  placeholder="Repeat your password"
+                  style={inputStyle}
+                />
+              </div>
+            )}
 
             {error && (
               <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "#a32d2d", marginBottom: 12 }}>
@@ -196,13 +240,13 @@ export function SignIn() {
           }}>
             {mode === "signup" ? (
               <>Already have an account?{" "}
-                <span onClick={() => { setMode("signin"); setError(""); }} style={{ color: "#1D9E75", cursor: "pointer" }}>
+                <span onClick={() => { setMode("signin"); setError(""); setName(""); setCompany(""); setConfirm(""); }} style={{ color: "#1D9E75", cursor: "pointer" }}>
                   Sign in
                 </span>
               </>
             ) : (
               <>Don't have an account?{" "}
-                <span onClick={() => { setMode("signup"); setError(""); }} style={{ color: "#1D9E75", cursor: "pointer" }}>
+                <span onClick={() => { setMode("signup"); setError(""); setConfirm(""); }} style={{ color: "#1D9E75", cursor: "pointer" }}>
                   Subscribe — $25/mo
                 </span>
               </>

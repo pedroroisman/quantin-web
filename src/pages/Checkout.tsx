@@ -42,6 +42,7 @@ export function Checkout() {
   const [b2bLoading, setB2bLoading]         = useState(false);
   const [b2bPayMethod, setB2bPayMethod]     = useState<"now" | "invoice" | null>(null);
   const [b2bInvoiceSent, setB2bInvoiceSent] = useState(false);
+  const [b2bError, setB2bError]             = useState("");
 
   // Enterprise form
   const [showEnt, setShowEnt]       = useState(false);
@@ -296,7 +297,7 @@ export function Checkout() {
                     <button
                       key={method}
                       type="button"
-                      onClick={() => setB2bPayMethod(method)}
+                      onClick={() => { setB2bPayMethod(method); setB2bError(""); }}
                       style={{
                         flex: 1, padding: "8px 0", cursor: "pointer",
                         fontFamily: outfit, fontWeight: active ? 500 : 300, fontSize: 12,
@@ -323,8 +324,11 @@ export function Checkout() {
                   <Button
                     size="lg"
                     style={{ width: "100%", justifyContent: "center" }}
-                    disabled={b2bLoading || b2bPayMethod === null}
-                    onClick={b2bPayMethod === "invoice" ? handleB2BInvoice : handleB2B}
+                    disabled={b2bLoading}
+                    onClick={() => {
+                      if (!b2bPayMethod) { setB2bError("Please choose a payment method above."); return; }
+                      b2bPayMethod === "invoice" ? handleB2BInvoice() : handleB2B();
+                    }}
                   >
                     {b2bLoading
                       ? "Processing…"
@@ -332,7 +336,12 @@ export function Checkout() {
                         ? "Request invoice →"
                         : "Get started →"}
                   </Button>
-                  <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 11, color: "var(--text-tertiary)", textAlign: "center", marginTop: 8 }}>
+                  {b2bError && (
+                    <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "#a32d2d", textAlign: "center", marginTop: 6 }}>
+                      {b2bError}
+                    </p>
+                  )}
+                  <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 11, color: "var(--text-tertiary)", textAlign: "center", marginTop: b2bError ? 4 : 8 }}>
                     {b2bPayMethod === "invoice"
                       ? "We'll email you a Stripe invoice · net 30"
                       : b2bPayMethod === "now"

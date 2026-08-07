@@ -394,7 +394,7 @@ export function Landing() {
                 <span className="nav-secondary" style={{ display: "inline-flex" }}>
                   <Button variant="ghost" size="sm" onClick={() => { track("click_free_preview", { source: "nav" }); navigate("/preview"); }}>See free preview</Button>
                 </span>
-                <Button variant="primary" size="sm" onClick={() => { track("click_subscribe", { source: "nav" }); navigate("/subscribe"); }}>Get the portfolio</Button>
+                <Button variant="primary" size="sm" onClick={() => { track("click_subscribe", { source: "nav" }); navigate("/signin?mode=signup"); }}>Get the portfolio</Button>
               </>
             )}
           </div>
@@ -571,7 +571,10 @@ export function Landing() {
 
               {/* CTA */}
               <div className="cta-row" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", marginBottom: "0.9rem" }}>
-                <Button size="lg" onClick={() => { track("click_subscribe", { source: "hero_cta" }); navigate("/subscribe"); }}>
+                <Button size="lg" onClick={() => {
+                  track("click_subscribe", { source: "hero_cta" });
+                  navigate(authState === "subscribed" ? "/portfolio" : authState === "unsubscribed" ? "/subscribe" : "/signin?mode=signup");
+                }}>
                   Try free for 14 days
                 </Button>
                 <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
