@@ -232,15 +232,6 @@ const fmtMonthYear = (d: string) => new Date(d + "T00:00:00").toLocaleString("en
 const fmtDate  = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
 
-function spyPerfSince(series: ChartSeries[], entryDateStr: string | null | undefined): number | null {
-  if (!series.length || !entryDateStr) return null;
-  const entry = new Date(entryDateStr);
-  const after = series.filter(d => new Date(d.date) >= entry);
-  if (!after.length) return null;
-  const vS = after[0].spy, vN = series[series.length - 1].spy;
-  return vS ? (vN / vS - 1) * 100 : null;
-}
-
 function computeGeo(holdings: PortfolioHolding[]): GeoSeg[] {
   const counts: Record<string, string[]> = {};
   holdings.forEach(h => { const g = TICKER_GEO[h.ticker] ?? "Other"; (counts[g] ??= []).push(h.ticker); });
@@ -722,9 +713,8 @@ function ExpandPanel({ h, cumrets, onClose }: {
 }
 
 // ── HoldingsGrid ──────────────────────────────────────────────────────────────
-function HoldingsGrid({ holdings, series, cumrets }: {
+function HoldingsGrid({ holdings, cumrets }: {
   holdings: PortfolioHolding[];
-  series: ChartSeries[];
   cumrets: Record<string, Record<string, number>>;
 }) {
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
@@ -1056,7 +1046,6 @@ export function Dashboard() {
         {portfolio && portfolio.portfolio.length > 0 && (
           <HoldingsGrid
             holdings={portfolio.portfolio}
-            series={chartData?.series ?? []}
             cumrets={portfolio.ticker_cumrets ?? {}}
           />
         )}
