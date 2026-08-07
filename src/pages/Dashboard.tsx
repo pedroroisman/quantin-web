@@ -1080,7 +1080,11 @@ export function Dashboard() {
         </p>
         {portfolio && portfolio.portfolio.length > 0 && (
           <HoldingsGrid
-            holdings={portfolio.portfolio}
+            holdings={[...portfolio.portfolio].sort((a, b) => {
+              if (!a.entry_date) return 1;
+              if (!b.entry_date) return -1;
+              return a.entry_date < b.entry_date ? -1 : a.entry_date > b.entry_date ? 1 : 0;
+            })}
             cumrets={portfolio.ticker_cumrets ?? {}}
           />
         )}
