@@ -17,6 +17,8 @@ const TICKER_NAMES: Record<string, { name: string; sector: string }> = {
   ASML: { name: "ASML Holding",             sector: "Technology"  },
   AVDV: { name: "Avantis Intl Small Cap",   sector: "ETF"         },
   AVLV: { name: "Avantis US Large Cap Val", sector: "ETF"         },
+  AVUS: { name: "Avantis US Equity ETF",    sector: "ETF"         },
+  CAT:  { name: "Caterpillar",               sector: "Industrials" },
   CEG:  { name: "Constellation Energy",      sector: "Utilities"   },
   COP:  { name: "ConocoPhillips",            sector: "Energy"      },
   CRWD: { name: "CrowdStrike",               sector: "Technology"  },
@@ -50,6 +52,7 @@ const TICKER_NAMES: Record<string, { name: string; sector: string }> = {
   RYDAF:{ name: "Shell (Royal Dutch)",       sector: "Energy"      },
   SCHD: { name: "Schwab US Dividend ETF",    sector: "ETF"         },
   SIVR: { name: "Aberdeen Silver ETF",       sector: "Commodity"   },
+  SPHQ: { name: "Invesco S&P 500 Quality",  sector: "ETF"         },
   SMH:  { name: "VanEck Semiconductor ETF",  sector: "ETF"         },
   SOXX: { name: "iShares Semiconductor ETF", sector: "ETF"         },
   SPDW: { name: "SPDR Dev World ex-US",      sector: "ETF"         },
@@ -91,6 +94,7 @@ const TICKER_GEO: Record<string, string> = {
   SPDW:"Intl Dev. ex-US", TSM:"Taiwan",       VWO:"Emerging Markets",
   ACWI:"Global",      DFLV:"United States",   HSIC:"United States",
   RARE:"United States", VTV:"United States",
+  AVUS:"United States", CAT:"United States",  SPHQ:"United States",
 };
 
 const TICKER_IND: Record<string, string> = {
@@ -128,6 +132,7 @@ const TICKER_IND: Record<string, string> = {
   DFLV:"US Value Factor ETF",     VTV:"US Value Factor ETF",
   ACWI:"Global Equity ETF",
   HSIC:"Healthcare Distribution", RARE:"Rare Disease Biotech",
+  AVUS:"US Equity ETF",           CAT:"Heavy Machinery",       SPHQ:"US Quality ETF",
 };
 
 const GEO_COLORS: Record<string, string> = {
