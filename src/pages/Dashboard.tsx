@@ -683,7 +683,7 @@ function ExpandPanel({ h, cumrets, onClose }: {
   ];
 
   return (
-    <div style={{ gridColumn: "1 / -1", background: "var(--bg-primary)", borderTop: "2px solid #1D9E75", display: "grid", gridTemplateColumns: "1fr 184px" }}>
+    <div style={{ gridColumn: "1 / -1", background: "var(--bg-secondary)", borderTop: "2px solid #1D9E75", display: "grid", gridTemplateColumns: "1fr 184px", boxShadow: "inset 0 4px 16px rgba(0,0,0,0.18)" }}>
       {/* Chart side */}
       <div style={{ padding: "14px 16px 12px 14px", borderRight: "0.5px solid var(--border-subtle)", position: "relative" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
