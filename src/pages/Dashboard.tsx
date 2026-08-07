@@ -981,7 +981,20 @@ export function Dashboard() {
             </div>
             <div style={{ width: 32, height: "0.5px", background: "#e0ddd8", marginBottom: "2.5rem" }} />
             <div style={{ display: "flex", gap: "2.5rem", justifyContent: "center", marginBottom: "3rem" }}>
-              {[{ label: "Current picks", val: "15 stocks" }, { label: "Next rebalance", val: "Sep 2026" }, { label: "Annual return", val: "+26.2%" }].map(({ label, val }) => (
+              {(() => {
+                const n = portfolio?.portfolio?.length;
+                const lastRebDate = chartData?.rebalances?.[chartData.rebalances.length - 1]?.date;
+                const nextReb = lastRebDate
+                  ? new Date(new Date(lastRebDate).getTime() + 62 * 86400000)
+                      .toLocaleString("en-US", { month: "short", year: "numeric" })
+                  : "—";
+                const annRet = portfolio?.validation?.metrics?.cagr;
+                return [
+                  { label: "Current picks",  val: n != null ? `${n} stocks` : "—" },
+                  { label: "Next rebalance", val: nextReb },
+                  { label: "Annual return",  val: annRet != null ? `+${annRet.toFixed(1)}%` : "—" },
+                ];
+              })().map(({ label, val }) => (
                 <div key={label} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
                   <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 11, color: "#888780", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</span>
                   <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 15, color: "#1e1e1c" }}>{val}</span>
@@ -1042,7 +1055,7 @@ export function Dashboard() {
             { val: `${p6.model.total >= 0 ? "+" : ""}${p6.model.total.toFixed(1)}%`, label: "return last 6m",  tooltip: "Total return of the portfolio over the last 6 months." },
             { val: `${p6.model.max_dd.toFixed(1)}%`,                                  label: "max DD last 6m",  tooltip: "Largest peak-to-trough decline over the last 6 months." },
             { val: p6.model.sharpe.toFixed(2),                                         label: "Sharpe last 6m",  tooltip: "Risk-adjusted return (Sharpe ratio) over the last 6 months." },
-            { val: movLabel,                                                            label: "last rebalance",  tooltip: "Tickers added and removed at the most recent rebalance." },
+            { val: movLabel,                                                            label: "last moves",      tooltip: "Tickers added and removed at the most recent rebalance." },
           ] : [
             { val: "—", label: "return last 6m", tooltip: "" }, { val: "—", label: "max DD last 6m", tooltip: "" },
             { val: "—", label: "Sharpe last 6m",  tooltip: "" }, { val: "—", label: "last rebalance", tooltip: "" },
