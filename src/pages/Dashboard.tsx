@@ -197,10 +197,11 @@ interface PortfolioHolding {
   performance_since_subscribed?: number | null;
   strategy?: string | null; confidence?: number | null;
 }
+interface PeriodMetrics { cagr: number; sharpe: number; max_dd: number; total: number; final_10k: number; }
 interface PortfolioData {
   portfolio: PortfolioHolding[]; as_of: string;
   validation: { metrics: { cagr: number; sharpe: number; max_dd: number; total_return: number }; dollar_simulation: { final_model: number; final_spy: number } };
-  period_metrics: Record<string, { model: { total: number } }>;
+  period_metrics: Record<string, { model: PeriodMetrics; spy: PeriodMetrics; start_date: string; end_date: string; n_months: number }>;
   ticker_cumrets?: Record<string, Record<string, number>>;
 }
 interface ChartSeries  { date: string; model: number; spy: number; }
@@ -571,15 +572,22 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
 // ── PerfChart ─────────────────────────────────────────────────────────────────
 function PerfChart({ series, rebalances }: { series: ChartSeries[]; rebalances: RebEvent[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [range, setRange] = useState<"3m"|"6m"|"1y"|"all">("all");
+  const [range, setRange] = useState<"3m"|"6m"|"1y"|"all">("3m");
   const [hovIdx, setHovIdx] = useState<number | null>(null);
   const [tip, setTip] = useState<{ x: number; port: number; spy: number; date: string } | null>(null);
 
   const filtered = useMemo(() => {
-    if (range === "all" || !series.length) return series;
-    const last = new Date(series[series.length - 1].date);
-    const days = range === "3m" ? 90 : range === "6m" ? 180 : 365;
-    return series.filter(d => (last.getTime() - new Date(d.date).getTime()) / 86400000 <= days);
+    let data = series;
+    if (range !== "all" && series.length) {
+      const last = new Date(series[series.length - 1].date);
+      const days = range === "3m" ? 90 : range === "6m" ? 180 : 365;
+      data = series.filter(d => (last.getTime() - new Date(d.date).getTime()) / 86400000 <= days);
+    }
+    if (range !== "all" && data.length > 0) {
+      const bm = data[0].model, bs = data[0].spy;
+      return data.map(d => ({ ...d, model: (d.model / bm) * 100, spy: (d.spy / bs) * 100 }));
+    }
+    return data;
   }, [series, range]);
 
   const redraw = useCallback((hi: number | null) => {
@@ -993,6 +1001,7 @@ export function Dashboard() {
         </div>
       </nav>
 
+      <style>{`@media (max-width: 600px) { .pie-grid { grid-template-columns: 1fr !important; } }`}</style>
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "2.5rem 2rem 6rem" }}>
 
         {SHOW_MAINTENANCE_BANNER && (
@@ -1016,25 +1025,33 @@ export function Dashboard() {
 
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "1.75rem", flexWrap: "wrap", gap: 8 }}>
           <h1 style={{ fontFamily: playfair, fontWeight: 400, fontSize: 32, color: "var(--text-primary)", margin: 0, lineHeight: 1.2 }}>Active positions</h1>
-          <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)", letterSpacing: "0.02em" }}>Next rebalance Aug 2026</span>
+          <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)", letterSpacing: "0.02em" }}>
+            {chartData?.rebalances?.length
+              ? `Last rebalance ${fmtDate(chartData.rebalances[chartData.rebalances.length - 1].date)}`
+              : "Last rebalance —"}
+          </span>
         </div>
 
         {(() => {
-          const v = portfolio?.validation, p6 = portfolio?.period_metrics?.["6m"];
-          const metrics = v ? [
-            { val: `+${Math.round(v.metrics.total_return)}%`, label: "since inception",  tooltip: "Total cumulative return since Feb 2018 backtest start." },
-            { val: `×${(v.dollar_simulation.final_model / v.dollar_simulation.final_spy).toFixed(1)}`, label: "vs S&P 500", tooltip: "How many times more the portfolio returned compared to S&P 500." },
-            { val: p6 ? `+${p6.model.total.toFixed(1)}%` : "—", label: "this period (6m)", tooltip: "Portfolio return over the last 6 months." },
-            { val: `−${Math.abs(v.metrics.max_dd).toFixed(1)}%`, label: "max drawdown", tooltip: "Largest peak-to-trough decline since inception." },
+          const p6 = portfolio?.period_metrics?.["6m"];
+          const lastReb = chartData?.rebalances?.[chartData.rebalances.length - 1];
+          const movIn  = lastReb ? lastReb.added.length : null;
+          const movOut = lastReb ? lastReb.dropped.length : null;
+          const movLabel = movIn !== null ? `${movIn} in · ${movOut} out` : "—";
+          const metrics = p6 ? [
+            { val: `${p6.model.total >= 0 ? "+" : ""}${p6.model.total.toFixed(1)}%`, label: "return last 6m",  tooltip: "Total return of the portfolio over the last 6 months." },
+            { val: `${p6.model.max_dd.toFixed(1)}%`,                                  label: "max DD last 6m",  tooltip: "Largest peak-to-trough decline over the last 6 months." },
+            { val: p6.model.sharpe.toFixed(2),                                         label: "Sharpe last 6m",  tooltip: "Risk-adjusted return (Sharpe ratio) over the last 6 months." },
+            { val: movLabel,                                                            label: "last rebalance",  tooltip: "Tickers added and removed at the most recent rebalance." },
           ] : [
-            { val: "—", label: "since inception", tooltip: "" }, { val: "—", label: "vs S&P 500", tooltip: "" },
-            { val: "—", label: "this period (6m)", tooltip: "" }, { val: "—", label: "max drawdown", tooltip: "" },
+            { val: "—", label: "return last 6m", tooltip: "" }, { val: "—", label: "max DD last 6m", tooltip: "" },
+            { val: "—", label: "Sharpe last 6m",  tooltip: "" }, { val: "—", label: "last rebalance", tooltip: "" },
           ];
           return (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", borderTop: "0.5px solid var(--border-subtle)", paddingTop: "1.5rem", marginBottom: "2rem" }}>
               {metrics.map(({ val, label, tooltip }, i) => (
                 <div key={label} style={{ paddingRight: i < 3 ? "1.5rem" : 0 }}>
-                  <div style={{ fontFamily: outfit, fontWeight: 200, fontSize: 26, color: val.startsWith("−") ? "var(--text-secondary)" : "var(--text-primary)", letterSpacing: "-0.02em", marginBottom: 5 }}>{val}</div>
+                  <div style={{ fontFamily: outfit, fontWeight: 200, fontSize: 26, color: val.startsWith("-") ? "var(--text-secondary)" : "var(--text-primary)", letterSpacing: "-0.02em", marginBottom: 5 }}>{val}</div>
                   <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                     <div style={{ fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</div>
                     {tooltip && <MetricTooltip text={tooltip} />}
@@ -1061,10 +1078,12 @@ export function Dashboard() {
         )}
 
         {portfolio && portfolio.portfolio.length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginBottom: "2rem" }}>
-            <SectorComposition holdings={portfolio.portfolio} />
-            <GeoComposition    holdings={portfolio.portfolio} />
-            <IndustryBars      holdings={portfolio.portfolio} />
+          <div style={{ marginBottom: "2rem" }}>
+            <div className="pie-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+              <SectorComposition holdings={portfolio.portfolio} />
+              <GeoComposition    holdings={portfolio.portfolio} />
+            </div>
+            <IndustryBars holdings={portfolio.portfolio} />
           </div>
         )}
 
