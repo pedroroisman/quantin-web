@@ -1046,31 +1046,51 @@ export function Dashboard() {
         </div>
 
         {(() => {
-          const p6 = portfolio?.period_metrics?.["6m"];
+          const p6  = portfolio?.period_metrics?.["6m"];
+          const p12 = portfolio?.period_metrics?.["12m"];
           const lastReb = chartData?.rebalances?.[chartData.rebalances.length - 1];
           const movIn  = lastReb ? lastReb.added.length : null;
           const movOut = lastReb ? lastReb.dropped.length : null;
           const movLabel = movIn !== null ? `${movIn} in · ${movOut} out` : "—";
-          const metrics = p6 ? [
-            { val: `${p6.model.total >= 0 ? "+" : ""}${p6.model.total.toFixed(1)}%`, label: "return last 6m",  tooltip: "Total return of the portfolio over the last 6 months." },
-            { val: `${p6.model.max_dd.toFixed(1)}%`,                                  label: "max DD last 6m",  tooltip: "Largest peak-to-trough decline over the last 6 months." },
-            { val: p6.model.sharpe.toFixed(2),                                         label: "Sharpe last 6m",  tooltip: "Risk-adjusted return (Sharpe ratio) over the last 6 months." },
-            { val: movLabel,                                                            label: "last moves",      tooltip: "Tickers added and removed at the most recent rebalance." },
+
+          const row6: { val: string; label: string; tooltip: string }[] = p6 ? [
+            { val: `${p6.model.total  >= 0 ? "+" : ""}${p6.model.total.toFixed(1)}%`, label: "return · 6m",  tooltip: "Total return over the last 6 months." },
+            { val: `${p6.model.max_dd.toFixed(1)}%`,                                    label: "max DD · 6m",  tooltip: "Largest peak-to-trough decline over the last 6 months." },
+            { val: p6.model.sharpe.toFixed(2),                                           label: "Sharpe · 6m",  tooltip: "Risk-adjusted return over the last 6 months." },
+            { val: movLabel,                                                              label: "last moves",   tooltip: "Tickers added and removed at the most recent rebalance." },
           ] : [
-            { val: "—", label: "return last 6m", tooltip: "" }, { val: "—", label: "max DD last 6m", tooltip: "" },
-            { val: "—", label: "Sharpe last 6m",  tooltip: "" }, { val: "—", label: "last rebalance", tooltip: "" },
+            { val: "—", label: "return · 6m", tooltip: "" }, { val: "—", label: "max DD · 6m", tooltip: "" },
+            { val: "—", label: "Sharpe · 6m", tooltip: "" }, { val: "—", label: "last moves",  tooltip: "" },
           ];
+
+          const row12: { val: string; label: string; tooltip: string }[] = p12 ? [
+            { val: `${p12.model.total >= 0 ? "+" : ""}${p12.model.total.toFixed(1)}%`, label: "return · 1y",  tooltip: "Total return over the last 12 months." },
+            { val: `${p12.model.max_dd.toFixed(1)}%`,                                   label: "max DD · 1y",  tooltip: "Largest peak-to-trough decline over the last 12 months." },
+            { val: p12.model.sharpe.toFixed(2),                                          label: "Sharpe · 1y",  tooltip: "Risk-adjusted return over the last 12 months." },
+          ] : [
+            { val: "—", label: "return · 1y", tooltip: "" }, { val: "—", label: "max DD · 1y", tooltip: "" },
+            { val: "—", label: "Sharpe · 1y", tooltip: "" },
+          ];
+
+          const MetricCell = ({ val, label, tooltip, padRight }: { val: string; label: string; tooltip: string; padRight?: boolean }) => (
+            <div style={{ paddingRight: padRight ? "1.5rem" : 0 }}>
+              <div style={{ fontFamily: outfit, fontWeight: 200, fontSize: 26, color: val.startsWith("-") ? "var(--text-secondary)" : "var(--text-primary)", letterSpacing: "-0.02em", marginBottom: 5 }}>{val}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <div style={{ fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</div>
+                {tooltip && <MetricTooltip text={tooltip} />}
+              </div>
+            </div>
+          );
+
           return (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", borderTop: "0.5px solid var(--border-subtle)", paddingTop: "1.5rem", marginBottom: "2rem" }}>
-              {metrics.map(({ val, label, tooltip }, i) => (
-                <div key={label} style={{ paddingRight: i < 3 ? "1.5rem" : 0 }}>
-                  <div style={{ fontFamily: outfit, fontWeight: 200, fontSize: 26, color: val.startsWith("-") ? "var(--text-secondary)" : "var(--text-primary)", letterSpacing: "-0.02em", marginBottom: 5 }}>{val}</div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                    <div style={{ fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</div>
-                    {tooltip && <MetricTooltip text={tooltip} />}
-                  </div>
-                </div>
-              ))}
+            <div style={{ borderTop: "0.5px solid var(--border-subtle)", paddingTop: "1.5rem", marginBottom: "2rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", marginBottom: "1.5rem" }}>
+                {row6.map((m, i) => <MetricCell key={m.label} {...m} padRight={i < 3} />)}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
+                {row12.map((m, i) => <MetricCell key={m.label} {...m} padRight={i < 2} />)}
+                <div />
+              </div>
             </div>
           );
         })()}

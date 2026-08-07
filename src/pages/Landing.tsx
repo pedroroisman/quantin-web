@@ -54,7 +54,7 @@ interface SeriesPoint { date: string; model: number; spy: number; }
 interface MetricData  { val: string; label: string; sub: string; valueColor: string; tooltip: string; }
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-const YEAR_TOGGLE = ["all", 2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, "custom"] as const;
+const YEAR_TOGGLE = ["all", "1m", "3m", "6m", 2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, "custom"] as const;
 type YearSelection = typeof YEAR_TOGGLE[number];
 
 function fmtMonth(yyyyMM: string) {
@@ -66,6 +66,12 @@ function filterPts(series: SeriesPoint[], year: YearSelection, cStart: string, c
   if (year === "all") return series;
   if (year === "custom") {
     return series.filter(p => p.date.slice(0, 7) >= cStart && p.date.slice(0, 7) <= cEnd);
+  }
+  if (year === "1m" || year === "3m" || year === "6m") {
+    if (!series.length) return series;
+    const last = new Date(series[series.length - 1].date);
+    const days = year === "1m" ? 31 : year === "3m" ? 91 : 182;
+    return series.filter(p => (last.getTime() - new Date(p.date).getTime()) / 86400000 <= days);
   }
   return series.filter(p => new Date(p.date).getFullYear() === year);
 }
@@ -124,12 +130,17 @@ function buildRangeMetrics(series: SeriesPoint[], year: YearSelection, cStart: s
   const modelSharpe = computeSharpe(pts, 'model');
   const spySharpe   = computeSharpe(pts, 'spy');
   const fmt = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
+  const isRelative   = year === "1m" || year === "3m" || year === "6m";
   const isYearPartial = typeof year === "number" && (year === 2018 || year === new Date().getFullYear());
-  const retLabel = year === "custom" ? "Period return" : isYearPartial ? "YTD return" : "Year return";
-  const ddSub    = year === "custom" ? "within the period" : "within the year";
-  const tip = typeof year === "number"
-    ? `Quantin returned ${fmt(modelRet)} in ${year}, vs ${fmt(spyRet)} for the S&P 500.`
-    : `Quantin returned ${fmt(modelRet)} from ${fmtMonth(cStart)} to ${fmtMonth(cEnd)}, vs ${fmt(spyRet)} for the S&P 500.`;
+  const relLabel     = year === "1m" ? "Last month" : year === "3m" ? "Last 3M" : "Last 6M";
+  const retLabel     = isRelative ? `${relLabel} return` : year === "custom" ? "Period return" : isYearPartial ? "YTD return" : "Year return";
+  const ddSub        = isRelative || year === "custom" ? "within the period" : "within the year";
+  const relPeriod    = year === "1m" ? "last month" : year === "3m" ? "last 3 months" : "last 6 months";
+  const tip = isRelative
+    ? `Quantin returned ${fmt(modelRet)} over the ${relPeriod}, vs ${fmt(spyRet)} for the S&P 500.`
+    : typeof year === "number"
+      ? `Quantin returned ${fmt(modelRet)} in ${year}, vs ${fmt(spyRet)} for the S&P 500.`
+      : `Quantin returned ${fmt(modelRet)} from ${fmtMonth(cStart)} to ${fmtMonth(cEnd)}, vs ${fmt(spyRet)} for the S&P 500.`;
   const sharpeVal = modelSharpe !== null ? modelSharpe.toFixed(2) : "—";
   const sharpeSub = spySharpe !== null ? `vs ${spySharpe.toFixed(2)} S&P 500` : "S&P 500 n/a";
   return [
@@ -175,11 +186,15 @@ function buildInterpretation(series: SeriesPoint[], year: YearSelection, cStart:
   }
   const fmt  = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
   const fmtA = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}pp`;
+  const ddClause = maxDD < -0.5 ? `, with a maximum drawdown of ${maxDD.toFixed(1)}%` : "";
+  if (year === "1m" || year === "3m" || year === "6m") {
+    const relP = year === "1m" ? "last month" : year === "3m" ? "last 3 months" : "last 6 months";
+    return `Quantin returned ${fmt(modelRet)} over the ${relP} vs ${fmt(spyRet)} for the S&P 500 — ${alpha >= 0 ? "outperforming" : "underperforming"} by ${fmtA(alpha)}${ddClause}.`;
+  }
   const isPartial = typeof year === "number" && (year === 2018 || year === new Date().getFullYear());
   const period = year === "custom"
     ? `from ${fmtMonth(cStart)} to ${fmtMonth(cEnd)}`
     : isPartial ? `in ${year} (YTD)` : `in ${year}`;
-  const ddClause = maxDD < -0.5 ? `, with a maximum drawdown of ${maxDD.toFixed(1)}%` : "";
   return `Quantin returned ${fmt(modelRet)} ${period} vs ${fmt(spyRet)} for the S&P 500 — ${alpha >= 0 ? "outperforming" : "underperforming"} by ${fmtA(alpha)}${ddClause}.`;
 }
 
@@ -490,7 +505,7 @@ export function Landing() {
                         fontWeight: active ? 500 : 400, transition: "all 0.15s",
                       }}
                     >
-                      {y === "all" ? "All" : y === "custom" ? "Custom" : y}
+                      {y === "all" ? "All" : y === "1m" ? "1M" : y === "3m" ? "3M" : y === "6m" ? "6M" : y === "custom" ? "Custom" : y}
                     </button>
                   );
                 })}
