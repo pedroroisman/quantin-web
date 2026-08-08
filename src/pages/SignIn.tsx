@@ -27,6 +27,7 @@ export function SignIn() {
   const [confirm, setConfirm]     = useState("");
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState("");
+  const [checkEmail, setCheckEmail] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -53,7 +54,7 @@ export function SignIn() {
         setLoading(false);
         return;
       }
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email, password,
         options: { data: { full_name: name.trim(), company: company.trim() } },
       });
@@ -66,6 +67,11 @@ export function SignIn() {
       }
       track("sign_up", { method: "email" });
       identify(email, { email });
+      if (!data.session) {
+        setCheckEmail(true);
+        setLoading(false);
+        return;
+      }
       navigate("/subscribe");
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -130,6 +136,22 @@ export function SignIn() {
         </h1>
 
         <div style={{ width: "100%", maxWidth: 360 }}>
+
+          {checkEmail ? (
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 40, marginBottom: "1.25rem" }}>📬</div>
+              <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 16, color: "var(--text-primary)", marginBottom: "0.75rem", lineHeight: 1.6 }}>
+                We sent a confirmation link to <strong>{email}</strong>.
+              </p>
+              <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 14, color: "var(--text-tertiary)", lineHeight: 1.6 }}>
+                Click the link in that email to activate your account, then come back here to sign in and subscribe.
+              </p>
+              <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "var(--text-tertiary)", marginTop: "1rem" }}>
+                Don't see it? Check your spam folder.
+              </p>
+            </div>
+          ) : (
+          <>
 
           {/* Google */}
           <button
@@ -253,6 +275,8 @@ export function SignIn() {
             )}
           </p>
 
+          </>
+          )}
         </div>
       </main>
     </div>
