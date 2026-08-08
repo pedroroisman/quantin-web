@@ -696,9 +696,9 @@ function ExpandPanel({ h, cumrets, onClose }: {
   ];
 
   return (
-    <div style={{ gridColumn: "1 / -1", background: "var(--bg-secondary)", borderTop: "2px solid #1D9E75", display: "grid", gridTemplateColumns: "1fr 184px", boxShadow: "inset 0 4px 16px rgba(0,0,0,0.18)" }}>
+    <div className="expand-panel" style={{ gridColumn: "1 / -1", background: "var(--bg-secondary)", borderTop: "2px solid #1D9E75", display: "grid", gridTemplateColumns: "1fr 184px", boxShadow: "inset 0 4px 16px rgba(0,0,0,0.18)" }}>
       {/* Chart side */}
-      <div style={{ padding: "14px 16px 12px 14px", borderRight: "0.5px solid var(--border-subtle)", position: "relative" }}>
+      <div className="expand-chart" style={{ padding: "14px 16px 12px 14px", borderRight: "0.5px solid var(--border-subtle)", position: "relative" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
           <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 13, fontWeight: 700, letterSpacing: "0.04em" }}>{h.ticker}</span>
           <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>{TICKER_NAMES[h.ticker]?.name ?? ""}</span>
@@ -731,7 +731,13 @@ function HoldingsGrid({ holdings, cumrets }: {
   cumrets: Record<string, Record<string, number>>;
 }) {
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
-  const COLS = 5;
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 600);
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 600);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
+  const COLS = isMobile ? 3 : 5;
   const maxPerf = useMemo(() =>
     Math.max(1, ...holdings.map(h => Math.abs(h.performance ?? h.performance_since_subscribed ?? 0))),
   [holdings]);
@@ -780,7 +786,7 @@ function HoldingsGrid({ holdings, cumrets }: {
   });
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: `repeat(${COLS}, 1fr)`, background: "var(--border-subtle)", gap: 1, border: "0.5px solid var(--border-subtle)", borderRadius: "var(--radius-lg)", overflow: "hidden", marginBottom: "2rem" }}>
+    <div className="holdings-grid" style={{ display: "grid", gridTemplateColumns: `repeat(${COLS}, 1fr)`, background: "var(--border-subtle)", gap: 1, border: "0.5px solid var(--border-subtle)", borderRadius: "var(--radius-lg)", overflow: "hidden", marginBottom: "2rem" }}>
       {nodes}
     </div>
   );
@@ -1014,7 +1020,15 @@ export function Dashboard() {
         </div>
       </nav>
 
-      <style>{`@media (max-width: 600px) { .pie-grid { grid-template-columns: 1fr !important; } }`}</style>
+      <style>{`
+        @media (max-width: 600px) {
+          .pie-grid        { grid-template-columns: 1fr !important; }
+          .metrics-grid    { grid-template-columns: repeat(2, 1fr) !important; }
+          .holdings-grid   { grid-template-columns: repeat(3, 1fr) !important; }
+          .expand-panel    { grid-template-columns: 1fr !important; }
+          .expand-chart    { border-right: none !important; border-bottom: 0.5px solid var(--border-subtle) !important; }
+        }
+      `}</style>
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "2.5rem 2rem 6rem" }}>
 
         {SHOW_MAINTENANCE_BANNER && (
@@ -1072,8 +1086,8 @@ export function Dashboard() {
             { val: "—", label: "Sharpe · 1y", tooltip: "" },
           ];
 
-          const MetricCell = ({ val, label, tooltip, padRight }: { val: string; label: string; tooltip: string; padRight?: boolean }) => (
-            <div style={{ paddingRight: padRight ? "1.5rem" : 0 }}>
+          const MetricCell = ({ val, label, tooltip }: { val: string; label: string; tooltip: string }) => (
+            <div>
               <div style={{ fontFamily: outfit, fontWeight: 200, fontSize: 26, color: val.startsWith("-") ? "var(--text-secondary)" : "var(--text-primary)", letterSpacing: "-0.02em", marginBottom: 5 }}>{val}</div>
               <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                 <div style={{ fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</div>
@@ -1084,11 +1098,11 @@ export function Dashboard() {
 
           return (
             <div style={{ borderTop: "0.5px solid var(--border-subtle)", paddingTop: "1.5rem", marginBottom: "2rem" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", marginBottom: "1.5rem" }}>
-                {row6.map((m, i) => <MetricCell key={m.label} {...m} padRight={i < 3} />)}
+              <div className="metrics-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1.5rem", marginBottom: "1.5rem" }}>
+                {row6.map(m => <MetricCell key={m.label} {...m} />)}
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
-                {row12.map((m, i) => <MetricCell key={m.label} {...m} padRight={i < 2} />)}
+              <div className="metrics-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1.5rem" }}>
+                {row12.map(m => <MetricCell key={m.label} {...m} />)}
                 <div />
               </div>
             </div>
