@@ -476,8 +476,7 @@ export function Landing() {
                 fontSize: 16, lineHeight: 1.65, maxWidth: 520,
                 color: "var(--text-secondary)", marginBottom: "2.5rem",
               }}>
-                Every two months, Quantin selects the 15 best-performing assets using
-                quantitative models. No opinions. Just data.
+                Quantin is a quantitative portfolio engine that gives wealth managers and advisors the edge of a quant team without the cost or complexity.
               </p>
 
               {/* Metrics */}
