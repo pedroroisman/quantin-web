@@ -27,17 +27,17 @@ const FALLBACK_CHART_DATA = [
 
 const ALL_TIME_METRICS = [
   {
-    val: "+26.2%", label: "Annual return", sub: "vs +14.4% S&P 500",
+    val: "+26.2%", label: "Avg. annual return", sub: "vs +14.4% S&P 500",
     valueColor: "#1D9E75",
     tooltip: "Average yearly return compounded over the full backtest period (Feb 2018 – Aug 2026).",
   },
   {
-    val: "−9.5%", label: "Max drawdown", sub: "vs −33.7% S&P 500",
+    val: "−9.5%", label: "Avg. max drawdown", sub: "vs −33.7% S&P 500",
     valueColor: "#B5621A",
     tooltip: "Largest peak-to-trough decline in portfolio value. Lower is better — the S&P 500 fell −33.7% in 2020 alone.",
   },
   {
-    val: "2.00", label: "Sharpe ratio", sub: "vs 0.80 S&P 500",
+    val: "2.00", label: "Avg. Sharpe ratio", sub: "vs 0.80 S&P 500",
     valueColor: "#059669",
     tooltip: "Risk-adjusted return: annual excess return divided by volatility. Above 1.0 is considered strong — Quantin's 2.00 means high return per unit of risk taken.",
   },
@@ -152,12 +152,12 @@ function buildRangeMetrics(series: SeriesPoint[], year: YearSelection, cStart: s
     },
     {
       val: maxDD === 0 ? "0.0%" : `${maxDD.toFixed(1)}%`,
-      label: "Max drawdown", sub: ddSub,
+      label: "Avg. max drawdown", sub: ddSub,
       valueColor: "#B5621A",
       tooltip: `Largest peak-to-trough decline within the selected period. Walk-forward validated.`,
     },
     {
-      val: sharpeVal, label: "Sharpe ratio", sub: sharpeSub,
+      val: sharpeVal, label: "Avg. Sharpe ratio", sub: sharpeSub,
       valueColor: "#059669",
       tooltip: `Risk-adjusted return for the selected period. Above 1.0 is considered strong.`,
     },
