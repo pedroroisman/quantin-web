@@ -22,7 +22,7 @@ export function QuantinLogo({ iconSize = 20, showText = true, showIcon = true, g
           fontWeight,
           fontSize: Math.round(iconSize * 0.85),
           color: "var(--text-primary)",
-          letterSpacing: Math.max(1, Math.round(iconSize * 0.1)),
+          letterSpacing: Math.max(1, Math.round(iconSize * 0.04)),
           lineHeight: 1,
           textTransform: "uppercase",
         }}>
