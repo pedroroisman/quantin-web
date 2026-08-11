@@ -622,6 +622,12 @@ export function Landing() {
 
         </main>
 
+        {/* Mission line */}
+        <div style={{ borderTop: "0.5px solid var(--border-subtle)", padding: "1.25rem max(2rem, 6%)", textAlign: "center" }}>
+          <p style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 300, fontSize: 13, color: "var(--text-tertiary)", letterSpacing: "0.04em", margin: 0 }}>
+            Bringing systematic investing to every advisory practice.
+          </p>
+        </div>
 
       </div>
     </>
