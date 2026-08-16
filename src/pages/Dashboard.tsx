@@ -1016,6 +1016,7 @@ export function Dashboard() {
       <nav style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 2rem", height: 56, background: "var(--bg-primary)", borderBottom: "0.5px solid var(--border-subtle)", position: "sticky", top: 0, zIndex: 10 }}>
         <button onClick={() => navigate("/")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, lineHeight: 0 }}><QuantinLogo iconSize={22} /></button>
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <Button variant="ghost" size="sm" onClick={() => navigate("/movements")}>Movements</Button>
           <Button variant="ghost" size="sm" onClick={() => navigate("/user")}>Account</Button>
         </div>
       </nav>

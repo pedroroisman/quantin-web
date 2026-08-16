@@ -10,6 +10,7 @@ import { SmartSelector } from "./pages/SmartSelector";
 import { SignIn }        from "./pages/SignIn";
 import { AuthCallback }  from "./pages/AuthCallback";
 import { UserProfile }  from "./pages/UserProfile";
+import { Movements }    from "./pages/Movements";
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
         <Route path="/signin"         element={<SignIn />} />
         <Route path="/auth/callback"  element={<AuthCallback />} />
         <Route path="/user"           element={<UserProfile />} />
+        <Route path="/movements"      element={<Movements />} />
       </Routes>
       <Analytics />
     </BrowserRouter>
