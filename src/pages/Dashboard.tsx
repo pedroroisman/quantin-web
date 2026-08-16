@@ -835,53 +835,6 @@ function SectorComposition({ holdings }: { holdings: PortfolioHolding[] }) {
   return <DonutChart title="Sector" segs={segs} />;
 }
 
-// ── RebalanceTimeline ─────────────────────────────────────────────────────────
-function RebalanceTimeline({ rebalances }: { rebalances: RebEvent[] }) {
-  // Last 10, most-recent first
-  const displayed = rebalances.slice(-10).reverse();
-  return (
-    <div style={{ marginBottom: "2rem" }}>
-      <p style={{ fontFamily: outfit, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--accent)", marginBottom: 14 }}>Rebalance History</p>
-      <div style={{ position: "relative", paddingLeft: 28 }}>
-        <div style={{ position: "absolute", left: 6, top: 8, bottom: 8, width: 1, background: "var(--border-subtle)" }} />
-        {displayed.map((r, idx) => {
-          const snapshot = [...r.added, ...r.held].sort();
-          const addSet   = new Set(r.added);
-          return (
-            <div key={r.date} style={{ position: "relative", paddingBottom: idx < displayed.length - 1 ? 28 : 0 }}>
-              <div style={{ position: "absolute", left: -28, top: 5, width: 12, height: 12, borderRadius: "50%", background: idx === 0 ? "#1D9E75" : "var(--bg-secondary)", border: `2px solid ${idx === 0 ? "#1D9E75" : "var(--border-default)"}` }} />
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 12, fontWeight: 600, color: "var(--text-primary)" }}>{fmtDate(r.date)}</span>
-                <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 7px", border: "0.5px solid var(--border-default)", color: "var(--text-secondary)", letterSpacing: "0.03em" }}>+{r.added.length} · −{r.dropped.length}</span>
-              </div>
-              {r.added.length > 0 && (
-                <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 5 }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#1D9E75", width: 44, flexShrink: 0 }}>↑ In</span>
-                  {r.added.map(t => <span key={t} style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, fontWeight: 600, padding: "2px 7px", background: "rgba(29,158,117,0.12)", color: "#1D9E75", letterSpacing: "0.04em" }}>{t}</span>)}
-                </div>
-              )}
-              {r.dropped.length > 0 && (
-                <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#B5621A", width: 44, flexShrink: 0 }}>↓ Out</span>
-                  {r.dropped.map(t => <span key={t} style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, fontWeight: 600, padding: "2px 7px", background: "rgba(181,98,26,0.10)", color: "#B5621A", letterSpacing: "0.04em" }}>{t}</span>)}
-                </div>
-              )}
-              {snapshot.length > 0 && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 4, padding: "8px 12px", background: "var(--bg-secondary)", border: "0.5px solid var(--border-subtle)" }}>
-                  <span style={{ fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em", marginRight: 4, alignSelf: "center" }}>After</span>
-                  {snapshot.map(t => (
-                    <span key={t} style={{ fontFamily: "ui-monospace, monospace", fontSize: 10, fontWeight: 600, padding: "2px 5px", color: addSet.has(t) ? "#1D9E75" : "var(--text-tertiary)", background: addSet.has(t) ? "rgba(29,158,117,0.10)" : "transparent" }}>{t}</span>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 export function Dashboard() {
   const navigate = useNavigate();
@@ -1141,10 +1094,6 @@ export function Dashboard() {
 
         {chartData && chartData.series.length > 1 && (
           <PerfChart series={chartData.series} rebalances={chartData.rebalances} />
-        )}
-
-        {chartData && chartData.rebalances.length > 0 && (
-          <RebalanceTimeline rebalances={chartData.rebalances} />
         )}
 
         <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--accent)", marginBottom: "0.75rem" }}>Alert settings</p>
