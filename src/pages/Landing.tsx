@@ -80,13 +80,15 @@ function buildChartData(series: SeriesPoint[], year: YearSelection, cStart: stri
   const pts = filterPts(series, year, cStart, cEnd);
   if (!pts.length) return null;
   const bm = pts[0].model, bs = pts[0].spy;
+  const isRelative = year === "1m" || year === "3m" || year === "6m";
   const multiYear = pts.some(p => new Date(p.date).getFullYear() !== new Date(pts[0].date).getFullYear());
   let lastLabelYear  = -1;
   let lastLabelMonth = -1;
   return pts.map(p => {
     const d = new Date(p.date);
     let period: string;
-    if (year === "all" || multiYear) {
+    // Relative periods (1m/3m/6m) always use monthly labels even if crossing year boundary
+    if (!isRelative && (year === "all" || multiYear)) {
       const yr = d.getFullYear();
       if (yr !== lastLabelYear) {
         period = String(yr);
@@ -94,8 +96,12 @@ function buildChartData(series: SeriesPoint[], year: YearSelection, cStart: stri
       } else { period = p.date; }
     } else {
       const mo = d.getMonth();
-      period = mo !== lastLabelMonth ? MONTHS[mo] : p.date;
-      lastLabelMonth = mo;
+      const yr = d.getFullYear();
+      if (mo !== lastLabelMonth || yr !== lastLabelYear) {
+        period = (isRelative && multiYear) ? `${MONTHS[mo]} '${String(yr).slice(2)}` : MONTHS[mo];
+        lastLabelMonth = mo;
+        lastLabelYear = yr;
+      } else { period = p.date; }
     }
     return { period, quantin: Math.round(p.model / bm * 10000), sp500: Math.round(p.spy / bs * 10000) };
   });
@@ -354,6 +360,9 @@ export function Landing() {
         ? `$10,000 invested ${fmtMonth(effectiveStart)} · custom range · walk-forward`
         : "$10,000 invested · custom range · walk-forward";
     }
+    if (selectedYear === "1m") return "Last 30 days · walk-forward";
+    if (selectedYear === "3m") return "Last 3 months · walk-forward";
+    if (selectedYear === "6m") return "Last 6 months · walk-forward";
     const isPartial = selectedYear === 2018 || selectedYear === new Date().getFullYear();
     const start = selectedYear === 2018 ? "Feb 2018" : `Jan ${selectedYear}`;
     return `$10,000 invested ${start} · ${isPartial ? "partial year" : "calendar year"} · walk-forward`;
@@ -622,6 +631,12 @@ export function Landing() {
 
         </main>
 
+        {/* Mission line */}
+        <div style={{ borderTop: "0.5px solid var(--border-subtle)", padding: "1.25rem max(2rem, 6%)", textAlign: "center" }}>
+          <p style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 300, fontSize: 13, color: "var(--text-tertiary)", letterSpacing: "0.04em", margin: 0 }}>
+            Bringing systematic investing to every advisory practice.
+          </p>
+        </div>
 
       </div>
     </>
