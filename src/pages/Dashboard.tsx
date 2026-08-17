@@ -737,7 +737,7 @@ function HoldingsGrid({ holdings, cumrets }: {
     window.addEventListener("resize", handler);
     return () => window.removeEventListener("resize", handler);
   }, []);
-  const COLS = isMobile ? 3 : 5;
+  const COLS = isMobile ? 2 : 5;
   const maxPerf = useMemo(() =>
     Math.max(1, ...holdings.map(h => Math.abs(h.performance ?? h.performance_since_subscribed ?? 0))),
   [holdings]);
@@ -1057,7 +1057,7 @@ export function Dashboard() {
         @media (max-width: 600px) {
           .pie-grid        { grid-template-columns: 1fr !important; }
           .metrics-grid    { grid-template-columns: repeat(2, 1fr) !important; }
-          .holdings-grid   { grid-template-columns: repeat(3, 1fr) !important; }
+          .holdings-grid   { grid-template-columns: repeat(2, 1fr) !important; }
           .expand-panel    { grid-template-columns: 1fr !important; }
           .expand-chart    { border-right: none !important; border-bottom: 0.5px solid var(--border-subtle) !important; }
         }
