@@ -933,7 +933,6 @@ export function Dashboard() {
   const { label: regimeLabel, colors: regimeColors } = useRegime();
   const [alerts, setAlerts] = useState(defaultAlerts);
   const toggle = (k: AlertKey) => setAlerts(a => ({ ...a, [k]: !a[k] }));
-  const [authReady, setAuthReady] = useState(false);
   const [isSubscriber, setIsSubscriber] = useState<boolean | null>(null);
   const [portfolio, setPortfolio] = useState<PortfolioData | null>(null);
   const [chartData, setChartData] = useState<ChartData | null>(null);
@@ -953,7 +952,7 @@ export function Dashboard() {
     // Check auth in background for alerts personalization
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!mounted) return;
-      setAuthReady(true);
+
       if (!session?.user?.email) { setIsSubscriber(false); return; }
       setUserEmail(session.user.email);
       identify(session.user.email, { email: session.user.email });
@@ -974,7 +973,6 @@ export function Dashboard() {
     return () => { mounted = false; subscription.unsubscribe(); };
   }, []);
 
-  const handleSignOut = async () => { await supabase.auth.signOut(); setUserEmail(null); setIsSubscriber(false); };
 
   const handleCancelSubscription = async () => {
     setCancelState("loading");
