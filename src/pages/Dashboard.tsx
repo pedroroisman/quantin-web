@@ -835,6 +835,98 @@ function SectorComposition({ holdings }: { holdings: PortfolioHolding[] }) {
   return <DonutChart title="Sector" segs={segs} />;
 }
 
+// ── LastMovementsPanel ────────────────────────────────────────────────────────
+interface Movement {
+  id: number; date: string; ticker: string;
+  from_state: "cash" | "buy"; to_state: "cash" | "buy";
+  movement_type: "rebalance" | "strategy";
+  return_pct: number | null;
+}
+
+function LastMovementsPanel() {
+  const navigate = useNavigate();
+  const [movements, setMovements] = useState<Movement[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    const apiUrl = import.meta.env.VITE_API_URL || "";
+    fetch(`${apiUrl}/api/portfolio_movements?limit=50&offset=0`)
+      .then(r => r.json())
+      .then(d => { if (mounted) { setMovements(d.movements || []); setLoading(false); } })
+      .catch(() => { if (mounted) setLoading(false); });
+    return () => { mounted = false; };
+  }, []);
+
+  if (loading) return (
+    <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-tertiary)", fontSize: 14 }}>
+      Loading movements…
+    </div>
+  );
+  if (movements.length === 0) return (
+    <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-tertiary)", fontSize: 14 }}>
+      No movements yet.
+    </div>
+  );
+
+  return (
+    <div style={{ marginBottom: "2rem" }}>
+      <div style={{ background: "var(--bg-primary)", borderRadius: "var(--radius-lg)", border: "0.5px solid var(--border-subtle)", overflow: "hidden", marginBottom: "0.75rem" }}>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <thead>
+              <tr style={{ borderBottom: "0.5px solid var(--border-subtle)" }}>
+                {["Date", "Ticker", "Movement", "Type", "Return"].map(h => (
+                  <th key={h} style={{ padding: "10px 16px", textAlign: h === "Return" ? "right" : "left", fontSize: 11, fontWeight: 600, color: "var(--text-tertiary)", letterSpacing: "0.06em", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {movements.slice(0, 20).map((m, i) => (
+                <tr
+                  key={m.id}
+                  style={{ borderBottom: i < Math.min(movements.length, 20) - 1 ? "0.5px solid var(--border-subtle)" : "none" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.025)")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                >
+                  <td style={{ padding: "10px 16px", color: "var(--text-tertiary)", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums", fontSize: 12 }}>{m.date}</td>
+                  <td style={{ padding: "10px 16px", fontWeight: 700, letterSpacing: "0.04em", color: "var(--text-primary)" }}>{m.ticker}</td>
+                  <td style={{ padding: "10px 16px" }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                      <span style={{ color: "var(--text-tertiary)", fontSize: 11 }}>{m.from_state === "cash" ? "CASH" : "BUY"}</span>
+                      <span style={{ color: "var(--text-tertiary)" }}>→</span>
+                      <span style={{ fontWeight: 700, fontSize: 13, color: m.to_state === "buy" ? "var(--accent)" : "var(--danger-text)" }}>{m.to_state === "cash" ? "CASH" : "BUY"}</span>
+                    </span>
+                  </td>
+                  <td style={{ padding: "10px 16px" }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" as const, padding: "3px 8px", borderRadius: "var(--radius-full)", background: m.movement_type === "rebalance" ? "rgba(52,211,153,0.1)" : "rgba(55,138,221,0.12)", color: m.movement_type === "rebalance" ? "var(--accent)" : "var(--blue-400)", border: `0.5px solid ${m.movement_type === "rebalance" ? "rgba(52,211,153,0.25)" : "rgba(55,138,221,0.25)"}` }}>
+                      {m.movement_type === "rebalance" ? "Rebalance" : "Strategy"}
+                    </span>
+                  </td>
+                  <td style={{ padding: "10px 16px", textAlign: "right" }}>
+                    {m.return_pct === null
+                      ? <span style={{ color: "var(--text-tertiary)", fontSize: 13 }}>—</span>
+                      : <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, fontSize: 13, color: m.return_pct >= 0 ? "var(--success-text)" : "var(--danger-text)" }}>{m.return_pct >= 0 ? "+" : ""}{m.return_pct.toFixed(2)}%</span>
+                    }
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div style={{ textAlign: "right" }}>
+        <button
+          onClick={() => navigate("/movements")}
+          style={{ fontFamily: outfit, fontWeight: 400, fontSize: 13, color: "var(--accent)", background: "none", border: "none", cursor: "pointer", letterSpacing: "0.01em" }}
+        >
+          View full history →
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 export function Dashboard() {
   const navigate = useNavigate();
@@ -847,31 +939,42 @@ export function Dashboard() {
   const [chartData, setChartData] = useState<ChartData | null>(null);
   const [cancelState, setCancelState] = useState<"idle"|"confirming"|"loading"|"done">("idle");
   const [cancelEndsOn, setCancelEndsOn] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"composition" | "performance" | "movements">("composition");
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
+    const apiUrl = import.meta.env.VITE_API_URL || "";
+
+    // Load public data immediately — no auth required
+    fetch(`${apiUrl}/api/portfolio_optimizer`).then(r => r.json()).then(d => { if (mounted) setPortfolio(d); }).catch(() => {});
+    fetch(`${apiUrl}/api/portfolio_optimizer/chart`).then(r => r.json()).then(d => { if (mounted) setChartData(d); }).catch(() => {});
+
+    // Check auth in background for alerts personalization
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!mounted) return;
-      if (!session?.user?.email) { navigate("/signin"); return; }
       setAuthReady(true);
+      if (!session?.user?.email) { setIsSubscriber(false); return; }
+      setUserEmail(session.user.email);
       identify(session.user.email, { email: session.user.email });
       const { data, error } = await supabase.from("subscribers").select("id, created_at").eq("email", session.user.email).maybeSingle();
       if (!mounted) return;
-      setIsSubscriber(error ? true : !!data);
+      setIsSubscriber(error ? false : !!data);
+      // Re-fetch personalized portfolio with subscriber's since date
       const since = data?.created_at ? data.created_at.split("T")[0] : null;
-      const apiUrl = import.meta.env.VITE_API_URL || "";
-      const url = since ? `${apiUrl}/api/portfolio_optimizer?since=${since}` : `${apiUrl}/api/portfolio_optimizer`;
-      fetch(url).then(r => r.json()).then(d => { if (mounted) setPortfolio(d); }).catch(() => {});
-      fetch(`${apiUrl}/api/portfolio_optimizer/chart`).then(r => r.json()).then(d => { if (mounted) setChartData(d); }).catch(() => {});
+      if (since) {
+        fetch(`${apiUrl}/api/portfolio_optimizer?since=${since}`).then(r => r.json()).then(d => { if (mounted) setPortfolio(d); }).catch(() => {});
+      }
     });
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(event => {
       if (!mounted) return;
-      if (event === "SIGNED_OUT") navigate("/signin");
+      if (event === "SIGNED_OUT") { setUserEmail(null); setIsSubscriber(false); }
     });
     return () => { mounted = false; subscription.unsubscribe(); };
-  }, [navigate]);
+  }, []);
 
-  const handleSignOut = async () => { await supabase.auth.signOut(); navigate("/signin"); };
+  const handleSignOut = async () => { await supabase.auth.signOut(); setUserEmail(null); setIsSubscriber(false); };
 
   const handleCancelSubscription = async () => {
     setCancelState("loading");
@@ -895,31 +998,6 @@ export function Dashboard() {
   });
   const [welcomeVisible, setWelcomeVisible] = useState(showWelcome);
   const dismissWelcome = () => { setWelcomeVisible(false); window.history.replaceState({}, "", "/portfolio"); };
-
-  if (!authReady || isSubscriber === null) return null;
-
-  if (!isSubscriber) return (
-    <div style={{ minHeight: "100vh", background: "var(--bg-tertiary)", display: "flex", flexDirection: "column" }}>
-      <nav style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 2rem", height: 56, background: "var(--bg-primary)", borderBottom: "0.5px solid var(--border-subtle)", position: "sticky", top: 0, zIndex: 10 }}>
-        <QuantinLogo iconSize={22} />
-        <Button variant="ghost" size="sm" onClick={handleSignOut}>Sign out</Button>
-      </nav>
-      <main style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "4rem 2rem 6rem", textAlign: "center" }}>
-        <div style={{ width: 48, height: 48, borderRadius: "50%", border: "1px solid var(--info-border)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "2rem" }}>
-          <div style={{ width: 14, height: 14, background: "#1D9E75", borderRadius: "50%" }} />
-        </div>
-        <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent)", marginBottom: "0.75rem" }}>Account ready</p>
-        <h1 style={{ fontFamily: playfair, fontWeight: 400, fontSize: 36, color: "var(--text-primary)", marginBottom: "0.5rem", lineHeight: 1.15 }}>One step left.</h1>
-        <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 15, color: "var(--text-tertiary)", marginBottom: "2.5rem", maxWidth: 380 }}>Your account is set up. Activate your subscription to access the portfolio and rebalance alerts.</p>
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: "2.5rem", background: regimeColors.bg, border: `0.5px solid ${regimeColors.border}`, borderRadius: 100, padding: "5px 14px" }}>
-          <div style={{ width: 6, height: 6, background: regimeColors.dot, borderRadius: "50%" }} />
-          <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: regimeColors.text }}>{regimeLabel ?? "Loading…"}</span>
-        </div>
-        <Button size="lg" onClick={() => navigate("/subscribe")}>Subscribe — $25/mo</Button>
-        <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)", marginTop: "0.9rem" }}>30-day money-back guarantee</p>
-      </main>
-    </div>
-  );
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-tertiary)" }}>
@@ -970,7 +1048,10 @@ export function Dashboard() {
         <button onClick={() => navigate("/")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, lineHeight: 0 }}><QuantinLogo iconSize={22} /></button>
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
           <Button variant="ghost" size="sm" onClick={() => navigate("/movements")}>Movements</Button>
-          <Button variant="ghost" size="sm" onClick={() => navigate("/user")}>Account</Button>
+          {userEmail
+            ? <Button variant="ghost" size="sm" onClick={() => navigate("/user")}>Account</Button>
+            : <Button size="sm" onClick={() => navigate("/subscribe")}>Get alerts</Button>
+          }
         </div>
       </nav>
 
@@ -999,11 +1080,13 @@ export function Dashboard() {
           </div>
         )}
 
+        {/* Regime pill */}
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "var(--info-bg)", border: "0.5px solid var(--info-border)", borderRadius: 100, padding: "5px 13px", marginBottom: "1.5rem" }}>
           <div style={{ width: 7, height: 7, background: regimeColors.dot, borderRadius: "50%", flexShrink: 0 }} />
           <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: regimeColors.text }}>{regimeLabel ?? "Loading…"}</span>
         </div>
 
+        {/* Header */}
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "1.75rem", flexWrap: "wrap", gap: 8 }}>
           <h1 style={{ fontFamily: playfair, fontWeight: 400, fontSize: 32, color: "var(--text-primary)", margin: 0, lineHeight: 1.2 }}>Active positions</h1>
           <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)", letterSpacing: "0.02em" }}>
@@ -1013,7 +1096,62 @@ export function Dashboard() {
           </span>
         </div>
 
-        {(() => {
+        {/* Portfolio showcase — always visible */}
+        <p style={{ fontFamily: outfit, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--accent)", marginBottom: "0.75rem" }}>
+          Holdings · {portfolio?.portfolio.length ?? "—"} positions · Equal weight
+        </p>
+        {portfolio && portfolio.portfolio.length > 0 && (
+          <HoldingsGrid
+            holdings={[...portfolio.portfolio].sort((a, b) => {
+              if (!a.entry_date) return 1;
+              if (!b.entry_date) return -1;
+              return a.entry_date < b.entry_date ? -1 : a.entry_date > b.entry_date ? 1 : 0;
+            })}
+            cumrets={portfolio.ticker_cumrets ?? {}}
+          />
+        )}
+        {!portfolio && (
+          <div style={{ height: 240, background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", borderRadius: "var(--radius-lg)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-tertiary)", fontSize: 13, marginBottom: "2rem" }}>
+            Loading portfolio…
+          </div>
+        )}
+
+        {/* Tab selector */}
+        <div style={{ display: "flex", gap: 4, marginBottom: "1.5rem", background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", borderRadius: "var(--radius-lg)", padding: 4 }}>
+          {(["composition", "performance", "movements"] as const).map(key => (
+            <button
+              key={key}
+              onClick={() => setActiveTab(key)}
+              style={{
+                flex: 1, padding: "8px 0",
+                borderRadius: "calc(var(--radius-lg) - 4px)",
+                border: "none", cursor: "pointer",
+                fontSize: 13, fontFamily: outfit,
+                fontWeight: activeTab === key ? 600 : 300,
+                background: activeTab === key ? "var(--bg-secondary)" : "transparent",
+                color: activeTab === key ? "var(--text-primary)" : "var(--text-tertiary)",
+                transition: "all 0.15s",
+                textTransform: "capitalize",
+              }}
+            >
+              {key === "movements" ? "Last Movements" : key.charAt(0).toUpperCase() + key.slice(1)}
+            </button>
+          ))}
+        </div>
+
+        {/* Composition tab */}
+        {activeTab === "composition" && portfolio && portfolio.portfolio.length > 0 && (
+          <div style={{ marginBottom: "2rem" }}>
+            <div className="pie-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+              <SectorComposition holdings={portfolio.portfolio} />
+              <GeoComposition    holdings={portfolio.portfolio} />
+            </div>
+            <IndustryBars holdings={portfolio.portfolio} />
+          </div>
+        )}
+
+        {/* Performance tab */}
+        {activeTab === "performance" && (() => {
           const p6  = portfolio?.period_metrics?.["6m"];
           const p12 = portfolio?.period_metrics?.["12m"];
           const lastReb = chartData?.rebalances?.[chartData.rebalances.length - 1];
@@ -1051,89 +1189,80 @@ export function Dashboard() {
           );
 
           return (
-            <div style={{ borderTop: "0.5px solid var(--border-subtle)", paddingTop: "1.5rem", marginBottom: "2rem" }}>
-              <div className="metrics-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1.5rem", marginBottom: "1.5rem" }}>
-                {row6.map(m => <MetricCell key={m.label} {...m} />)}
+            <div>
+              <div style={{ borderTop: "0.5px solid var(--border-subtle)", paddingTop: "1.5rem", marginBottom: "2rem" }}>
+                <div className="metrics-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1.5rem", marginBottom: "1.5rem" }}>
+                  {row6.map(m => <MetricCell key={m.label} {...m} />)}
+                </div>
+                <div className="metrics-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1.5rem" }}>
+                  {row12.map(m => <MetricCell key={m.label} {...m} />)}
+                  <div />
+                </div>
               </div>
-              <div className="metrics-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1.5rem" }}>
-                {row12.map(m => <MetricCell key={m.label} {...m} />)}
-                <div />
-              </div>
+              {chartData && chartData.series.length > 1 && (
+                <PerfChart series={chartData.series} rebalances={chartData.rebalances} />
+              )}
             </div>
           );
         })()}
 
-        <p style={{ fontFamily: outfit, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--accent)", marginBottom: "0.75rem" }}>
-          Holdings · {portfolio?.portfolio.length ?? "—"} positions · Equal weight
-        </p>
-        {portfolio && portfolio.portfolio.length > 0 && (
-          <HoldingsGrid
-            holdings={[...portfolio.portfolio].sort((a, b) => {
-              if (!a.entry_date) return 1;
-              if (!b.entry_date) return -1;
-              return a.entry_date < b.entry_date ? -1 : a.entry_date > b.entry_date ? 1 : 0;
-            })}
-            cumrets={portfolio.ticker_cumrets ?? {}}
-          />
-        )}
-        {!portfolio && (
-          <div style={{ height: 240, background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", borderRadius: "var(--radius-lg)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-tertiary)", fontSize: 13, marginBottom: "2rem" }}>
-            Loading portfolio…
-          </div>
-        )}
-
-        {portfolio && portfolio.portfolio.length > 0 && (
-          <div style={{ marginBottom: "2rem" }}>
-            <div className="pie-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
-              <SectorComposition holdings={portfolio.portfolio} />
-              <GeoComposition    holdings={portfolio.portfolio} />
-            </div>
-            <IndustryBars holdings={portfolio.portfolio} />
-          </div>
-        )}
-
-        {chartData && chartData.series.length > 1 && (
-          <PerfChart series={chartData.series} rebalances={chartData.rebalances} />
-        )}
+        {/* Last Movements tab */}
+        {activeTab === "movements" && <LastMovementsPanel />}
 
         <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--accent)", marginBottom: "0.75rem" }}>Alert settings</p>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: "3rem" }}>
-          {alertDefs.map(({ key, label, sub }) => (
-            <div key={key} style={{ display: "flex", alignItems: "center", gap: 14, padding: "1rem 1.25rem", borderRadius: "var(--radius-md)", background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)" }}>
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)", margin: 0, marginBottom: 2 }}>{label}</p>
-                <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0, opacity: 0.85 }}>{sub}</p>
+        {isSubscriber ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: "3rem" }}>
+            {alertDefs.map(({ key, label, sub }) => (
+              <div key={key} style={{ display: "flex", alignItems: "center", gap: 14, padding: "1rem 1.25rem", borderRadius: "var(--radius-md)", background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)" }}>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)", margin: 0, marginBottom: 2 }}>{label}</p>
+                  <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0, opacity: 0.85 }}>{sub}</p>
+                </div>
+                <Toggle on={alerts[key]} onToggle={() => toggle(key)} />
               </div>
-              <Toggle on={alerts[key]} onToggle={() => toggle(key)} />
+            ))}
+          </div>
+        ) : (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16, padding: "1.25rem 1.5rem", borderRadius: "var(--radius-lg)", background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", marginBottom: "3rem" }}>
+            <div>
+              <p style={{ fontFamily: outfit, fontWeight: 500, fontSize: 14, color: "var(--text-primary)", margin: "0 0 4px" }}>Get real-time alerts</p>
+              <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "var(--text-tertiary)", margin: 0 }}>
+                Receive an email the moment the model makes a move — entries, exits, and rebalances.
+              </p>
             </div>
-          ))}
-        </div>
+            <Button size="sm" onClick={() => navigate("/subscribe")}>Subscribe — $25/mo</Button>
+          </div>
+        )}
 
-        <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-tertiary)", marginBottom: "0.75rem" }}>Subscription</p>
-        <div style={{ background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", borderRadius: "var(--radius-md)", padding: "1.25rem" }}>
-          {cancelState === "done" ? (
-            <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "var(--text-secondary)", margin: 0 }}>
-              Your subscription has been cancelled.{cancelEndsOn ? ` You'll have full access until ${cancelEndsOn}.` : ""}
-            </p>
-          ) : (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-              <div>
-                <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)", margin: 0, marginBottom: 2 }}>Cancel subscription</p>
-                <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0 }}>
-                  {cancelState === "confirming" ? "Are you sure? Your access will continue until the end of the current period." : "You'll keep access until the end of the current billing period."}
+        {isSubscriber && (
+          <>
+            <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-tertiary)", marginBottom: "0.75rem" }}>Subscription</p>
+            <div style={{ background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", borderRadius: "var(--radius-md)", padding: "1.25rem" }}>
+              {cancelState === "done" ? (
+                <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "var(--text-secondary)", margin: 0 }}>
+                  Your subscription has been cancelled.{cancelEndsOn ? ` You'll have full access until ${cancelEndsOn}.` : ""}
                 </p>
-              </div>
-              <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                {cancelState === "confirming" && (
-                  <button onClick={() => setCancelState("idle")} style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, padding: "6px 14px", borderRadius: "var(--radius-md)", border: "0.5px solid var(--border-default)", background: "transparent", color: "var(--text-secondary)", cursor: "pointer" }}>Keep subscription</button>
-                )}
-                <button onClick={cancelState === "idle" ? () => setCancelState("confirming") : handleCancelSubscription} disabled={cancelState === "loading"} style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, padding: "6px 14px", borderRadius: "var(--radius-md)", border: "0.5px solid var(--border-default)", background: cancelState === "confirming" ? "#B5621A" : "transparent", color: cancelState === "confirming" ? "#fff" : "var(--text-tertiary)", cursor: cancelState === "loading" ? "not-allowed" : "pointer", opacity: cancelState === "loading" ? 0.6 : 1, transition: "all 0.15s" }}>
-                  {cancelState === "loading" ? "Cancelling…" : cancelState === "confirming" ? "Yes, cancel" : "Cancel subscription"}
-                </button>
-              </div>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+                  <div>
+                    <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)", margin: 0, marginBottom: 2 }}>Cancel subscription</p>
+                    <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: 0 }}>
+                      {cancelState === "confirming" ? "Are you sure? Your access will continue until the end of the current period." : "You'll keep access until the end of the current billing period."}
+                    </p>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                    {cancelState === "confirming" && (
+                      <button onClick={() => setCancelState("idle")} style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, padding: "6px 14px", borderRadius: "var(--radius-md)", border: "0.5px solid var(--border-default)", background: "transparent", color: "var(--text-secondary)", cursor: "pointer" }}>Keep subscription</button>
+                    )}
+                    <button onClick={cancelState === "idle" ? () => setCancelState("confirming") : handleCancelSubscription} disabled={cancelState === "loading"} style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, padding: "6px 14px", borderRadius: "var(--radius-md)", border: "0.5px solid var(--border-default)", background: cancelState === "confirming" ? "#B5621A" : "transparent", color: cancelState === "confirming" ? "#fff" : "var(--text-tertiary)", cursor: cancelState === "loading" ? "not-allowed" : "pointer", opacity: cancelState === "loading" ? 0.6 : 1, transition: "all 0.15s" }}>
+                      {cancelState === "loading" ? "Cancelling…" : cancelState === "confirming" ? "Yes, cancel" : "Cancel subscription"}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        )}
 
       </main>
     </div>

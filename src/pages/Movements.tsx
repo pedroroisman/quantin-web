@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, QuantinLogo } from "../components/ui";
-import { supabase } from "../lib/supabase";
 
 interface Movement {
   id: number;
@@ -115,30 +114,19 @@ export function Movements() {
 
   useEffect(() => {
     let mounted = true;
-    (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user?.email) { navigate("/signin"); return; }
-
-      const apiUrl = import.meta.env.VITE_API_URL || "";
-      try {
-        const res = await fetch(
-          `${apiUrl}/api/portfolio_movements?limit=500&offset=0`,
-          { headers: { Authorization: `Bearer ${session.access_token}` } }
-        );
-        if (res.status === 403) { navigate("/subscribe"); return; }
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
+    const apiUrl = import.meta.env.VITE_API_URL || "";
+    fetch(`${apiUrl}/api/portfolio_movements?limit=500&offset=0`)
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .then(data => {
         if (mounted) {
           setMovements(data.movements || []);
           setTotal(data.total || 0);
           setLoading(false);
         }
-      } catch (e: any) {
-        if (mounted) { setError(e.message); setLoading(false); }
-      }
-    })();
+      })
+      .catch((e: any) => { if (mounted) { setError(e.message); setLoading(false); } });
     return () => { mounted = false; };
-  }, [navigate]);
+  }, []);
 
   const filtered = movements.filter(m => {
     if (typeFilter !== "all" && m.movement_type !== typeFilter) return false;
