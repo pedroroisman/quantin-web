@@ -405,22 +405,10 @@ export function Landing() {
         }}>
           <QuantinLogo iconSize={22} />
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            {authState === "subscribed" ? (
-              <Button variant="primary" size="sm" onClick={() => navigate("/portfolio")}>View Portfolio</Button>
-            ) : authState === "unsubscribed" ? (
-              <>
-                <Button variant="ghost" size="sm" onClick={() => navigate("/signin")}>Sign in</Button>
-                <Button variant="primary" size="sm" onClick={() => { track("click_subscribe", { source: "nav" }); navigate("/subscribe"); }}>Subscribe</Button>
-              </>
-            ) : (
-              <>
-                <Button variant="ghost" size="sm" onClick={() => navigate("/signin?mode=signup")}>Sign in</Button>
-                <span className="nav-secondary" style={{ display: "inline-flex" }}>
-                  <Button variant="ghost" size="sm" onClick={() => { track("click_free_preview", { source: "nav" }); navigate("/preview"); }}>See free preview</Button>
-                </span>
-                <Button variant="primary" size="sm" onClick={() => { track("click_subscribe", { source: "nav" }); navigate("/signin?mode=signup"); }}>Get the portfolio</Button>
-              </>
+            {authState !== "subscribed" && (
+              <Button variant="ghost" size="sm" onClick={() => { track("click_subscribe", { source: "nav" }); navigate("/subscribe"); }}>Get alerts</Button>
             )}
+            <Button variant="primary" size="sm" onClick={() => navigate("/portfolio")}>View Portfolio</Button>
           </div>
         </nav>
 
@@ -595,13 +583,13 @@ export function Landing() {
               {/* CTA */}
               <div className="cta-row" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", marginBottom: "0.9rem" }}>
                 <Button size="lg" onClick={() => {
-                  track("click_subscribe", { source: "hero_cta" });
-                  navigate(authState === "subscribed" ? "/portfolio" : authState === "unsubscribed" ? "/subscribe" : "/signin?mode=signup");
+                  track("click_view_portfolio", { source: "hero_cta" });
+                  navigate("/portfolio");
                 }}>
-                  Try free for 14 days
+                  View the portfolio →
                 </Button>
                 <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
-                  Then $25/mo · cancel anytime
+                  Free · Alerts from $25/mo
                 </span>
               </div>
 
