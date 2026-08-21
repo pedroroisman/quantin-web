@@ -263,10 +263,10 @@ function computeSec(holdings: PortfolioHolding[]): SecSeg[] {
 // ── Chart drawing helpers ─────────────────────────────────────────────────────
 const cv = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 const REGIME_COLORS: Record<string, string> = {
-  "Bull Low Vol":  "rgba(29,158,117,0.09)",
-  "Bull High Vol": "rgba(255,200,50,0.09)",
-  "Sideways":      "rgba(100,120,150,0.09)",
-  "Bear":          "rgba(220,80,60,0.09)",
+  "BULL_LOW_VOL":  "rgba(29,158,117,0.09)",
+  "BULL_HIGH_VOL": "rgba(255,200,50,0.09)",
+  "SIDEWAYS":      "rgba(100,120,150,0.09)",
+  "BEAR":          "rgba(220,80,60,0.09)",
 };
 
 function drawPerfChart(
