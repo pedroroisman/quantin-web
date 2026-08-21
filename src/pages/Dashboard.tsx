@@ -206,7 +206,8 @@ interface PortfolioData {
 }
 interface ChartSeries  { date: string; model: number; spy: number; }
 interface RebEvent     { date: string; added: string[]; dropped: string[]; held: string[]; total: number; }
-interface ChartData    { series: ChartSeries[]; rebalances: RebEvent[]; }
+interface RegimeEp     { start: string; end: string; regime: string; }
+interface ChartData    { series: ChartSeries[]; rebalances: RebEvent[]; regime_history?: RegimeEp[]; }
 interface GeoSeg       { label: string; pct: number; color: string; tickers: string[]; }
 interface IndSeg       { label: string; pct: number; color: string; tickers: string[]; }
 interface SecSeg       { label: string; pct: number; color: string; tickers: string[]; }
@@ -261,8 +262,16 @@ function computeSec(holdings: PortfolioHolding[]): SecSeg[] {
 
 // ── Chart drawing helpers ─────────────────────────────────────────────────────
 const cv = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const REGIME_COLORS: Record<string, string> = {
+  "Bull Low Vol":  "rgba(29,158,117,0.09)",
+  "Bull High Vol": "rgba(255,200,50,0.09)",
+  "Sideways":      "rgba(100,120,150,0.09)",
+  "Bear":          "rgba(220,80,60,0.09)",
+};
+
 function drawPerfChart(
-  canvas: HTMLCanvasElement, data: ChartSeries[], rebalances: RebEvent[], hovIdx: number | null
+  canvas: HTMLCanvasElement, data: ChartSeries[], rebalances: RebEvent[],
+  hovIdx: number | null, regimeHistory: RegimeEp[] = []
 ) {
   const W = canvas.clientWidth, H = canvas.clientHeight;
   if (!W || !H || data.length < 2) return;
@@ -282,8 +291,30 @@ function drawPerfChart(
   const minV = Math.min(...allV) * 0.97, maxV = Math.max(...allV) * 1.03;
   const xOf  = (i: number) => PAD.l + (i / (data.length - 1)) * CW;
   const yOf  = (v: number) => PAD.t + CH - ((v - minV) / (maxV - minV)) * CH;
+  const dateMs = data.map(d => new Date(d.date).getTime());
+  const xOfDate = (iso: string) => {
+    const ms = new Date(iso).getTime();
+    if (ms <= dateMs[0]) return PAD.l;
+    if (ms >= dateMs[dateMs.length - 1]) return PAD.l + CW;
+    let lo = 0, hi = dateMs.length - 1;
+    while (lo < hi - 1) { const mid = (lo + hi) >> 1; if (dateMs[mid] <= ms) lo = mid; else hi = mid; }
+    const t = (ms - dateMs[lo]) / (dateMs[hi] - dateMs[lo]);
+    return xOf(lo) + t * (xOf(hi) - xOf(lo));
+  };
 
   ctx.clearRect(0, 0, W, H);
+
+  // Regime background bands (drawn before grid so grid sits on top)
+  if (regimeHistory.length > 0) {
+    regimeHistory.forEach(ep => {
+      const color = REGIME_COLORS[ep.regime];
+      if (!color) return;
+      const x1 = xOfDate(ep.start), x2 = xOfDate(ep.end);
+      ctx.fillStyle = color;
+      ctx.fillRect(x1, PAD.t, Math.max(x2 - x1, 1), CH);
+    });
+  }
+
   ctx.font = "10px ui-monospace, monospace"; ctx.textAlign = "right"; ctx.setLineDash([]);
   for (let i = 0; i <= 4; i++) {
     const v = minV + (i / 4) * (maxV - minV), y = yOf(v);
@@ -570,7 +601,7 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
 }
 
 // ── PerfChart ─────────────────────────────────────────────────────────────────
-function PerfChart({ series, rebalances }: { series: ChartSeries[]; rebalances: RebEvent[] }) {
+function PerfChart({ series, rebalances, regimeHistory = [] }: { series: ChartSeries[]; rebalances: RebEvent[]; regimeHistory?: RegimeEp[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [range, setRange] = useState<"3m"|"6m"|"1y"|"all">("3m");
   const [hovIdx, setHovIdx] = useState<number | null>(null);
@@ -592,8 +623,8 @@ function PerfChart({ series, rebalances }: { series: ChartSeries[]; rebalances: 
 
   const redraw = useCallback((hi: number | null) => {
     const canvas = canvasRef.current;
-    if (canvas && filtered.length >= 2) drawPerfChart(canvas, filtered, rebalances, hi);
-  }, [filtered, rebalances]);
+    if (canvas && filtered.length >= 2) drawPerfChart(canvas, filtered, rebalances, hi, regimeHistory);
+  }, [filtered, rebalances, regimeHistory]);
 
   useEffect(() => { redraw(hovIdx); }, [filtered, rebalances]);
 
@@ -1198,7 +1229,7 @@ export function Dashboard() {
                 </div>
               </div>
               {chartData && chartData.series.length > 1 && (
-                <PerfChart series={chartData.series} rebalances={chartData.rebalances} />
+                <PerfChart series={chartData.series} rebalances={chartData.rebalances} regimeHistory={chartData.regime_history} />
               )}
             </div>
           );
