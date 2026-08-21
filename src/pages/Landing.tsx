@@ -593,13 +593,6 @@ export function Landing() {
                 </span>
               </div>
 
-              <div style={{ display: "flex", gap: 5, alignItems: "center", marginBottom: "2rem" }}>
-                <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>Not sure yet?</span>
-                <Button variant="link" size="sm" onClick={() => { track("click_free_preview", { source: "hero_link" }); navigate("/preview"); }}>
-                  See last period's picks for free →
-                </Button>
-              </div>
-
               {/* Footer strip */}
               <div className="footer-strip" style={{ paddingTop: "1.25rem", borderTop: "0.5px solid var(--border-subtle)", display: "flex", gap: "2rem", flexWrap: "wrap" }}>
                 {[
