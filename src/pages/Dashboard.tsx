@@ -268,6 +268,10 @@ const REGIME_COLORS: Record<string, string> = {
   "SIDEWAYS":      "rgba(100,120,150,0.09)",
   "BEAR":          "rgba(220,80,60,0.09)",
 };
+const REGIME_LABELS: Record<string, string> = {
+  BULL_LOW_VOL: "Bull Low Vol", BULL_HIGH_VOL: "Bull High Vol",
+  SIDEWAYS: "Sideways", BEAR: "Bear",
+};
 
 function drawPerfChart(
   canvas: HTMLCanvasElement, data: ChartSeries[], rebalances: RebEvent[],
@@ -652,7 +656,6 @@ function PerfChart({ series, rebalances, regimeHistory = [] }: { series: ChartSe
 
   const handleLeave = useCallback(() => { setHovIdx(null); setTip(null); redraw(null); }, [redraw]);
   const pctStr = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
-  const REGIME_LABELS: Record<string, string> = { BULL_LOW_VOL: "Bull Low Vol", BULL_HIGH_VOL: "Bull High Vol", SIDEWAYS: "Sideways", BEAR: "Bear" };
 
   return (
     <div style={{ marginBottom: "2rem" }}>
