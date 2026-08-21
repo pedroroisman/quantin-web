@@ -6,48 +6,53 @@ interface Movement {
   id: number;
   date: string;
   ticker: string;
-  from_state: "cash" | "buy";
-  to_state: "cash" | "buy";
-  movement_type: "rebalance" | "strategy";
+  from_state: string;
+  to_state: string;
+  movement_type: "rebalance" | "strategy" | "regime_change";
   entry_date: string | null;
   entry_price: number | null;
   exit_price: number | null;
   return_pct: number | null;
+  portfolio_impact_pct: number | null;
 }
 
-type TypeFilter = "all" | "rebalance" | "strategy";
+const REGIME_LABELS: Record<string, string> = {
+  BULL_LOW_VOL: "Bull Low Vol", BULL_HIGH_VOL: "Bull High Vol",
+  SIDEWAYS: "Sideways", BEAR: "Bear",
+};
+
+type TypeFilter = "all" | "rebalance" | "strategy" | "regime_change";
 type DirectionFilter = "all" | "entry" | "exit";
 
-function ReturnBadge({ value }: { value: number | null }) {
+function ReturnBadge({ value, impact }: { value: number | null; impact?: number | null }) {
   if (value === null) return <span style={{ color: "var(--text-tertiary)", fontSize: 13 }}>—</span>;
   const pos = value >= 0;
   return (
-    <span style={{
-      fontVariantNumeric: "tabular-nums",
-      fontWeight: 600,
-      fontSize: 13,
-      color: pos ? "var(--success-text)" : "var(--danger-text)",
-    }}>
-      {pos ? "+" : ""}{value.toFixed(2)}%
+    <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
+      <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, fontSize: 13, color: pos ? "var(--success-text)" : "var(--danger-text)" }}>
+        {pos ? "+" : ""}{value.toFixed(2)}%
+      </span>
+      {impact != null && (
+        <span style={{ fontVariantNumeric: "tabular-nums", fontSize: 11, color: impact >= 0 ? "var(--success-text)" : "var(--danger-text)", opacity: 0.7 }}>
+          {impact >= 0 ? "+" : ""}{impact.toFixed(2)}% ptf
+        </span>
+      )}
     </span>
   );
 }
 
-function TypeBadge({ type }: { type: "rebalance" | "strategy" }) {
-  const isRebal = type === "rebalance";
+function TypeBadge({ type }: { type: "rebalance" | "strategy" | "regime_change" }) {
+  const cfg =
+    type === "rebalance"    ? { bg: "rgba(52,211,153,0.1)",  color: "var(--accent)",   border: "rgba(52,211,153,0.25)",  label: "Rebalance" } :
+    type === "regime_change"? { bg: "rgba(180,130,255,0.1)", color: "#b482ff",          border: "rgba(180,130,255,0.25)", label: "Regime" } :
+                              { bg: "rgba(55,138,221,0.12)", color: "var(--blue-400)",  border: "rgba(55,138,221,0.25)",  label: "Strategy" };
   return (
     <span style={{
-      fontSize: 11,
-      fontWeight: 600,
-      letterSpacing: "0.04em",
-      textTransform: "uppercase",
-      padding: "3px 8px",
-      borderRadius: "var(--radius-full)",
-      background: isRebal ? "rgba(52,211,153,0.1)" : "rgba(55,138,221,0.12)",
-      color: isRebal ? "var(--accent)" : "var(--blue-400)",
-      border: `0.5px solid ${isRebal ? "rgba(52,211,153,0.25)" : "rgba(55,138,221,0.25)"}`,
+      fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase",
+      padding: "3px 8px", borderRadius: "var(--radius-full)",
+      background: cfg.bg, color: cfg.color, border: `0.5px solid ${cfg.border}`,
     }}>
-      {isRebal ? "Rebalance" : "Strategy"}
+      {cfg.label}
     </span>
   );
 }
@@ -183,9 +188,10 @@ export function Movements() {
         }}>
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
             <span style={{ fontSize: 12, color: "var(--text-tertiary)", marginRight: 4 }}>Type</span>
-            <FilterPill label="All"       active={typeFilter === "all"}       onClick={() => handleTypeFilter("all")} />
-            <FilterPill label="Rebalance" active={typeFilter === "rebalance"} onClick={() => handleTypeFilter("rebalance")} />
-            <FilterPill label="Strategy"  active={typeFilter === "strategy"}  onClick={() => handleTypeFilter("strategy")} />
+            <FilterPill label="All"       active={typeFilter === "all"}           onClick={() => handleTypeFilter("all")} />
+            <FilterPill label="Rebalance" active={typeFilter === "rebalance"}     onClick={() => handleTypeFilter("rebalance")} />
+            <FilterPill label="Strategy"  active={typeFilter === "strategy"}      onClick={() => handleTypeFilter("strategy")} />
+            <FilterPill label="Regime"    active={typeFilter === "regime_change"} onClick={() => handleTypeFilter("regime_change")} />
           </div>
           <div style={{ width: "0.5px", background: "var(--border-subtle)", margin: "0 4px" }} />
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -254,17 +260,25 @@ export function Movements() {
                       <td style={{ padding: "11px 16px", color: "var(--text-tertiary)", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
                         {m.date}
                       </td>
-                      <td style={{ padding: "11px 16px", fontWeight: 700, letterSpacing: "0.04em", color: "var(--text-primary)" }}>
+                      <td style={{ padding: "11px 16px", fontWeight: 700, letterSpacing: "0.04em", color: m.movement_type === "regime_change" ? "var(--text-tertiary)" : "var(--text-primary)" }}>
                         {m.ticker}
                       </td>
                       <td style={{ padding: "11px 16px" }}>
-                        <DirectionChip from={m.from_state} to={m.to_state} />
+                        {m.movement_type === "regime_change" ? (
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13 }}>
+                            <span style={{ color: "var(--text-tertiary)", fontSize: 11 }}>{REGIME_LABELS[m.from_state] ?? m.from_state}</span>
+                            <span style={{ color: "var(--text-tertiary)" }}>→</span>
+                            <span style={{ fontWeight: 700, color: "#b482ff" }}>{REGIME_LABELS[m.to_state] ?? m.to_state}</span>
+                          </span>
+                        ) : (
+                          <DirectionChip from={m.from_state as "cash" | "buy"} to={m.to_state as "cash" | "buy"} />
+                        )}
                       </td>
                       <td style={{ padding: "11px 16px" }}>
                         <TypeBadge type={m.movement_type} />
                       </td>
                       <td style={{ padding: "11px 16px", textAlign: "right" }}>
-                        <ReturnBadge value={m.return_pct} />
+                        <ReturnBadge value={m.return_pct} impact={m.to_state === "cash" ? m.portfolio_impact_pct : null} />
                       </td>
                     </tr>
                   ))}

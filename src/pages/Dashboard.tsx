@@ -878,9 +878,10 @@ function SectorComposition({ holdings }: { holdings: PortfolioHolding[] }) {
 // ── LastMovementsPanel ────────────────────────────────────────────────────────
 interface Movement {
   id: number; date: string; ticker: string;
-  from_state: "cash" | "buy"; to_state: "cash" | "buy";
-  movement_type: "rebalance" | "strategy";
+  from_state: string; to_state: string;
+  movement_type: "rebalance" | "strategy" | "regime_change";
   return_pct: number | null;
+  portfolio_impact_pct: number | null;
 }
 
 function LastMovementsPanel() {
@@ -930,23 +931,40 @@ function LastMovementsPanel() {
                   onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                 >
                   <td style={{ padding: "10px 16px", color: "var(--text-tertiary)", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums", fontSize: 12 }}>{m.date}</td>
-                  <td style={{ padding: "10px 16px", fontWeight: 700, letterSpacing: "0.04em", color: "var(--text-primary)" }}>{m.ticker}</td>
+                  <td style={{ padding: "10px 16px", fontWeight: 700, letterSpacing: "0.04em", color: m.movement_type === "regime_change" ? "var(--text-tertiary)" : "var(--text-primary)" }}>{m.ticker}</td>
                   <td style={{ padding: "10px 16px" }}>
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-                      <span style={{ color: "var(--text-tertiary)", fontSize: 11 }}>{m.from_state === "cash" ? "CASH" : "BUY"}</span>
-                      <span style={{ color: "var(--text-tertiary)" }}>→</span>
-                      <span style={{ fontWeight: 700, fontSize: 13, color: m.to_state === "buy" ? "var(--accent)" : "var(--danger-text)" }}>{m.to_state === "cash" ? "CASH" : "BUY"}</span>
-                    </span>
+                    {m.movement_type === "regime_change" ? (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                        <span style={{ color: "var(--text-tertiary)", fontSize: 11 }}>{REGIME_LABELS[m.from_state] ?? m.from_state}</span>
+                        <span style={{ color: "var(--text-tertiary)" }}>→</span>
+                        <span style={{ fontWeight: 700, fontSize: 13, color: "#b482ff" }}>{REGIME_LABELS[m.to_state] ?? m.to_state}</span>
+                      </span>
+                    ) : (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                        <span style={{ color: "var(--text-tertiary)", fontSize: 11 }}>{m.from_state === "cash" ? "CASH" : "BUY"}</span>
+                        <span style={{ color: "var(--text-tertiary)" }}>→</span>
+                        <span style={{ fontWeight: 700, fontSize: 13, color: m.to_state === "buy" ? "var(--accent)" : "var(--danger-text)" }}>{m.to_state === "cash" ? "CASH" : "BUY"}</span>
+                      </span>
+                    )}
                   </td>
                   <td style={{ padding: "10px 16px" }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" as const, padding: "3px 8px", borderRadius: "var(--radius-full)", background: m.movement_type === "rebalance" ? "rgba(52,211,153,0.1)" : "rgba(55,138,221,0.12)", color: m.movement_type === "rebalance" ? "var(--accent)" : "var(--blue-400)", border: `0.5px solid ${m.movement_type === "rebalance" ? "rgba(52,211,153,0.25)" : "rgba(55,138,221,0.25)"}` }}>
-                      {m.movement_type === "rebalance" ? "Rebalance" : "Strategy"}
-                    </span>
+                    {(() => {
+                      const cfg =
+                        m.movement_type === "regime_change" ? { bg: "rgba(180,130,255,0.1)", color: "#b482ff", border: "rgba(180,130,255,0.25)", label: "Regime" } :
+                        m.movement_type === "rebalance"     ? { bg: "rgba(52,211,153,0.1)",  color: "var(--accent)", border: "rgba(52,211,153,0.25)", label: "Rebalance" } :
+                                                              { bg: "rgba(55,138,221,0.12)", color: "var(--blue-400)", border: "rgba(55,138,221,0.25)", label: "Strategy" };
+                      return <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase" as const, padding: "3px 8px", borderRadius: "var(--radius-full)", background: cfg.bg, color: cfg.color, border: `0.5px solid ${cfg.border}` }}>{cfg.label}</span>;
+                    })()}
                   </td>
                   <td style={{ padding: "10px 16px", textAlign: "right" }}>
                     {m.return_pct === null
                       ? <span style={{ color: "var(--text-tertiary)", fontSize: 13 }}>—</span>
-                      : <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, fontSize: 13, color: m.return_pct >= 0 ? "var(--success-text)" : "var(--danger-text)" }}>{m.return_pct >= 0 ? "+" : ""}{m.return_pct.toFixed(2)}%</span>
+                      : <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
+                          <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600, fontSize: 13, color: m.return_pct >= 0 ? "var(--success-text)" : "var(--danger-text)" }}>{m.return_pct >= 0 ? "+" : ""}{m.return_pct.toFixed(2)}%</span>
+                          {m.to_state === "cash" && m.portfolio_impact_pct != null && (
+                            <span style={{ fontVariantNumeric: "tabular-nums", fontSize: 11, color: m.portfolio_impact_pct >= 0 ? "var(--success-text)" : "var(--danger-text)", opacity: 0.7 }}>{m.portfolio_impact_pct >= 0 ? "+" : ""}{m.portfolio_impact_pct.toFixed(2)}% ptf</span>
+                          )}
+                        </span>
                     }
                   </td>
                 </tr>
