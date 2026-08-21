@@ -605,7 +605,7 @@ function PerfChart({ series, rebalances, regimeHistory = [] }: { series: ChartSe
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [range, setRange] = useState<"3m"|"6m"|"1y"|"all">("3m");
   const [hovIdx, setHovIdx] = useState<number | null>(null);
-  const [tip, setTip] = useState<{ x: number; port: number; spy: number; date: string } | null>(null);
+  const [tip, setTip] = useState<{ x: number; port: number; spy: number; date: string; regime?: string } | null>(null);
 
   const filtered = useMemo(() => {
     let data = series;
@@ -645,11 +645,14 @@ function PerfChart({ series, rebalances, regimeHistory = [] }: { series: ChartSe
     const idx = Math.max(0, Math.min(Math.round((mx - PAD_L) / CW * (filtered.length - 1)), filtered.length - 1));
     setHovIdx(idx); redraw(idx);
     const pt = filtered[idx];
-    setTip({ x: Math.min(mx + 12, canvas.clientWidth - 160), port: (pt.model / 100 - 1) * 100, spy: (pt.spy / 100 - 1) * 100, date: pt.date });
+    const ptMs = new Date(pt.date).getTime();
+    const ep = regimeHistory.find(r => ptMs >= new Date(r.start).getTime() && ptMs <= new Date(r.end).getTime());
+    setTip({ x: Math.min(mx + 12, canvas.clientWidth - 160), port: (pt.model / 100 - 1) * 100, spy: (pt.spy / 100 - 1) * 100, date: pt.date, regime: ep?.regime });
   }, [filtered, redraw]);
 
   const handleLeave = useCallback(() => { setHovIdx(null); setTip(null); redraw(null); }, [redraw]);
   const pctStr = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
+  const REGIME_LABELS: Record<string, string> = { BULL_LOW_VOL: "Bull Low Vol", BULL_HIGH_VOL: "Bull High Vol", SIDEWAYS: "Sideways", BEAR: "Bear" };
 
   return (
     <div style={{ marginBottom: "2rem" }}>
@@ -670,10 +673,16 @@ function PerfChart({ series, rebalances, regimeHistory = [] }: { series: ChartSe
               <span style={{ color: "var(--text-secondary)" }}>Portfolio</span>
               <span style={{ fontFamily: "ui-monospace, monospace", fontWeight: 600, color: "#1D9E75" }}>{pctStr(tip.port)}</span>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 14, marginBottom: tip.regime ? 6 : 0 }}>
               <span style={{ color: "var(--text-secondary)" }}>S&P 500</span>
               <span style={{ fontFamily: "ui-monospace, monospace", fontWeight: 600 }}>{pctStr(tip.spy)}</span>
             </div>
+            {tip.regime && (
+              <div style={{ borderTop: "0.5px solid var(--border-subtle)", paddingTop: 6, display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, background: (REGIME_COLORS[tip.regime] ?? "rgba(150,150,150,0.5)").replace(/[\d.]+\)$/, "0.7)") }} />
+                <span style={{ color: "var(--text-tertiary)", fontSize: 10 }}>{REGIME_LABELS[tip.regime] ?? tip.regime}</span>
+              </div>
+            )}
           </div>
         )}
         <div style={{ display: "flex", gap: 20, padding: "8px 16px", borderTop: "0.5px solid var(--border-subtle)" }}>
