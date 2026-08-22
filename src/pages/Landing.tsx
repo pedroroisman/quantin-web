@@ -403,7 +403,6 @@ export function Landing() {
           background: "var(--bg-primary)", borderBottom: "0.5px solid var(--border-subtle)",
           position: "sticky", top: 0, zIndex: 10,
         }}>
-          <QuantinLogo iconSize={22} />
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             {authState !== "subscribed" && (
               <Button variant="ghost" size="sm" onClick={() => { track("click_subscribe", { source: "nav" }); navigate("/subscribe"); }}>Get alerts</Button>
