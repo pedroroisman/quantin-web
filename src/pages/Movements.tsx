@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, QuantinLogo } from "../components/ui";
+import { track } from "../lib/analytics";
 
 interface Movement {
   id: number;
@@ -144,8 +145,10 @@ export function Movements() {
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const currentPage = Math.floor(offset / PAGE_SIZE) + 1;
 
-  const handleTypeFilter = (f: TypeFilter) => { setTypeFilter(f); setOffset(0); };
-  const handleDirFilter  = (f: DirectionFilter) => { setDirectionFilter(f); setOffset(0); };
+  useEffect(() => { track("movements_viewed"); }, []);
+
+  const handleTypeFilter = (f: TypeFilter) => { setTypeFilter(f); setOffset(0); track("movements_filter_changed", { type: f, direction: directionFilter }); };
+  const handleDirFilter  = (f: DirectionFilter) => { setDirectionFilter(f); setOffset(0); track("movements_filter_changed", { type: typeFilter, direction: f }); };
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-tertiary)" }}>

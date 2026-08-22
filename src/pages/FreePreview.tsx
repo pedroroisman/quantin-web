@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, QuantinLogo } from "../components/ui";
+import { track } from "../lib/analytics";
 
 // ── Maintenance banner ────────────────────────────────────────────────────────
 const SHOW_MAINTENANCE_BANNER = false;
@@ -422,6 +423,23 @@ export function FreePreview() {
   const [chartSeries, setChartSeries] = useState<ChartPoint[]>([]);
   const [rebalances, setRebalances]   = useState<RebEvent[]>([]);
   const [error, setError]     = useState(false);
+  const chartRef = useRef<HTMLDivElement>(null);
+  const chartTracked = useRef(false);
+
+  useEffect(() => { track("free_preview_viewed"); }, []);
+
+  useEffect(() => {
+    const el = chartRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !chartTracked.current) {
+        chartTracked.current = true;
+        track("free_preview_scrolled_to_chart");
+      }
+    }, { threshold: 0.3 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   useEffect(() => {
     const apiUrl = import.meta.env.VITE_API_URL || "";
@@ -483,7 +501,7 @@ export function FreePreview() {
         <button onClick={() => navigate("/")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, lineHeight: 0 }}>
           <QuantinLogo iconSize={22} />
         </button>
-        <Button size="sm" onClick={() => navigate("/signin?mode=signup")}>Get the portfolio — $25/mo</Button>
+        <Button size="sm" onClick={() => { track("free_preview_cta_clicked", { source: "nav" }); navigate("/signin?mode=signup"); }}>Get the portfolio — $25/mo</Button>
       </nav>
 
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "2.5rem 2rem 6rem" }}>
@@ -540,7 +558,9 @@ export function FreePreview() {
 
         {/* Performance chart */}
         {filteredSeries.length >= 2 && (
-          <PerfChart series={filteredSeries} rebalances={filteredRebalances} />
+          <div ref={chartRef}>
+            <PerfChart series={filteredSeries} rebalances={filteredRebalances} />
+          </div>
         )}
 
         {/* Holdings grid */}
@@ -570,7 +590,7 @@ export function FreePreview() {
             <p style={{ fontFamily: outfit, fontWeight: 300, fontSize: 13, color: "var(--text-tertiary)", margin: 0 }}>Updated every 2 months · email alert on every change</p>
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
-            <Button size="md" onClick={() => navigate("/signin?mode=signup")}>Get the portfolio — $25/mo</Button>
+            <Button size="md" onClick={() => { track("free_preview_cta_clicked", { source: "paywall" }); navigate("/signin?mode=signup"); }}>Get the portfolio — $25/mo</Button>
             <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)" }}>Cancel anytime · no commitment</span>
           </div>
         </div>

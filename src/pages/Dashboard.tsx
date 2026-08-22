@@ -978,7 +978,7 @@ function LastMovementsPanel() {
       </div>
       <div style={{ textAlign: "right" }}>
         <button
-          onClick={() => navigate("/movements")}
+          onClick={() => { track("view_full_movements_clicked"); navigate("/movements"); }}
           style={{ fontFamily: outfit, fontWeight: 400, fontSize: 13, color: "var(--accent)", background: "none", border: "none", cursor: "pointer", letterSpacing: "0.01em" }}
         >
           View full history →
@@ -1001,6 +1001,8 @@ export function Dashboard() {
   const [cancelEndsOn, setCancelEndsOn] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"composition" | "performance" | "movements">("composition");
   const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => { track("dashboard_viewed"); }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -1109,7 +1111,7 @@ export function Dashboard() {
           <Button variant="ghost" size="sm" onClick={() => navigate("/movements")}>Movements</Button>
           {userEmail
             ? <Button variant="ghost" size="sm" onClick={() => navigate("/user")}>Account</Button>
-            : <Button size="sm" onClick={() => navigate("/subscribe")}>Get alerts</Button>
+            : <Button size="sm" onClick={() => { track("subscribe_cta_clicked", { source: "dashboard_nav" }); navigate("/subscribe"); }}>Get alerts</Button>
           }
         </div>
       </nav>
@@ -1180,7 +1182,7 @@ export function Dashboard() {
           {(["composition", "performance", "movements"] as const).map(key => (
             <button
               key={key}
-              onClick={() => setActiveTab(key)}
+              onClick={() => { setActiveTab(key); track("dashboard_tab_changed", { tab: key }); }}
               style={{
                 flex: 1, padding: "8px 0",
                 borderRadius: "calc(var(--radius-lg) - 4px)",
@@ -1289,7 +1291,7 @@ export function Dashboard() {
                 Receive an email the moment the model makes a move — entries, exits, and rebalances.
               </p>
             </div>
-            <Button size="sm" onClick={() => navigate("/subscribe")}>Subscribe — $25/mo</Button>
+            <Button size="sm" onClick={() => { track("subscribe_cta_clicked", { source: "dashboard_banner" }); navigate("/subscribe"); }}>Subscribe — $25/mo</Button>
           </div>
         )}
 
