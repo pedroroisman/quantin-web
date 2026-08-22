@@ -431,7 +431,7 @@ export function Landing() {
 
           {/* Logo + wordmark — centered */}
           <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
-            <QuantinLogo iconSize={52} showText={true} showIcon={false} gap={14} fontWeight={400} />
+            <QuantinLogo iconSize={52} fontWeight={400} />
           </div>
 
           {/* Two-column: content left, ticker right */}
