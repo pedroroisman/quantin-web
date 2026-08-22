@@ -398,7 +398,7 @@ export function Landing() {
 
         {/* Nav */}
         <nav className="hero-nav" style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
+          display: "flex", alignItems: "center", justifyContent: "flex-end",
           padding: "0 2rem", height: 56,
           background: "var(--bg-primary)", borderBottom: "0.5px solid var(--border-subtle)",
           position: "sticky", top: 0, zIndex: 10,
