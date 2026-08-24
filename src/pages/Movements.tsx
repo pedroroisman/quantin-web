@@ -9,7 +9,7 @@ interface Movement {
   ticker: string;
   from_state: string;
   to_state: string;
-  movement_type: "rebalance" | "strategy" | "regime_change";
+  movement_type: "rebalance" | "strategy" | "regime_change" | "strategy_change";
   entry_date: string | null;
   entry_price: number | null;
   exit_price: number | null;
@@ -22,7 +22,7 @@ const REGIME_LABELS: Record<string, string> = {
   SIDEWAYS: "Sideways", BEAR: "Bear",
 };
 
-type TypeFilter = "all" | "rebalance" | "strategy" | "regime_change";
+type TypeFilter = "all" | "rebalance" | "strategy" | "regime_change" | "strategy_change";
 type DirectionFilter = "all" | "entry" | "exit";
 
 function ReturnBadge({ value, impact }: { value: number | null; impact?: number | null }) {
@@ -42,11 +42,12 @@ function ReturnBadge({ value, impact }: { value: number | null; impact?: number 
   );
 }
 
-function TypeBadge({ type }: { type: "rebalance" | "strategy" | "regime_change" }) {
+function TypeBadge({ type }: { type: "rebalance" | "strategy" | "regime_change" | "strategy_change" }) {
   const cfg =
-    type === "rebalance"    ? { bg: "rgba(52,211,153,0.1)",  color: "var(--accent)",   border: "rgba(52,211,153,0.25)",  label: "Rebalance" } :
-    type === "regime_change"? { bg: "rgba(180,130,255,0.1)", color: "#b482ff",          border: "rgba(180,130,255,0.25)", label: "Regime" } :
-                              { bg: "rgba(55,138,221,0.12)", color: "var(--blue-400)",  border: "rgba(55,138,221,0.25)",  label: "Strategy" };
+    type === "rebalance"      ? { bg: "rgba(52,211,153,0.1)",  color: "var(--accent)",   border: "rgba(52,211,153,0.25)",  label: "Rebalance" } :
+    type === "regime_change"  ? { bg: "rgba(180,130,255,0.1)", color: "#b482ff",          border: "rgba(180,130,255,0.25)", label: "Regime" } :
+    type === "strategy_change"? { bg: "rgba(251,191,36,0.1)",  color: "#d97706",          border: "rgba(251,191,36,0.25)",  label: "Strategy" } :
+                                { bg: "rgba(55,138,221,0.12)", color: "var(--blue-400)",  border: "rgba(55,138,221,0.25)",  label: "Signal" };
   return (
     <span style={{
       fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase",
@@ -191,10 +192,11 @@ export function Movements() {
         }}>
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
             <span style={{ fontSize: 12, color: "var(--text-tertiary)", marginRight: 4 }}>Type</span>
-            <FilterPill label="All"       active={typeFilter === "all"}           onClick={() => handleTypeFilter("all")} />
-            <FilterPill label="Rebalance" active={typeFilter === "rebalance"}     onClick={() => handleTypeFilter("rebalance")} />
-            <FilterPill label="Strategy"  active={typeFilter === "strategy"}      onClick={() => handleTypeFilter("strategy")} />
-            <FilterPill label="Regime"    active={typeFilter === "regime_change"} onClick={() => handleTypeFilter("regime_change")} />
+            <FilterPill label="All"            active={typeFilter === "all"}             onClick={() => handleTypeFilter("all")} />
+            <FilterPill label="Rebalance"      active={typeFilter === "rebalance"}       onClick={() => handleTypeFilter("rebalance")} />
+            <FilterPill label="Signal"         active={typeFilter === "strategy"}        onClick={() => handleTypeFilter("strategy")} />
+            <FilterPill label="New strategy"   active={typeFilter === "strategy_change"} onClick={() => handleTypeFilter("strategy_change")} />
+            <FilterPill label="Regime"         active={typeFilter === "regime_change"}   onClick={() => handleTypeFilter("regime_change")} />
           </div>
           <div style={{ width: "0.5px", background: "var(--border-subtle)", margin: "0 4px" }} />
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -263,7 +265,7 @@ export function Movements() {
                       <td style={{ padding: "11px 16px", color: "var(--text-tertiary)", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
                         {m.date}
                       </td>
-                      <td style={{ padding: "11px 16px", fontWeight: 700, letterSpacing: "0.04em", color: m.movement_type === "regime_change" ? "var(--text-tertiary)" : "var(--text-primary)" }}>
+                      <td style={{ padding: "11px 16px", fontWeight: 700, letterSpacing: "0.04em", color: (m.movement_type === "regime_change" || m.movement_type === "strategy_change") ? "var(--text-tertiary)" : "var(--text-primary)" }}>
                         {m.ticker}
                       </td>
                       <td style={{ padding: "11px 16px" }}>
@@ -272,6 +274,12 @@ export function Movements() {
                             <span style={{ color: "var(--text-tertiary)", fontSize: 11 }}>{REGIME_LABELS[m.from_state] ?? m.from_state}</span>
                             <span style={{ color: "var(--text-tertiary)" }}>→</span>
                             <span style={{ fontWeight: 700, color: "#b482ff" }}>{REGIME_LABELS[m.to_state] ?? m.to_state}</span>
+                          </span>
+                        ) : m.movement_type === "strategy_change" ? (
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12 }}>
+                            <span style={{ color: "var(--text-tertiary)", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={m.from_state}>{m.from_state}</span>
+                            <span style={{ color: "var(--text-tertiary)", flexShrink: 0 }}>→</span>
+                            <span style={{ fontWeight: 600, color: "#d97706", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={m.to_state}>{m.to_state}</span>
                           </span>
                         ) : (
                           <DirectionChip from={m.from_state as "cash" | "buy"} to={m.to_state as "cash" | "buy"} />
