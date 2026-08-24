@@ -11,6 +11,7 @@ import { SignIn }        from "./pages/SignIn";
 import { AuthCallback }  from "./pages/AuthCallback";
 import { UserProfile }  from "./pages/UserProfile";
 import { Movements }    from "./pages/Movements";
+import { PrivateRoute }  from "./components/PrivateRoute";
 
 export default function App() {
   return (
@@ -19,12 +20,12 @@ export default function App() {
         <Route path="/"               element={<Landing />} />
         <Route path="/preview"        element={<FreePreview />} />
         <Route path="/subscribe"      element={<Checkout />} />
-        <Route path="/portfolio"      element={<Dashboard />} />
-        <Route path="/smart-selector" element={<SmartSelector />} />
         <Route path="/signin"         element={<SignIn />} />
         <Route path="/auth/callback"  element={<AuthCallback />} />
-        <Route path="/user"           element={<UserProfile />} />
-        <Route path="/movements"      element={<Movements />} />
+        <Route path="/portfolio"      element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+        <Route path="/smart-selector" element={<PrivateRoute><SmartSelector /></PrivateRoute>} />
+        <Route path="/user"           element={<PrivateRoute><UserProfile /></PrivateRoute>} />
+        <Route path="/movements"      element={<PrivateRoute><Movements /></PrivateRoute>} />
       </Routes>
       <Analytics />
     </BrowserRouter>

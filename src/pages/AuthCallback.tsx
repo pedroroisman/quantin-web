@@ -6,10 +6,13 @@ import { QuantinLogo } from "../components/ui";
 const outfit = "'Outfit', sans-serif";
 
 async function routeAfterAuth(email: string, navigate: (path: string) => void) {
+  const next = sessionStorage.getItem("auth_next");
+  sessionStorage.removeItem("auth_next");
   const { data } = await supabase
     .from("subscribers").select("id")
     .eq("email", email.trim().toLowerCase()).maybeSingle();
-  navigate(data ? "/portfolio" : "/subscribe");
+  if (data && next) navigate(next);
+  else navigate(data ? "/portfolio" : "/subscribe");
 }
 
 export function AuthCallback() {

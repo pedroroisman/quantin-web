@@ -7,11 +7,12 @@ import { track, identify } from "../lib/analytics";
 const outfit = "'Outfit', sans-serif";
 const playfair = "'Playfair Display', serif";
 
-async function routeAfterSignIn(email: string, navigate: (path: string) => void) {
+async function routeAfterSignIn(email: string, navigate: (path: string) => void, next?: string | null) {
   const { data } = await supabase
     .from("subscribers").select("id")
     .eq("email", email.trim().toLowerCase()).maybeSingle();
-  navigate(data ? "/portfolio" : "/subscribe");
+  if (data && next) navigate(next);
+  else navigate(data ? "/portfolio" : "/subscribe");
 }
 
 export function SignIn() {
@@ -29,14 +30,17 @@ export function SignIn() {
   const [error, setError]         = useState("");
   const [checkEmail, setCheckEmail] = useState(false);
 
+  const next = params.get("next");
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user?.email) routeAfterSignIn(session.user.email, navigate);
+      if (session?.user?.email) routeAfterSignIn(session.user.email, navigate, next);
     });
-  }, [navigate]);
+  }, [navigate, next]);
 
   const handleGoogle = async () => {
     track("sign_in", { method: "google" });
+    if (next) sessionStorage.setItem("auth_next", next);
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${window.location.origin}/auth/callback` },
@@ -82,7 +86,7 @@ export function SignIn() {
       }
       track("sign_in", { method: "email" });
       identify(email, { email });
-      routeAfterSignIn(email, navigate);
+      routeAfterSignIn(email, navigate, next);
     }
   };
 
