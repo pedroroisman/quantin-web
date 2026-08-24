@@ -404,8 +404,14 @@ export function Landing() {
           position: "sticky", top: 0, zIndex: 10,
         }}>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            {authState !== "subscribed" && (
+            {authState === "none" && (
+              <Button variant="ghost" size="sm" onClick={() => { track("click_signin", { source: "nav" }); navigate("/signin"); }}>Sign in</Button>
+            )}
+            {authState === "none" && (
               <Button variant="ghost" size="sm" onClick={() => { track("click_subscribe", { source: "nav" }); navigate("/subscribe"); }}>Get alerts</Button>
+            )}
+            {(authState === "subscribed" || authState === "unsubscribed") && (
+              <Button variant="ghost" size="sm" onClick={() => navigate("/user")}>Account</Button>
             )}
             <Button variant="primary" size="sm" onClick={() => navigate("/portfolio")}>View Portfolio</Button>
           </div>
