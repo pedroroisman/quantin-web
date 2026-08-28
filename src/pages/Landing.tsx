@@ -118,7 +118,7 @@ function computeSharpe(pts: SeriesPoint[], key: 'model' | 'spy'): number | null 
   const variance = rets.reduce((a, b) => a + (b - mean) ** 2, 0) / rets.length;
   const std = Math.sqrt(variance);
   if (std < 1e-9) return null;
-  return (mean / std) * Math.sqrt(52);
+  return (mean / std) * Math.sqrt(252);
 }
 
 function buildRangeMetrics(series: SeriesPoint[], year: YearSelection, cStart: string, cEnd: string): MetricData[] {
