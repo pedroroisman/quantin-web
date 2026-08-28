@@ -389,8 +389,8 @@ export function Landing() {
     if (selectedYear === "all" && wfStats) {
       const cagr   = (wfStats.cagr   * 100).toFixed(1);
       const mdd    = (wfStats.max_dd * 100).toFixed(1);
-      const spyCagr = wfStats.spy_cagr != null ? (wfStats.spy_cagr * 100).toFixed(1) : "14.4";
-      const alpha   = (wfStats.cagr * 100 - (wfStats.spy_cagr ?? 0.144) * 100).toFixed(1);
+      const spyNum  = wfStats.spy_cagr != null ? wfStats.spy_cagr * 100 : 14.4;
+      const alpha   = (wfStats.cagr * 100 - spyNum).toFixed(1);
       return `Since Feb 2018, Quantin has compounded at +${cagr}%/yr — outperforming the S&P 500 by ${alpha}pp per year — while limiting its worst drawdown to just ${mdd}%, compared to −33.7% for the index during the 2020 crash.`;
     }
     return buildInterpretation(chartSeries, selectedYear, effectiveStart, effectiveEnd);
