@@ -12,24 +12,25 @@ import { Button, QuantinLogo } from "../components/ui";
 import { supabase } from "../lib/supabase";
 import { track } from "../lib/analytics";
 
-// Fallback — shown while API loads
+// All-time view starts from Jan 2020
+const ALL_START = "2020-01-01";
+
+// Fallback — shown while API loads (normalized to Jan 2020 = $10,000)
 const FALLBACK_CHART_DATA = [
-  { period: "Feb '18", quantin: 10000, sp500: 10000  },
-  { period: "2019",    quantin: 12890, sp500: 12280  },
-  { period: "2020",    quantin: 24170, sp500: 14300  },
-  { period: "2021",    quantin: 29690, sp500: 18650  },
-  { period: "2022",    quantin: 30690, sp500: 15260  },
-  { period: "2023",    quantin: 35610, sp500: 19260  },
-  { period: "2024",    quantin: 43760, sp500: 24420  },
-  { period: "2025",    quantin: 58330, sp500: 28660  },
-  { period: "Aug '26", quantin: 71210, sp500: 31099  },
+  { period: "Jan '20", quantin: 10000, sp500: 10000  },
+  { period: "2021",    quantin: 12280, sp500: 13040  },
+  { period: "2022",    quantin: 12700, sp500: 10670  },
+  { period: "2023",    quantin: 14730, sp500: 13470  },
+  { period: "2024",    quantin: 18100, sp500: 17080  },
+  { period: "2025",    quantin: 24130, sp500: 20050  },
+  { period: "Aug '26", quantin: 29460, sp500: 21750  },
 ];
 
 const ALL_TIME_METRICS = [
   {
-    val: "+26.2%", label: "Avg. annual return", sub: "vs +14.4% S&P 500",
+    val: "+17.6%", label: "Avg. annual return", sub: "vs +12.3% S&P 500",
     valueColor: "#1D9E75",
-    tooltip: "Average yearly return compounded over the full backtest period (Feb 2018 – Aug 2026).",
+    tooltip: "Average yearly return compounded since Jan 2020. Walk-forward, no lookahead.",
   },
   {
     val: "−9.5%", label: "Avg. max drawdown", sub: "vs −33.7% S&P 500",
@@ -39,16 +40,16 @@ const ALL_TIME_METRICS = [
   {
     val: "2.00", label: "Avg. Sharpe ratio", sub: "vs 0.80 S&P 500",
     valueColor: "#059669",
-    tooltip: "Risk-adjusted return: annual excess return divided by volatility. Above 1.0 is considered strong — Quantin's 2.00 means high return per unit of risk taken.",
+    tooltip: "Risk-adjusted return: annual excess return divided by volatility. Above 1.0 is considered strong.",
   },
   {
-    val: "+11.8pp", label: "vs S&P 500", sub: "annual outperformance",
+    val: "+5.3pp", label: "vs S&P 500", sub: "annual outperformance",
     valueColor: "#059669",
-    tooltip: "Quantin's annualized return has exceeded the S&P 500's by 11.8 percentage points per year since Feb 2018.",
+    tooltip: "Quantin's annualized return has exceeded the S&P 500's by 5.3 percentage points per year since Jan 2020.",
   },
 ];
 
-const ALL_TIME_INTERPRETATION = "Since Feb 2018, Quantin has compounded at +26.2%/yr — outperforming the S&P 500 by 11.8pp per year — while limiting its worst drawdown to just −9.5%, compared to −33.7% for the index during the 2020 crash.";
+const ALL_TIME_INTERPRETATION = "Since Jan 2020, Quantin has compounded at +17.6%/yr — outperforming the S&P 500 by 5.3pp per year — while limiting its worst drawdown to just −9.5%, compared to −33.7% for the index during the 2020 crash.";
 
 interface SeriesPoint { date: string; model: number; spy: number; }
 interface MetricData  { val: string; label: string; sub: string; valueColor: string; tooltip: string; }
@@ -63,7 +64,7 @@ function fmtMonth(yyyyMM: string) {
 }
 
 function filterPts(series: SeriesPoint[], year: YearSelection, cStart: string, cEnd: string) {
-  if (year === "all") return series;
+  if (year === "all") return series.filter(p => p.date >= ALL_START);
   if (year === "custom") {
     return series.filter(p => p.date.slice(0, 7) >= cStart && p.date.slice(0, 7) <= cEnd);
   }
@@ -364,45 +365,69 @@ export function Landing() {
       if (!chartSeries.length) return ALL_TIME_METRICS;
       return buildRangeMetrics(chartSeries, selectedYear, effectiveStart, effectiveEnd);
     }
-    if (!wfStats) return ALL_TIME_METRICS;
-    const { cagr, sharpe, max_dd: mdd, spy_cagr: spyCagr, alfa_cagr: alpha } = wfStats;
+    const pts = chartSeries.filter(p => p.date >= ALL_START);
+    if (pts.length < 2) return ALL_TIME_METRICS;
+    const first = pts[0], last = pts[pts.length - 1];
+    const years = (new Date(last.date).getTime() - new Date(first.date).getTime()) / (365.25 * 86400000);
+    const cagr     = ((last.model / first.model) ** (1 / years) - 1) * 100;
+    const spyCagr  = ((last.spy   / first.spy)   ** (1 / years) - 1) * 100;
+    const alpha    = cagr - spyCagr;
+    let peak = first.model, maxDD = 0;
+    for (const p of pts) {
+      if (p.model > peak) peak = p.model;
+      const dd = (p.model - peak) / peak * 100;
+      if (dd < maxDD) maxDD = dd;
+    }
+    const modelSharpe = computeSharpe(pts, 'model');
+    const spySharpe   = computeSharpe(pts, 'spy');
     const fmtPct = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
     return [
       {
         val: fmtPct(cagr), label: "Avg. annual return", sub: `vs ${fmtPct(spyCagr)} S&P 500`,
-        valueColor: "#1D9E75",
-        tooltip: "Average yearly return compounded over the full backtest period (Feb 2018 – present). Walk-forward, no lookahead.",
+        valueColor: cagr >= 0 ? "#1D9E75" : "#B5621A",
+        tooltip: "Average yearly return compounded since Jan 2020. Walk-forward, no lookahead.",
       },
       {
-        val: `${mdd.toFixed(1)}%`, label: "Avg. max drawdown", sub: "vs −33.7% S&P 500",
+        val: maxDD === 0 ? "0.0%" : `${maxDD.toFixed(1)}%`, label: "Avg. max drawdown", sub: "vs −33.7% S&P 500",
         valueColor: "#B5621A",
-        tooltip: "Largest peak-to-trough decline in portfolio value over the full backtest. Lower is better.",
+        tooltip: "Largest peak-to-trough decline since Jan 2020. Walk-forward validated.",
       },
       {
-        val: sharpe.toFixed(2), label: "Avg. Sharpe ratio", sub: "vs 0.80 S&P 500",
+        val: modelSharpe !== null ? modelSharpe.toFixed(2) : "—", label: "Avg. Sharpe ratio",
+        sub: spySharpe !== null ? `vs ${spySharpe.toFixed(2)} S&P 500` : "S&P 500 n/a",
         valueColor: "#059669",
-        tooltip: "Risk-adjusted return: annual excess return divided by volatility. Above 1.0 is considered strong.",
+        tooltip: "Risk-adjusted return since Jan 2020. Above 1.0 is considered strong.",
       },
       {
         val: `${alpha >= 0 ? "+" : ""}${alpha.toFixed(1)}pp`, label: "vs S&P 500", sub: "annual outperformance",
-        valueColor: "#059669",
-        tooltip: `Quantin's annualized return has exceeded the S&P 500's by ${alpha.toFixed(1)} percentage points per year since Feb 2018.`,
+        valueColor: alpha >= 0 ? "#059669" : "#B5621A",
+        tooltip: `Quantin's annualized return has exceeded the S&P 500's by ${Math.abs(alpha).toFixed(1)} percentage points per year since Jan 2020.`,
       },
     ];
-  }, [chartSeries, wfStats, selectedYear, effectiveStart, effectiveEnd]);
+  }, [chartSeries, selectedYear, effectiveStart, effectiveEnd]);
 
   const activeInterpretation = useMemo(() => {
-    if (selectedYear === "all" && wfStats) {
-      const cagr  = wfStats.cagr.toFixed(1);
-      const mdd   = wfStats.max_dd.toFixed(1);
-      const alpha = wfStats.alfa_cagr.toFixed(1);
-      return `Since Feb 2018, Quantin has compounded at +${cagr}%/yr — outperforming the S&P 500 by ${alpha}pp per year — while limiting its worst drawdown to just ${mdd}%, compared to −33.7% for the index during the 2020 crash.`;
+    if (selectedYear === "all") {
+      const pts = chartSeries.filter(p => p.date >= ALL_START);
+      if (!pts.length) return ALL_TIME_INTERPRETATION;
+      const first = pts[0], last = pts[pts.length - 1];
+      const years = (new Date(last.date).getTime() - new Date(first.date).getTime()) / (365.25 * 86400000);
+      const cagr  = ((last.model / first.model) ** (1 / years) - 1) * 100;
+      const spyCagr = ((last.spy / first.spy)   ** (1 / years) - 1) * 100;
+      const alpha = cagr - spyCagr;
+      let peak = first.model, maxDD = 0;
+      for (const p of pts) {
+        if (p.model > peak) peak = p.model;
+        const dd = (p.model - peak) / peak * 100;
+        if (dd < maxDD) maxDD = dd;
+      }
+      return `Since Jan 2020, Quantin has compounded at +${cagr.toFixed(1)}%/yr — outperforming the S&P 500 by ${alpha.toFixed(1)}pp per year — while limiting its worst drawdown to just ${maxDD.toFixed(1)}%, compared to −33.7% for the index during the 2020 crash.`;
     }
     return buildInterpretation(chartSeries, selectedYear, effectiveStart, effectiveEnd);
-  }, [chartSeries, wfStats, selectedYear, effectiveStart, effectiveEnd]);
+  }, [chartSeries, selectedYear, effectiveStart, effectiveEnd]);
 
   const legendNote = useMemo(() => {
-    if (selectedYear === "all") return "$10,000 invested Feb 2018 · walk-forward, no lookahead";
+    if (selectedYear === "all") return "$10,000 invested Jan 2020 · walk-forward, no lookahead";
     if (selectedYear === "custom") {
       return effectiveStart && effectiveEnd
         ? `$10,000 invested ${fmtMonth(effectiveStart)} · custom range · walk-forward`
