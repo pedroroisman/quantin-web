@@ -197,7 +197,6 @@ export function Movements() {
             <FilterPill label="All"            active={typeFilter === "all"}             onClick={() => handleTypeFilter("all")} />
             <FilterPill label="Rebalance"      active={typeFilter === "rebalance"}       onClick={() => handleTypeFilter("rebalance")} />
             <FilterPill label="Signal"         active={typeFilter === "strategy"}        onClick={() => handleTypeFilter("strategy")} />
-            <FilterPill label="New strategy"   active={typeFilter === "strategy_change"} onClick={() => handleTypeFilter("strategy_change")} />
             <FilterPill label="Regime"         active={typeFilter === "regime_change"}   onClick={() => handleTypeFilter("regime_change")} />
           </div>
           <div style={{ width: "0.5px", background: "var(--border-subtle)", margin: "0 4px" }} />

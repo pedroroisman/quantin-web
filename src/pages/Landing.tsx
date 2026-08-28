@@ -650,7 +650,6 @@ export function Landing() {
               <div className="footer-strip" style={{ paddingTop: "1.25rem", borderTop: "0.5px solid var(--border-subtle)", display: "flex", gap: "2rem", flexWrap: "wrap" }}>
                 {[
                   ["15 positions", "active today"],
-                  ["Next rebalance", "in ~6 weeks"],
                   ["Email + push", "on every change"],
                 ].map(([strong, rest]) => (
                   <span key={strong} style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
