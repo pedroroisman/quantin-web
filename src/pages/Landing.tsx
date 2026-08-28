@@ -55,7 +55,7 @@ interface SeriesPoint { date: string; model: number; spy: number; }
 interface MetricData  { val: string; label: string; sub: string; valueColor: string; tooltip: string; }
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-const YEAR_TOGGLE = ["all", "1m", "3m", "6m", 2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, "custom"] as const;
+const YEAR_TOGGLE = ["all", "1m", "3m", "6m", 2026, 2025, 2024, 2023, 2022, 2021, 2020, "custom"] as const;
 type YearSelection = typeof YEAR_TOGGLE[number];
 
 function fmtMonth(yyyyMM: string) {
