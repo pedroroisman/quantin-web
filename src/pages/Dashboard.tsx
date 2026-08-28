@@ -775,10 +775,10 @@ function ExpandPanel({ h, onClose }: {
     const canvas = canvasRef.current;
     if (!canvas || !h.entry_date || dailyPrices.length === 0) return;
     const draw = () => drawExpandChart(canvas, dailyPrices, h.entry_date!, markers);
-    draw();
+    const raf = requestAnimationFrame(draw);
     const obs = new ResizeObserver(draw);
     obs.observe(canvas);
-    return () => obs.disconnect();
+    return () => { cancelAnimationFrame(raf); obs.disconnect(); };
   }, [h, dailyPrices, markers]);
 
   const perf = h.performance ?? h.performance_since_subscribed;
