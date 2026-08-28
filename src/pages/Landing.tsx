@@ -138,7 +138,7 @@ function buildRangeMetrics(series: SeriesPoint[], year: YearSelection, cStart: s
   const spySharpe   = computeSharpe(pts, 'spy');
   const fmt = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
   const isRelative   = year === "1m" || year === "3m" || year === "6m";
-  const isYearPartial = typeof year === "number" && (year === 2018 || year === new Date().getFullYear());
+  const isYearPartial = typeof year === "number" && year === new Date().getFullYear();
   const relLabel     = year === "1m" ? "Last month" : year === "3m" ? "Last 3M" : "Last 6M";
   const retLabel     = isRelative ? `${relLabel} return` : year === "custom" ? "Period return" : isYearPartial ? "YTD return" : "Year return";
   const ddSub        = isRelative || year === "custom" ? "within the period" : "within the year";
@@ -198,7 +198,7 @@ function buildInterpretation(series: SeriesPoint[], year: YearSelection, cStart:
     const relP = year === "1m" ? "last month" : year === "3m" ? "last 3 months" : "last 6 months";
     return `Quantin returned ${fmt(modelRet)} over the ${relP} vs ${fmt(spyRet)} for the S&P 500 — ${alpha >= 0 ? "outperforming" : "underperforming"} by ${fmtA(alpha)}${ddClause}.`;
   }
-  const isPartial = typeof year === "number" && (year === 2018 || year === new Date().getFullYear());
+  const isPartial = typeof year === "number" && year === new Date().getFullYear();
   const period = year === "custom"
     ? `from ${fmtMonth(cStart)} to ${fmtMonth(cEnd)}`
     : isPartial ? `in ${year} (YTD)` : `in ${year}`;
@@ -293,7 +293,7 @@ export function Landing() {
   const { label: regimeLabel, colors: regimeColors } = useRegime();
   const [authState, setAuthState]   = useState<AuthState>("loading");
   const [chartSeries, setChartSeries] = useState<SeriesPoint[]>([]);
-  const [wfStats, setWfStats] = useState<{ cagr: number; sharpe: number; max_dd: number; spy_cagr: number; alfa_cagr: number } | null>(null);
+  const [_wfStats, setWfStats] = useState<{ cagr: number; sharpe: number; max_dd: number; spy_cagr: number; alfa_cagr: number } | null>(null);
   const [selectedYear, setSelectedYear] = useState<YearSelection>("all");
   const [customStart, setCustomStart] = useState<string>("");
   const [customEnd,   setCustomEnd]   = useState<string>("");
@@ -436,9 +436,8 @@ export function Landing() {
     if (selectedYear === "1m") return "Last 30 days · walk-forward";
     if (selectedYear === "3m") return "Last 3 months · walk-forward";
     if (selectedYear === "6m") return "Last 6 months · walk-forward";
-    const isPartial = selectedYear === 2018 || selectedYear === new Date().getFullYear();
-    const start = selectedYear === 2018 ? "Feb 2018" : `Jan ${selectedYear}`;
-    return `$10,000 invested ${start} · ${isPartial ? "partial year" : "calendar year"} · walk-forward`;
+    const isPartial = selectedYear === new Date().getFullYear();
+    return `$10,000 invested Jan ${selectedYear} · ${isPartial ? "partial year" : "calendar year"} · walk-forward`;
   }, [selectedYear, effectiveStart, effectiveEnd]);
 
   return (
