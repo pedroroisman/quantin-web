@@ -292,7 +292,7 @@ export function Landing() {
   const { label: regimeLabel, colors: regimeColors } = useRegime();
   const [authState, setAuthState]   = useState<AuthState>("loading");
   const [chartSeries, setChartSeries] = useState<SeriesPoint[]>([]);
-  const [wfStats, setWfStats] = useState<{ cagr: number; sharpe: number; max_dd: number; spy_cagr?: number } | null>(null);
+  const [wfStats, setWfStats] = useState<{ cagr: number; sharpe: number; max_dd: number; spy_cagr: number; alfa_cagr: number } | null>(null);
   const [selectedYear, setSelectedYear] = useState<YearSelection>("all");
   const [customStart, setCustomStart] = useState<string>("");
   const [customEnd,   setCustomEnd]   = useState<string>("");
@@ -317,7 +317,17 @@ export function Landing() {
       .catch(() => {});
     fetch(`${apiUrl}/api/portfolio_optimizer`)
       .then(r => r.json())
-      .then(d => { if (d.wf_stats) setWfStats(d.wf_stats); })
+      .then(d => {
+        const m = d.validation?.metrics;
+        const v = d.validation?.vs_spy;
+        if (m && v) setWfStats({
+          cagr:     m.cagr,
+          sharpe:   m.sharpe,
+          max_dd:   m.max_dd,
+          spy_cagr: v.spy_cagr,
+          alfa_cagr: v.alfa_cagr,
+        });
+      })
       .catch(() => {});
   }, []);
 
@@ -355,11 +365,7 @@ export function Landing() {
       return buildRangeMetrics(chartSeries, selectedYear, effectiveStart, effectiveEnd);
     }
     if (!wfStats) return ALL_TIME_METRICS;
-    const cagr   = wfStats.cagr   * 100;
-    const mdd    = wfStats.max_dd * 100;
-    const sharpe = wfStats.sharpe;
-    const spyCagr = wfStats.spy_cagr != null ? wfStats.spy_cagr * 100 : 14.4;
-    const alpha  = cagr - spyCagr;
+    const { cagr, sharpe, max_dd: mdd, spy_cagr: spyCagr, alfa_cagr: alpha } = wfStats;
     const fmtPct = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
     return [
       {
@@ -387,10 +393,9 @@ export function Landing() {
 
   const activeInterpretation = useMemo(() => {
     if (selectedYear === "all" && wfStats) {
-      const cagr   = (wfStats.cagr   * 100).toFixed(1);
-      const mdd    = (wfStats.max_dd * 100).toFixed(1);
-      const spyNum  = wfStats.spy_cagr != null ? wfStats.spy_cagr * 100 : 14.4;
-      const alpha   = (wfStats.cagr * 100 - spyNum).toFixed(1);
+      const cagr  = wfStats.cagr.toFixed(1);
+      const mdd   = wfStats.max_dd.toFixed(1);
+      const alpha = wfStats.alfa_cagr.toFixed(1);
       return `Since Feb 2018, Quantin has compounded at +${cagr}%/yr — outperforming the S&P 500 by ${alpha}pp per year — while limiting its worst drawdown to just ${mdd}%, compared to −33.7% for the index during the 2020 crash.`;
     }
     return buildInterpretation(chartSeries, selectedYear, effectiveStart, effectiveEnd);
