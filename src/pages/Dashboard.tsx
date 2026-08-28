@@ -72,6 +72,9 @@ const TICKER_NAMES: Record<string, { name: string; sector: string }> = {
   RARE: { name: "Ultragenyx Pharmaceutical", sector: "Healthcare"  },
   VTV:  { name: "Vanguard Value ETF",        sector: "ETF"         },
   RSP:  { name: "Invesco S&P 500 Equal Wt",  sector: "ETF"         },
+  AMD:  { name: "Advanced Micro Devices",    sector: "Technology"  },
+  PANW: { name: "Palo Alto Networks",        sector: "Technology"  },
+  STX:  { name: "Seagate Technology",        sector: "Technology"  },
 };
 
 const TICKER_GEO: Record<string, string> = {
@@ -97,6 +100,7 @@ const TICKER_GEO: Record<string, string> = {
   RARE:"United States", VTV:"United States",
   AVUS:"United States", CAT:"United States",  SPHQ:"United States",
   RSP:"United States",
+  AMD:"United States", PANW:"United States", STX:"United States",
 };
 
 const TICKER_IND: Record<string, string> = {
@@ -136,6 +140,7 @@ const TICKER_IND: Record<string, string> = {
   HSIC:"Healthcare Distribution", RARE:"Rare Disease Biotech",
   AVUS:"US Equity ETF",           CAT:"Heavy Machinery",       SPHQ:"US Quality ETF",
   RSP:"US Equity ETF (Equal Wt)",
+  AMD:"AI / GPU Chips",           PANW:"Cybersecurity",        STX:"Data Storage",
 };
 
 const GEO_COLORS: Record<string, string> = {
