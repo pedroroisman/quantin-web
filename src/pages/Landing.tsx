@@ -149,7 +149,7 @@ function buildRangeMetrics(series: SeriesPoint[], year: YearSelection, cStart: s
       ? `Quantin returned ${fmt(modelRet)} in ${year}, vs ${fmt(spyRet)} for the S&P 500.`
       : `Quantin returned ${fmt(modelRet)} from ${fmtMonth(cStart)} to ${fmtMonth(cEnd)}, vs ${fmt(spyRet)} for the S&P 500.`;
   const sharpeVal = modelSharpe !== null ? modelSharpe.toFixed(2) : "—";
-  const sharpeSub = spySharpe !== null ? `vs ${spySharpe.toFixed(2)} S&P 500` : "S&P 500 n/a";
+  const sharpeSub = spySharpe !== null ? `SPY: ${spySharpe.toFixed(2)}` : "SPY: n/a";
   return [
     {
       val: fmt(modelRet), label: retLabel,
@@ -394,7 +394,7 @@ export function Landing() {
       },
       {
         val: modelSharpe !== null ? modelSharpe.toFixed(2) : "—", label: "Avg. Sharpe ratio",
-        sub: spySharpe !== null ? `vs ${spySharpe.toFixed(2)} S&P 500` : "S&P 500 n/a",
+        sub: spySharpe !== null ? `SPY: ${spySharpe.toFixed(2)}` : "SPY: n/a",
         valueColor: "#059669",
         tooltip: "Risk-adjusted return since Jan 2020. Above 1.0 is considered strong.",
       },
