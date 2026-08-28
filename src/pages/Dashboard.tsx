@@ -516,20 +516,30 @@ function drawExpandChart(
   ctx.clearRect(0, 0, W, H);
 
   const entry = new Date(entryDateStr + "T00:00:00").getTime();
-  const tPts = prices
-    .map(p => ({ ms: new Date(p.date + "T00:00:00").getTime(), v: p.close }))
+  const rawPts = prices
+    .map(p => ({ ms: new Date(p.date + "T00:00:00").getTime(), close: p.close }))
     .filter(p => p.ms >= entry)
     .sort((a, b) => a.ms - b.ms);
 
-  if (tPts.length === 0) {
+  if (rawPts.length === 0) {
     ctx.fillStyle = LBL; ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.font = "11px system-ui, sans-serif";
     ctx.fillText("No data yet", W / 2, H / 2);
     return;
   }
 
-  const vBase = tPts[0].v;
-  const tNorm = tPts.map(p => ({ ms: p.ms, v: (p.v / vBase) * 100 }));
+  // Strategy equity: track price only when in "buy" state, flat in "cash"
+  const mSorted = [...markers].sort((a, b) => a.ms - b.ms);
+  const getState = (ms: number): "buy" | "cash" => {
+    let s: "buy" | "cash" = "buy";
+    for (const mk of mSorted) { if (mk.ms <= ms) s = mk.type; else break; }
+    return s;
+  };
+  let equity = 100;
+  const tNorm = rawPts.map((pt, i) => {
+    if (i > 0 && getState(pt.ms) === "buy") equity *= pt.close / rawPts[i - 1].close;
+    return { ms: pt.ms, v: i === 0 ? 100 : equity };
+  });
 
   const allMs = tNorm.map(p => p.ms);
   const allV  = tNorm.map(p => p.v);
@@ -805,7 +815,7 @@ function ExpandPanel({ h, onClose }: {
           <div style={{ marginLeft: "auto", display: "flex", gap: 14, fontSize: 10, color: "var(--text-secondary)" }}>
             <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
               <svg width="14" height="6"><line x1="0" y1="3" x2="14" y2="3" stroke="#1D9E75" strokeWidth="2"/></svg>
-              Strategy return since entry
+              Strategy equity since entry (flat in cash)
             </span>
           </div>
         </div>
