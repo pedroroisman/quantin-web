@@ -292,6 +292,7 @@ export function Landing() {
   const { label: regimeLabel, colors: regimeColors } = useRegime();
   const [authState, setAuthState]   = useState<AuthState>("loading");
   const [chartSeries, setChartSeries] = useState<SeriesPoint[]>([]);
+  const [wfStats, setWfStats] = useState<{ cagr: number; sharpe: number; max_dd: number; spy_cagr?: number } | null>(null);
   const [selectedYear, setSelectedYear] = useState<YearSelection>("all");
   const [customStart, setCustomStart] = useState<string>("");
   const [customEnd,   setCustomEnd]   = useState<string>("");
@@ -313,6 +314,10 @@ export function Landing() {
     fetch(`${apiUrl}/api/portfolio_optimizer/chart`)
       .then(r => r.json())
       .then(d => { if (Array.isArray(d.series)) setChartSeries(d.series); })
+      .catch(() => {});
+    fetch(`${apiUrl}/api/portfolio_optimizer`)
+      .then(r => r.json())
+      .then(d => { if (d.wf_stats) setWfStats(d.wf_stats); })
       .catch(() => {});
   }, []);
 
@@ -345,13 +350,51 @@ export function Landing() {
   }, [activeChartData]);
 
   const activeMetrics = useMemo<MetricData[]>(() => {
-    if (selectedYear === "all" || !chartSeries.length) return ALL_TIME_METRICS;
-    return buildRangeMetrics(chartSeries, selectedYear, effectiveStart, effectiveEnd);
-  }, [chartSeries, selectedYear, effectiveStart, effectiveEnd]);
+    if (selectedYear !== "all") {
+      if (!chartSeries.length) return ALL_TIME_METRICS;
+      return buildRangeMetrics(chartSeries, selectedYear, effectiveStart, effectiveEnd);
+    }
+    if (!wfStats) return ALL_TIME_METRICS;
+    const cagr   = wfStats.cagr   * 100;
+    const mdd    = wfStats.max_dd * 100;
+    const sharpe = wfStats.sharpe;
+    const spyCagr = wfStats.spy_cagr != null ? wfStats.spy_cagr * 100 : 14.4;
+    const alpha  = cagr - spyCagr;
+    const fmtPct = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
+    return [
+      {
+        val: fmtPct(cagr), label: "Avg. annual return", sub: `vs ${fmtPct(spyCagr)} S&P 500`,
+        valueColor: "#1D9E75",
+        tooltip: "Average yearly return compounded over the full backtest period (Feb 2018 – present). Walk-forward, no lookahead.",
+      },
+      {
+        val: `${mdd.toFixed(1)}%`, label: "Avg. max drawdown", sub: "vs −33.7% S&P 500",
+        valueColor: "#B5621A",
+        tooltip: "Largest peak-to-trough decline in portfolio value over the full backtest. Lower is better.",
+      },
+      {
+        val: sharpe.toFixed(2), label: "Avg. Sharpe ratio", sub: "vs 0.80 S&P 500",
+        valueColor: "#059669",
+        tooltip: "Risk-adjusted return: annual excess return divided by volatility. Above 1.0 is considered strong.",
+      },
+      {
+        val: `${alpha >= 0 ? "+" : ""}${alpha.toFixed(1)}pp`, label: "vs S&P 500", sub: "annual outperformance",
+        valueColor: "#059669",
+        tooltip: `Quantin's annualized return has exceeded the S&P 500's by ${alpha.toFixed(1)} percentage points per year since Feb 2018.`,
+      },
+    ];
+  }, [chartSeries, wfStats, selectedYear, effectiveStart, effectiveEnd]);
 
-  const activeInterpretation = useMemo(() =>
-    buildInterpretation(chartSeries, selectedYear, effectiveStart, effectiveEnd),
-  [chartSeries, selectedYear, effectiveStart, effectiveEnd]);
+  const activeInterpretation = useMemo(() => {
+    if (selectedYear === "all" && wfStats) {
+      const cagr   = (wfStats.cagr   * 100).toFixed(1);
+      const mdd    = (wfStats.max_dd * 100).toFixed(1);
+      const spyCagr = wfStats.spy_cagr != null ? (wfStats.spy_cagr * 100).toFixed(1) : "14.4";
+      const alpha   = (wfStats.cagr * 100 - (wfStats.spy_cagr ?? 0.144) * 100).toFixed(1);
+      return `Since Feb 2018, Quantin has compounded at +${cagr}%/yr — outperforming the S&P 500 by ${alpha}pp per year — while limiting its worst drawdown to just ${mdd}%, compared to −33.7% for the index during the 2020 crash.`;
+    }
+    return buildInterpretation(chartSeries, selectedYear, effectiveStart, effectiveEnd);
+  }, [chartSeries, wfStats, selectedYear, effectiveStart, effectiveEnd]);
 
   const legendNote = useMemo(() => {
     if (selectedYear === "all") return "$10,000 invested Feb 2018 · walk-forward, no lookahead";

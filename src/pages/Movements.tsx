@@ -118,6 +118,7 @@ export function Movements() {
 
   const [typeFilter, setTypeFilter]           = useState<TypeFilter>("all");
   const [directionFilter, setDirectionFilter] = useState<DirectionFilter>("all");
+  const [tickerFilter, setTickerFilter]       = useState<string>("");
 
   useEffect(() => {
     let mounted = true;
@@ -139,6 +140,7 @@ export function Movements() {
     if (typeFilter !== "all" && m.movement_type !== typeFilter) return false;
     if (directionFilter === "entry" && m.to_state !== "buy") return false;
     if (directionFilter === "exit"  && m.to_state !== "cash") return false;
+    if (tickerFilter && !m.ticker?.toUpperCase().includes(tickerFilter.toUpperCase())) return false;
     return true;
   });
 
@@ -204,6 +206,35 @@ export function Movements() {
             <FilterPill label="All"     active={directionFilter === "all"}   onClick={() => handleDirFilter("all")} />
             <FilterPill label="Entries" active={directionFilter === "entry"} onClick={() => handleDirFilter("entry")} />
             <FilterPill label="Exits"   active={directionFilter === "exit"}  onClick={() => handleDirFilter("exit")} />
+          </div>
+          <div style={{ width: "0.5px", background: "var(--border-subtle)", margin: "0 4px" }} />
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <span style={{ fontSize: 12, color: "var(--text-tertiary)", marginRight: 4 }}>Ticker</span>
+            <input
+              type="text"
+              value={tickerFilter}
+              onChange={e => { setTickerFilter(e.target.value.toUpperCase()); setOffset(0); }}
+              placeholder="e.g. AAPL"
+              style={{
+                fontSize: 12, padding: "4px 10px",
+                background: "var(--bg-secondary)",
+                border: "0.5px solid var(--border-subtle)",
+                borderRadius: "var(--radius-sm)",
+                color: "var(--text-primary)",
+                outline: "none",
+                width: 90,
+              }}
+            />
+            {tickerFilter && (
+              <button
+                onClick={() => { setTickerFilter(""); setOffset(0); }}
+                style={{
+                  fontSize: 11, padding: "3px 7px",
+                  background: "none", border: "none", cursor: "pointer",
+                  color: "var(--text-tertiary)",
+                }}
+              >✕</button>
+            )}
           </div>
           {filtered.length !== movements.length && (
             <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--text-tertiary)", alignSelf: "center" }}>
