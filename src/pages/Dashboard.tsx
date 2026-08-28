@@ -71,6 +71,7 @@ const TICKER_NAMES: Record<string, { name: string; sector: string }> = {
   HSIC: { name: "Henry Schein",              sector: "Healthcare"  },
   RARE: { name: "Ultragenyx Pharmaceutical", sector: "Healthcare"  },
   VTV:  { name: "Vanguard Value ETF",        sector: "ETF"         },
+  RSP:  { name: "Invesco S&P 500 Equal Wt",  sector: "ETF"         },
 };
 
 const TICKER_GEO: Record<string, string> = {
@@ -95,6 +96,7 @@ const TICKER_GEO: Record<string, string> = {
   ACWI:"Global",      DFLV:"United States",   HSIC:"United States",
   RARE:"United States", VTV:"United States",
   AVUS:"United States", CAT:"United States",  SPHQ:"United States",
+  RSP:"United States",
 };
 
 const TICKER_IND: Record<string, string> = {
@@ -133,6 +135,7 @@ const TICKER_IND: Record<string, string> = {
   ACWI:"Global Equity ETF",
   HSIC:"Healthcare Distribution", RARE:"Rare Disease Biotech",
   AVUS:"US Equity ETF",           CAT:"Heavy Machinery",       SPHQ:"US Quality ETF",
+  RSP:"US Equity ETF (Equal Wt)",
 };
 
 const GEO_COLORS: Record<string, string> = {
@@ -484,10 +487,13 @@ function DonutChart({ title, segs }: { title: string; segs: DonutSeg[] }) {
   );
 }
 
+type MarkerEvent = { ms: number; type: "buy" | "cash" };
+
 function drawExpandChart(
   canvas: HTMLCanvasElement,
-  tickerCumrets: Record<string, number>,
-  entryDateStr: string
+  prices: { date: string; close: number }[],
+  entryDateStr: string,
+  markers: MarkerEvent[] = [],
 ) {
   const W = canvas.clientWidth, H = canvas.clientHeight;
   if (!W || !H) return;
@@ -499,14 +505,14 @@ function drawExpandChart(
   const BG   = cv("--bg-primary")    || "#232540";
   const GRID = cv("--border-subtle") || "rgba(255,255,255,0.07)";
   const LBL  = cv("--text-tertiary") || "#5D7A94";
-  const PAD  = { t: 10, r: 12, b: 28, l: 40 };
+  const PAD  = { t: 14, r: 12, b: 28, l: 44 };
   const CW   = W - PAD.l - PAD.r, CH = H - PAD.t - PAD.b;
 
   ctx.clearRect(0, 0, W, H);
 
-  const entry = new Date(entryDateStr).getTime();
-  const tPts = Object.entries(tickerCumrets)
-    .map(([d, v]) => ({ ms: new Date(d).getTime(), v }))
+  const entry = new Date(entryDateStr + "T00:00:00").getTime();
+  const tPts = prices
+    .map(p => ({ ms: new Date(p.date + "T00:00:00").getTime(), v: p.close }))
     .filter(p => p.ms >= entry)
     .sort((a, b) => a.ms - b.ms);
 
@@ -522,7 +528,6 @@ function drawExpandChart(
 
   const allMs = tNorm.map(p => p.ms);
   const allV  = tNorm.map(p => p.v);
-  if (!allMs.length) return;
 
   const msMin = Math.min(...allMs), msMax = Math.max(...allMs);
   const vMin  = Math.min(95, ...allV) * 0.99, vMax = Math.max(105, ...allV) * 1.01;
@@ -543,18 +548,20 @@ function drawExpandChart(
     ctx.fillText(`${pct >= 0 ? "+" : ""}${pct.toFixed(0)}%`, PAD.l - 4, yOf(v));
   }
 
-  // X-axis labels
+  // X-axis labels — adaptive density
   ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"; ctx.font = "9px system-ui, sans-serif";
-  [0, 0.5, 1].forEach(frac => {
+  const spanDays = (msMax - msMin) / 86400000;
+  const labelFracs = spanDays > 300 ? [0, 0.25, 0.5, 0.75, 1] : [0, 0.33, 0.67, 1];
+  labelFracs.forEach(frac => {
     const ms = msMin + frac * (msMax - msMin), d = new Date(ms);
     ctx.fillStyle = LBL;
-    ctx.fillText(d.toLocaleDateString("en-US", { month: "short", year: frac === 0 || frac === 1 ? "2-digit" : undefined }), xOf(ms), PAD.t + CH + 18);
+    ctx.fillText(d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: frac === 0 || frac === 1 ? "2-digit" : undefined }), xOf(ms), PAD.t + CH + 18);
   });
 
   // Ticker line + fill
   if (tNorm.length >= 2) {
     const g = ctx.createLinearGradient(0, PAD.t, 0, PAD.t + CH);
-    g.addColorStop(0, "rgba(29,158,117,0.20)");
+    g.addColorStop(0, "rgba(29,158,117,0.18)");
     g.addColorStop(1, "rgba(29,158,117,0)");
     ctx.beginPath(); ctx.moveTo(xOf(tNorm[0].ms), yOf(tNorm[0].v));
     tNorm.forEach(p => ctx.lineTo(xOf(p.ms), yOf(p.v)));
@@ -563,7 +570,27 @@ function drawExpandChart(
     ctx.fillStyle = g; ctx.fill();
     ctx.beginPath(); ctx.moveTo(xOf(tNorm[0].ms), yOf(tNorm[0].v));
     tNorm.forEach(p => ctx.lineTo(xOf(p.ms), yOf(p.v)));
-    ctx.strokeStyle = ACC; ctx.lineWidth = 2; ctx.stroke();
+    ctx.strokeStyle = ACC; ctx.lineWidth = 1.5; ctx.stroke();
+  }
+
+  // BUY / CASH markers
+  const visMarkers = markers.filter(m => m.ms >= msMin && m.ms <= msMax);
+  for (const mk of visMarkers) {
+    const x = xOf(mk.ms);
+    const isBuy = mk.type === "buy";
+    const col = isBuy ? "#1D9E75" : "#B5621A";
+    // Vertical tick
+    ctx.strokeStyle = col; ctx.lineWidth = 1; ctx.setLineDash([2, 2]);
+    ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, PAD.t + CH); ctx.stroke();
+    ctx.setLineDash([]);
+    // Label
+    const tag = isBuy ? "BUY" : "CASH";
+    ctx.font = "bold 8px ui-monospace, monospace";
+    const tw = ctx.measureText(tag).width;
+    const lx = Math.max(PAD.l + 2, Math.min(x - tw / 2, PAD.l + CW - tw - 2));
+    const ly = isBuy ? PAD.t + 3 : PAD.t + 11;
+    ctx.fillStyle = col; ctx.textAlign = "left"; ctx.textBaseline = "top";
+    ctx.fillText(tag, lx, ly);
   }
 
   // Endpoint dot
@@ -708,34 +735,59 @@ function PerfChart({ series, rebalances, regimeHistory = [] }: { series: ChartSe
 }
 
 // ── ExpandPanel ───────────────────────────────────────────────────────────────
-function ExpandPanel({ h, cumrets, onClose }: {
+function ExpandPanel({ h, onClose }: {
   h: PortfolioHolding;
-  cumrets: Record<string, Record<string, number>>;
   onClose: () => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [dailyPrices, setDailyPrices] = useState<{ date: string; close: number }[]>([]);
+  const [markers, setMarkers] = useState<MarkerEvent[]>([]);
+
+  useEffect(() => {
+    if (!h.entry_date) return;
+    const apiUrl = import.meta.env.VITE_API_URL || "";
+    // Fetch daily prices from entry date
+    fetch(`${apiUrl}/api/ticker_daily/${h.ticker}?start=${h.entry_date}`)
+      .then(r => r.json())
+      .then(d => { if (d.prices) setDailyPrices(d.prices); })
+      .catch(() => {});
+    // Fetch BUY/CASH movements for this ticker
+    fetch(`${apiUrl}/api/portfolio_movements?ticker=${h.ticker}&limit=200`)
+      .then(r => r.json())
+      .then(d => {
+        const mvs: MarkerEvent[] = (d.movements || [])
+          .filter((m: any) => m.to_state === "buy" || m.to_state === "cash")
+          .map((m: any) => ({
+            ms: new Date(m.date + "T00:00:00").getTime(),
+            type: m.to_state === "buy" ? "buy" : "cash",
+          }));
+        setMarkers(mvs);
+      })
+      .catch(() => {});
+  }, [h.ticker, h.entry_date]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !h.entry_date) return;
-    const draw = () => drawExpandChart(canvas, cumrets[h.ticker] ?? {}, h.entry_date!);
+    if (!canvas || !h.entry_date || dailyPrices.length === 0) return;
+    const draw = () => drawExpandChart(canvas, dailyPrices, h.entry_date!, markers);
     draw();
     const obs = new ResizeObserver(draw);
     obs.observe(canvas);
     return () => obs.disconnect();
-  }, [h, cumrets]);
+  }, [h, dailyPrices, markers]);
 
   const perf = h.performance ?? h.performance_since_subscribed;
   const pos  = h.position ?? "long";
   const pct  = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
   const confLabel = h.confidence != null ? `${Math.round(h.confidence * 100)}%` : "—";
 
+  const posLabel = pos.charAt(0).toUpperCase() + pos.slice(1);
+  const posColor = pos === "long" ? "#1D9E75" : "var(--text-tertiary)";
   const stats = [
-    { label: "Since entry", val: perf != null ? pct(perf) : "—", c: perf != null && perf > 0 ? "#1D9E75" : perf != null && perf < 0 ? "#B5621A" : undefined },
-    { label: "Strategy",    val: h.strategy ?? "—",               c: undefined, small: true },
-    { label: "Confidence",  val: confLabel,                        c: h.confidence != null && h.confidence >= 0.7 ? "#1D9E75" : h.confidence != null && h.confidence >= 0.5 ? "#B5621A" : "var(--text-tertiary)" },
-    { label: "Position",    val: pos.charAt(0).toUpperCase() + pos.slice(1), c: pos === "long" ? "#1D9E75" : "var(--text-tertiary)" },
-    { label: "Entry",       val: h.entry_date ? fmtMonthYear(h.entry_date) : "—", c: undefined },
+    { label: "Since entry",       val: perf != null ? pct(perf) : "—", c: perf != null && perf > 0 ? "#1D9E75" : perf != null && perf < 0 ? "#B5621A" : undefined },
+    { label: "Current Strategy",  val: h.strategy ?? "—",               c: undefined, small: true },
+    { label: "Confidence",        val: confLabel,                        c: h.confidence != null && h.confidence >= 0.7 ? "#1D9E75" : h.confidence != null && h.confidence >= 0.5 ? "#B5621A" : "var(--text-tertiary)" },
+    { label: "Entry",             val: h.entry_date ? fmtMonthYear(h.entry_date) : "—", c: undefined },
   ];
 
   return (
@@ -757,21 +809,25 @@ function ExpandPanel({ h, cumrets, onClose }: {
       </div>
       {/* Stats side */}
       <div style={{ padding: "14px" }}>
-        {stats.map(({ label, val, c, small }, i) => (
-          <div key={label} style={{ paddingBottom: 10, marginBottom: 10, borderBottom: i < stats.length - 1 ? "0.5px solid var(--border-subtle)" : "none" }}>
+        {stats.map(({ label, val, c, small }) => (
+          <div key={label} style={{ paddingBottom: 10, marginBottom: 10, borderBottom: "0.5px solid var(--border-subtle)" }}>
             <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text-tertiary)", marginBottom: 3 }}>{label}</div>
             <div style={{ fontFamily: small ? "inherit" : "ui-monospace, monospace", fontSize: small ? 10 : 14, fontWeight: 700, letterSpacing: small ? 0 : "-0.02em", color: c ?? "var(--text-primary)", lineHeight: 1.3 }}>{val}</div>
           </div>
         ))}
+        {/* Current Position — boxed, last item */}
+        <div style={{ background: pos === "long" ? "rgba(29,158,117,0.08)" : "rgba(150,150,150,0.07)", border: `0.5px solid ${pos === "long" ? "rgba(29,158,117,0.3)" : "var(--border-subtle)"}`, borderRadius: 6, padding: "8px 10px" }}>
+          <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text-tertiary)", marginBottom: 3 }}>Current Position</div>
+          <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 14, fontWeight: 700, letterSpacing: "-0.02em", color: posColor }}>{posLabel}</div>
+        </div>
       </div>
     </div>
   );
 }
 
 // ── HoldingsGrid ──────────────────────────────────────────────────────────────
-function HoldingsGrid({ holdings, cumrets }: {
+function HoldingsGrid({ holdings }: {
   holdings: PortfolioHolding[];
-  cumrets: Record<string, Record<string, number>>;
 }) {
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 600);
@@ -820,7 +876,6 @@ function HoldingsGrid({ holdings, cumrets }: {
           <ExpandPanel
             key="__expand"
             h={holdings[activeIdx]}
-            cumrets={cumrets}
             onClose={() => setActiveIdx(null)}
           />
         );
@@ -1151,8 +1206,8 @@ export function Dashboard() {
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "1.75rem", flexWrap: "wrap", gap: 8 }}>
           <h1 style={{ fontFamily: playfair, fontWeight: 400, fontSize: 32, color: "var(--text-primary)", margin: 0, lineHeight: 1.2 }}>Active positions</h1>
           <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)", letterSpacing: "0.02em" }}>
-            {chartData?.rebalances?.length
-              ? `Last rebalance ${fmtDate(chartData.rebalances[chartData.rebalances.length - 1].date)}`
+            {portfolio?.as_of
+              ? `Last rebalance ${fmtDate(portfolio.as_of)}`
               : "Last rebalance —"}
           </span>
         </div>
@@ -1168,7 +1223,6 @@ export function Dashboard() {
               if (!b.entry_date) return -1;
               return a.entry_date < b.entry_date ? -1 : a.entry_date > b.entry_date ? 1 : 0;
             })}
-            cumrets={portfolio.ticker_cumrets ?? {}}
           />
         )}
         {!portfolio && (
