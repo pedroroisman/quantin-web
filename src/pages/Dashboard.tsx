@@ -730,37 +730,32 @@ function PerfChart({ series, rebalances, regimeHistory = [] }: { series: ChartSe
 }
 
 // ── ExpandPanel ───────────────────────────────────────────────────────────────
-function ExpandPanel({ h, onClose, cumrets }: {
+function ExpandPanel({ h, onClose }: {
   h: PortfolioHolding;
   onClose: () => void;
-  cumrets?: Record<string, Record<string, number>>;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [equityCurve, setEquityCurve] = useState<{ ms: number; v: number }[]>([]);
   const [markers, setMarkers] = useState<MarkerEvent[]>([]);
-
-  // Build strategy equity curve from position-aware monthly cumrets (backtest data)
-  const equityCurve = useMemo(() => {
-    const tc = cumrets?.[h.ticker];
-    if (!tc || !h.entry_date) return [];
-    const entryMs = new Date(h.entry_date + "T00:00:00").getTime();
-    const sorted = Object.entries(tc)
-      .map(([date, val]) => ({ ms: new Date(date + "T00:00:00").getTime(), val }))
-      .sort((a, b) => a.ms - b.ms);
-    // Find last month-end at or before entry_date as baseline
-    let baselineIdx = 0;
-    for (let i = 0; i < sorted.length; i++) {
-      if (sorted[i].ms <= entryMs) baselineIdx = i;
-      else break;
-    }
-    const baseline = sorted[baselineIdx]?.val;
-    if (!baseline) return [];
-    return sorted.slice(baselineIdx).map(p => ({ ms: p.ms, v: (p.val / baseline) * 100 }));
-  }, [cumrets, h.ticker, h.entry_date]);
 
   useEffect(() => {
     if (!h.entry_date) return;
     const apiUrl = import.meta.env.VITE_API_URL || "";
-    // Fetch BUY/CASH movements for markers only
+    // Fetch daily strategy equity (backtest, position-aware, rebased to 100 at entry)
+    fetch(`${apiUrl}/api/ticker_strategy_equity/${h.ticker}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.equity) {
+          setEquityCurve(
+            (d.equity as { date: string; v: number }[]).map(p => ({
+              ms: new Date(p.date + "T00:00:00").getTime(),
+              v: p.v,
+            }))
+          );
+        }
+      })
+      .catch(() => {});
+    // Fetch BUY/CASH movements for markers
     fetch(`${apiUrl}/api/portfolio_movements?ticker=${h.ticker}&limit=200`)
       .then(r => r.json())
       .then(d => {
@@ -835,9 +830,8 @@ function ExpandPanel({ h, onClose, cumrets }: {
 }
 
 // ── HoldingsGrid ──────────────────────────────────────────────────────────────
-function HoldingsGrid({ holdings, cumrets }: {
+function HoldingsGrid({ holdings }: {
   holdings: PortfolioHolding[];
-  cumrets?: Record<string, Record<string, number>>;
 }) {
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 600);
@@ -887,7 +881,6 @@ function HoldingsGrid({ holdings, cumrets }: {
             key="__expand"
             h={holdings[activeIdx]}
             onClose={() => setActiveIdx(null)}
-            cumrets={cumrets}
           />
         );
       }
@@ -1234,7 +1227,6 @@ export function Dashboard() {
               if (!b.entry_date) return -1;
               return a.entry_date < b.entry_date ? -1 : a.entry_date > b.entry_date ? 1 : 0;
             })}
-            cumrets={portfolio.ticker_cumrets}
           />
         )}
         {!portfolio && (
