@@ -496,8 +496,7 @@ type MarkerEvent = { ms: number; type: "buy" | "cash" };
 
 function drawExpandChart(
   canvas: HTMLCanvasElement,
-  prices: { date: string; close: number }[],
-  entryDateStr: string,
+  tNorm: { ms: number; v: number }[],
   markers: MarkerEvent[] = [],
 ) {
   const W = canvas.clientWidth, H = canvas.clientHeight;
@@ -515,31 +514,12 @@ function drawExpandChart(
 
   ctx.clearRect(0, 0, W, H);
 
-  const entry = new Date(entryDateStr + "T00:00:00").getTime();
-  const rawPts = prices
-    .map(p => ({ ms: new Date(p.date + "T00:00:00").getTime(), close: p.close }))
-    .filter(p => p.ms >= entry)
-    .sort((a, b) => a.ms - b.ms);
-
-  if (rawPts.length === 0) {
+  if (tNorm.length === 0) {
     ctx.fillStyle = LBL; ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.font = "11px system-ui, sans-serif";
     ctx.fillText("No data yet", W / 2, H / 2);
     return;
   }
-
-  // Strategy equity: track price only when in "buy" state, flat in "cash"
-  const mSorted = [...markers].sort((a, b) => a.ms - b.ms);
-  const getState = (ms: number): "buy" | "cash" => {
-    let s: "buy" | "cash" = "buy";
-    for (const mk of mSorted) { if (mk.ms <= ms) s = mk.type; else break; }
-    return s;
-  };
-  let equity = 100;
-  const tNorm = rawPts.map((pt, i) => {
-    if (i > 0 && getState(pt.ms) === "buy") equity *= pt.close / rawPts[i - 1].close;
-    return { ms: pt.ms, v: i === 0 ? 100 : equity };
-  });
 
   const allMs = tNorm.map(p => p.ms);
   const allV  = tNorm.map(p => p.v);
@@ -750,23 +730,37 @@ function PerfChart({ series, rebalances, regimeHistory = [] }: { series: ChartSe
 }
 
 // ── ExpandPanel ───────────────────────────────────────────────────────────────
-function ExpandPanel({ h, onClose }: {
+function ExpandPanel({ h, onClose, cumrets }: {
   h: PortfolioHolding;
   onClose: () => void;
+  cumrets?: Record<string, Record<string, number>>;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [dailyPrices, setDailyPrices] = useState<{ date: string; close: number }[]>([]);
   const [markers, setMarkers] = useState<MarkerEvent[]>([]);
+
+  // Build strategy equity curve from position-aware monthly cumrets (backtest data)
+  const equityCurve = useMemo(() => {
+    const tc = cumrets?.[h.ticker];
+    if (!tc || !h.entry_date) return [];
+    const entryMs = new Date(h.entry_date + "T00:00:00").getTime();
+    const sorted = Object.entries(tc)
+      .map(([date, val]) => ({ ms: new Date(date + "T00:00:00").getTime(), val }))
+      .sort((a, b) => a.ms - b.ms);
+    // Find last month-end at or before entry_date as baseline
+    let baselineIdx = 0;
+    for (let i = 0; i < sorted.length; i++) {
+      if (sorted[i].ms <= entryMs) baselineIdx = i;
+      else break;
+    }
+    const baseline = sorted[baselineIdx]?.val;
+    if (!baseline) return [];
+    return sorted.slice(baselineIdx).map(p => ({ ms: p.ms, v: (p.val / baseline) * 100 }));
+  }, [cumrets, h.ticker, h.entry_date]);
 
   useEffect(() => {
     if (!h.entry_date) return;
     const apiUrl = import.meta.env.VITE_API_URL || "";
-    // Fetch daily prices from entry date
-    fetch(`${apiUrl}/api/ticker_daily/${h.ticker}?start=${h.entry_date}`)
-      .then(r => r.json())
-      .then(d => { if (d.prices) setDailyPrices(d.prices); })
-      .catch(() => {});
-    // Fetch BUY/CASH movements for this ticker
+    // Fetch BUY/CASH movements for markers only
     fetch(`${apiUrl}/api/portfolio_movements?ticker=${h.ticker}&limit=200`)
       .then(r => r.json())
       .then(d => {
@@ -783,13 +777,13 @@ function ExpandPanel({ h, onClose }: {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !h.entry_date || dailyPrices.length === 0) return;
-    const draw = () => drawExpandChart(canvas, dailyPrices, h.entry_date!, markers);
+    if (!canvas || equityCurve.length === 0) return;
+    const draw = () => drawExpandChart(canvas, equityCurve, markers);
     const raf = requestAnimationFrame(draw);
     const obs = new ResizeObserver(draw);
     obs.observe(canvas);
     return () => { cancelAnimationFrame(raf); obs.disconnect(); };
-  }, [h, dailyPrices, markers]);
+  }, [equityCurve, markers]);
 
   const perf = h.performance ?? h.performance_since_subscribed;
   const pos  = h.position ?? "long";
@@ -841,8 +835,9 @@ function ExpandPanel({ h, onClose }: {
 }
 
 // ── HoldingsGrid ──────────────────────────────────────────────────────────────
-function HoldingsGrid({ holdings }: {
+function HoldingsGrid({ holdings, cumrets }: {
   holdings: PortfolioHolding[];
+  cumrets?: Record<string, Record<string, number>>;
 }) {
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 600);
@@ -892,6 +887,7 @@ function HoldingsGrid({ holdings }: {
             key="__expand"
             h={holdings[activeIdx]}
             onClose={() => setActiveIdx(null)}
+            cumrets={cumrets}
           />
         );
       }
@@ -1238,6 +1234,7 @@ export function Dashboard() {
               if (!b.entry_date) return -1;
               return a.entry_date < b.entry_date ? -1 : a.entry_date > b.entry_date ? 1 : 0;
             })}
+            cumrets={portfolio.ticker_cumrets}
           />
         )}
         {!portfolio && (
