@@ -1215,8 +1215,8 @@ export function Dashboard() {
           <h1 style={{ fontFamily: playfair, fontWeight: 400, fontSize: 32, color: "var(--text-primary)", margin: 0, lineHeight: 1.2 }}>Active positions</h1>
           <span style={{ fontFamily: outfit, fontWeight: 300, fontSize: 12, color: "var(--text-tertiary)", letterSpacing: "0.02em" }}>
             {portfolio?.as_of
-              ? `Last rebalance ${fmtDate(portfolio.as_of)}`
-              : "Last rebalance —"}
+              ? `As of ${fmtDate(portfolio.as_of)}`
+              : "As of —"}
           </span>
         </div>
 
