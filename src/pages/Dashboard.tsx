@@ -75,6 +75,10 @@ const TICKER_NAMES: Record<string, { name: string; sector: string }> = {
   AMD:  { name: "Advanced Micro Devices",    sector: "Technology"  },
   PANW: { name: "Palo Alto Networks",        sector: "Technology"  },
   STX:  { name: "Seagate Technology",        sector: "Technology"  },
+  HPE:  { name: "Hewlett Packard Enterprise", sector: "Technology"  },
+  MET:  { name: "MetLife",                   sector: "Financials"  },
+  PSX:  { name: "Phillips 66",               sector: "Energy"      },
+  QUAL: { name: "iShares MSCI USA Quality",  sector: "ETF"         },
 };
 
 const TICKER_GEO: Record<string, string> = {
