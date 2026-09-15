@@ -501,6 +501,7 @@ type MarkerEvent = { ms: number; type: "buy" | "cash" };
 function drawExpandChart(
   canvas: HTMLCanvasElement,
   tNorm: { ms: number; v: number }[],
+  bhNorm: { ms: number; v: number }[] = [],
   markers: MarkerEvent[] = [],
 ) {
   const W = canvas.clientWidth, H = canvas.clientHeight;
@@ -510,6 +511,7 @@ function drawExpandChart(
   const ctx = canvas.getContext("2d")!; ctx.scale(dpr, dpr);
 
   const ACC  = "#1D9E75";
+  const BH   = "#7090AA";
   const BG   = cv("--bg-primary")    || "#232540";
   const GRID = cv("--border-subtle") || "rgba(255,255,255,0.07)";
   const LBL  = cv("--text-tertiary") || "#5D7A94";
@@ -526,7 +528,7 @@ function drawExpandChart(
   }
 
   const allMs = tNorm.map(p => p.ms);
-  const allV  = tNorm.map(p => p.v);
+  const allV  = [...tNorm.map(p => p.v), ...bhNorm.map(p => p.v)];
 
   const msMin = Math.min(...allMs), msMax = Math.max(...allMs);
   const vMin  = Math.min(95, ...allV) * 0.99, vMax = Math.max(105, ...allV) * 1.01;
@@ -557,7 +559,16 @@ function drawExpandChart(
     ctx.fillText(d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: frac === 0 || frac === 1 ? "2-digit" : undefined }), xOf(ms), PAD.t + CH + 18);
   });
 
-  // Ticker line + fill
+  // Buy & Hold line (dashed, behind strategy line)
+  const bhVisible = bhNorm.filter(p => p.ms >= msMin && p.ms <= msMax);
+  if (bhVisible.length >= 2) {
+    ctx.beginPath(); ctx.moveTo(xOf(bhVisible[0].ms), yOf(bhVisible[0].v));
+    bhVisible.forEach(p => ctx.lineTo(xOf(p.ms), yOf(p.v)));
+    ctx.strokeStyle = BH; ctx.lineWidth = 1.2; ctx.setLineDash([4, 3]); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Strategy line + fill
   if (tNorm.length >= 2) {
     const g = ctx.createLinearGradient(0, PAD.t, 0, PAD.t + CH);
     g.addColorStop(0, "rgba(29,158,117,0.18)");
@@ -740,12 +751,14 @@ function ExpandPanel({ h, onClose }: {
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [equityCurve, setEquityCurve] = useState<{ ms: number; v: number }[]>([]);
+  const [bhCurve,     setBhCurve]     = useState<{ ms: number; v: number }[]>([]);
   const [markers, setMarkers] = useState<MarkerEvent[]>([]);
 
   useEffect(() => {
     if (!h.entry_date) return;
     const apiUrl = import.meta.env.VITE_API_URL || "";
-    // Fetch daily strategy equity (backtest, position-aware, rebased to 100 at entry)
+    const entryMs = new Date(h.entry_date + "T00:00:00").getTime();
+
     fetch(`${apiUrl}/api/ticker_strategy_equity/${h.ticker}`)
       .then(r => r.json())
       .then(d => {
@@ -757,14 +770,27 @@ function ExpandPanel({ h, onClose }: {
             }))
           );
         }
+        if (d.bh_equity) {
+          setBhCurve(
+            (d.bh_equity as { date: string; v: number }[]).map(p => ({
+              ms: new Date(p.date + "T00:00:00").getTime(),
+              v: p.v,
+            }))
+          );
+        }
       })
       .catch(() => {});
-    // Fetch BUY/CASH movements for markers
+
+    // Only strategy-type movements (Long↔Cash flips) on or after entry_date
     fetch(`${apiUrl}/api/portfolio_movements?ticker=${h.ticker}&limit=200`)
       .then(r => r.json())
       .then(d => {
         const mvs: MarkerEvent[] = (d.movements || [])
-          .filter((m: any) => m.to_state === "buy" || m.to_state === "cash")
+          .filter((m: any) =>
+            m.movement_type === "strategy" &&
+            (m.to_state === "buy" || m.to_state === "cash") &&
+            new Date(m.date + "T00:00:00").getTime() >= entryMs
+          )
           .map((m: any) => ({
             ms: new Date(m.date + "T00:00:00").getTime(),
             type: m.to_state === "buy" ? "buy" : "cash",
@@ -777,12 +803,12 @@ function ExpandPanel({ h, onClose }: {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || equityCurve.length === 0) return;
-    const draw = () => drawExpandChart(canvas, equityCurve, markers);
+    const draw = () => drawExpandChart(canvas, equityCurve, bhCurve, markers);
     const raf = requestAnimationFrame(draw);
     const obs = new ResizeObserver(draw);
     obs.observe(canvas);
     return () => { cancelAnimationFrame(raf); obs.disconnect(); };
-  }, [equityCurve, markers]);
+  }, [equityCurve, bhCurve, markers]);
 
   const perf = h.performance ?? h.performance_since_subscribed;
   const pos  = h.position ?? "long";
@@ -808,7 +834,11 @@ function ExpandPanel({ h, onClose }: {
           <div style={{ marginLeft: "auto", display: "flex", gap: 14, fontSize: 10, color: "var(--text-secondary)" }}>
             <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
               <svg width="14" height="6"><line x1="0" y1="3" x2="14" y2="3" stroke="#1D9E75" strokeWidth="2"/></svg>
-              Strategy equity since entry (flat in cash)
+              Quantin
+            </span>
+            <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <svg width="14" height="6"><line x1="0" y1="3" x2="14" y2="3" stroke="#7090AA" strokeWidth="1.5" strokeDasharray="4 3"/></svg>
+              Buy &amp; Hold
             </span>
           </div>
         </div>

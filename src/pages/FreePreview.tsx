@@ -72,6 +72,10 @@ const TICKER_NAMES: Record<string, { name: string; sector: string }> = {
   VXUS:  { name: "Vanguard Total Intl",      sector: "ETF"         },
   WDC:   { name: "Western Digital",          sector: "Technology"  },
   XOM:   { name: "ExxonMobil",              sector: "Energy"      },
+  AVUS:  { name: "Avantis US Equity ETF",   sector: "ETF"         },
+  CAT:   { name: "Caterpillar",             sector: "Industrials" },
+  RSP:   { name: "Invesco S&P 500 Equal Wt",sector: "ETF"         },
+  SOXX:  { name: "iShares Semiconductor ETF",sector: "ETF"        },
 };
 
 const SEC_COLORS: Record<string, string> = {
