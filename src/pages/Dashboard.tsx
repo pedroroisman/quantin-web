@@ -79,6 +79,7 @@ const TICKER_NAMES: Record<string, { name: string; sector: string }> = {
   MET:  { name: "MetLife",                   sector: "Financials"  },
   PSX:  { name: "Phillips 66",               sector: "Energy"      },
   QUAL: { name: "iShares MSCI USA Quality",  sector: "ETF"         },
+  BIL:  { name: "SPDR 1-3 Month T-Bill ETF", sector: "Cash"        },
 };
 
 const TICKER_GEO: Record<string, string> = {
@@ -817,7 +818,12 @@ function ExpandPanel({ h, onClose }: {
 
   const posLabel = pos.charAt(0).toUpperCase() + pos.slice(1);
   const posColor = pos === "long" ? "#1D9E75" : "var(--text-tertiary)";
-  const stats = [
+  const stats = h.ticker === "BIL" ? [
+    { label: "Since entry",  val: perf != null ? pct(perf) : "—", c: perf != null && perf > 0 ? "#1D9E75" : perf != null && perf < 0 ? "#B5621A" : undefined },
+    { label: "Role",         val: "Idle cash proxy",               c: undefined, small: true },
+    { label: "Instrument",   val: "T-Bill 1-3 Month",              c: "var(--text-tertiary)", small: true },
+    { label: "Entry",        val: h.entry_date ? fmtMonthYear(h.entry_date) : "—", c: undefined },
+  ] : [
     { label: "Since entry",       val: perf != null ? pct(perf) : "—", c: perf != null && perf > 0 ? "#1D9E75" : perf != null && perf < 0 ? "#B5621A" : undefined },
     { label: "Current Strategy",  val: h.strategy ?? "—",               c: undefined, small: true },
     { label: "Confidence",        val: confLabel,                        c: h.confidence != null && h.confidence >= 0.7 ? "#1D9E75" : h.confidence != null && h.confidence >= 0.5 ? "#B5621A" : "var(--text-tertiary)" },
@@ -836,10 +842,12 @@ function ExpandPanel({ h, onClose }: {
               <svg width="14" height="6"><line x1="0" y1="3" x2="14" y2="3" stroke="#1D9E75" strokeWidth="2"/></svg>
               Quantin
             </span>
-            <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <svg width="14" height="6"><line x1="0" y1="3" x2="14" y2="3" stroke="#7090AA" strokeWidth="1.5" strokeDasharray="4 3"/></svg>
-              Buy &amp; Hold
-            </span>
+            {h.ticker !== "BIL" && (
+              <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <svg width="14" height="6"><line x1="0" y1="3" x2="14" y2="3" stroke="#7090AA" strokeWidth="1.5" strokeDasharray="4 3"/></svg>
+                Buy &amp; Hold
+              </span>
+            )}
           </div>
         </div>
         <canvas ref={canvasRef} style={{ display: "block", width: "100%", height: 150 }} />
