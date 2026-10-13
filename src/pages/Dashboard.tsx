@@ -79,6 +79,7 @@ const TICKER_NAMES: Record<string, { name: string; sector: string }> = {
   MET:  { name: "MetLife",                   sector: "Financials"  },
   PSX:  { name: "Phillips 66",               sector: "Energy"      },
   QUAL: { name: "iShares MSCI USA Quality",  sector: "ETF"         },
+  BIL:  { name: "SPDR 1-3 Month T-Bill ETF", sector: "Cash"        },
 };
 
 const TICKER_GEO: Record<string, string> = {
@@ -754,12 +755,16 @@ function ExpandPanel({ h, onClose }: {
   const [bhCurve,     setBhCurve]     = useState<{ ms: number; v: number }[]>([]);
   const [markers, setMarkers] = useState<MarkerEvent[]>([]);
 
+  const isCash = (h.position ?? "long") === "cash";
+
   useEffect(() => {
     if (!h.entry_date) return;
     const apiUrl = import.meta.env.VITE_API_URL || "";
     const entryMs = new Date(h.entry_date + "T00:00:00").getTime();
 
-    fetch(`${apiUrl}/api/ticker_strategy_equity/${h.ticker}`)
+    // Cash-position tickers: show BIL equity curve instead of flat strategy line
+    const equityTicker = isCash ? "BIL" : h.ticker;
+    fetch(`${apiUrl}/api/ticker_strategy_equity/${equityTicker}`)
       .then(r => r.json())
       .then(d => {
         if (d.equity) {
@@ -770,7 +775,7 @@ function ExpandPanel({ h, onClose }: {
             }))
           );
         }
-        if (d.bh_equity) {
+        if (d.bh_equity && !isCash) {
           setBhCurve(
             (d.bh_equity as { date: string; v: number }[]).map(p => ({
               ms: new Date(p.date + "T00:00:00").getTime(),
@@ -815,9 +820,14 @@ function ExpandPanel({ h, onClose }: {
   const pct  = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
   const confLabel = h.confidence != null ? `${Math.round(h.confidence * 100)}%` : "—";
 
-  const posLabel = pos.charAt(0).toUpperCase() + pos.slice(1);
-  const posColor = pos === "long" ? "#1D9E75" : "var(--text-tertiary)";
-  const stats = [
+  const posLabel = pos === "cash" ? "BIL" : pos.charAt(0).toUpperCase() + pos.slice(1);
+  const posColor = pos === "long" ? "#1D9E75" : "#7090AA";
+  const stats = h.ticker === "BIL" ? [
+    { label: "Since entry",  val: perf != null ? pct(perf) : "—", c: perf != null && perf > 0 ? "#1D9E75" : perf != null && perf < 0 ? "#B5621A" : undefined },
+    { label: "Role",         val: "Idle cash proxy",               c: undefined, small: true },
+    { label: "Instrument",   val: "T-Bill 1-3 Month",              c: "var(--text-tertiary)", small: true },
+    { label: "Entry",        val: h.entry_date ? fmtMonthYear(h.entry_date) : "—", c: undefined },
+  ] : [
     { label: "Since entry",       val: perf != null ? pct(perf) : "—", c: perf != null && perf > 0 ? "#1D9E75" : perf != null && perf < 0 ? "#B5621A" : undefined },
     { label: "Current Strategy",  val: h.strategy ?? "—",               c: undefined, small: true },
     { label: "Confidence",        val: confLabel,                        c: h.confidence != null && h.confidence >= 0.7 ? "#1D9E75" : h.confidence != null && h.confidence >= 0.5 ? "#B5621A" : "var(--text-tertiary)" },
@@ -834,12 +844,14 @@ function ExpandPanel({ h, onClose }: {
           <div style={{ marginLeft: "auto", display: "flex", gap: 14, fontSize: 10, color: "var(--text-secondary)" }}>
             <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
               <svg width="14" height="6"><line x1="0" y1="3" x2="14" y2="3" stroke="#1D9E75" strokeWidth="2"/></svg>
-              Quantin
+              {isCash ? "BIL (T-Bill)" : "Quantin"}
             </span>
-            <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <svg width="14" height="6"><line x1="0" y1="3" x2="14" y2="3" stroke="#7090AA" strokeWidth="1.5" strokeDasharray="4 3"/></svg>
-              Buy &amp; Hold
-            </span>
+            {!isCash && (
+              <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <svg width="14" height="6"><line x1="0" y1="3" x2="14" y2="3" stroke="#7090AA" strokeWidth="1.5" strokeDasharray="4 3"/></svg>
+                Buy &amp; Hold
+              </span>
+            )}
           </div>
         </div>
         <canvas ref={canvasRef} style={{ display: "block", width: "100%", height: 150 }} />
@@ -891,8 +903,8 @@ function HoldingsGrid({ holdings }: {
         <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 14, fontWeight: 700, letterSpacing: "0.05em", marginBottom: 2 }}>{h.ticker}</div>
         <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginBottom: 10, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{TICKER_NAMES[h.ticker]?.name ?? ""}</div>
         <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
-          <div style={{ width: 5, height: 5, borderRadius: "50%", background: pos === "long" ? "#1D9E75" : "var(--text-tertiary)" }} />
-          <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: pos === "long" ? "#1D9E75" : "var(--text-tertiary)" }}>{pos}</span>
+          <div style={{ width: 5, height: 5, borderRadius: "50%", background: pos === "long" ? "#1D9E75" : "#7090AA" }} />
+          <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: pos === "long" ? "#1D9E75" : "#7090AA" }}>{pos === "cash" ? "BIL" : pos}</span>
         </div>
         <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 7, color: perf != null && perf > 0 ? "#1D9E75" : perf != null && perf < 0 ? "#B5621A" : "var(--text-tertiary)" }}>
           {perf != null ? `${perf >= 0 ? "+" : ""}${perf.toFixed(1)}%` : "—"}
