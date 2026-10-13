@@ -755,12 +755,16 @@ function ExpandPanel({ h, onClose }: {
   const [bhCurve,     setBhCurve]     = useState<{ ms: number; v: number }[]>([]);
   const [markers, setMarkers] = useState<MarkerEvent[]>([]);
 
+  const isCash = (h.position ?? "long") === "cash";
+
   useEffect(() => {
     if (!h.entry_date) return;
     const apiUrl = import.meta.env.VITE_API_URL || "";
     const entryMs = new Date(h.entry_date + "T00:00:00").getTime();
 
-    fetch(`${apiUrl}/api/ticker_strategy_equity/${h.ticker}`)
+    // Cash-position tickers: show BIL equity curve instead of flat strategy line
+    const equityTicker = isCash ? "BIL" : h.ticker;
+    fetch(`${apiUrl}/api/ticker_strategy_equity/${equityTicker}`)
       .then(r => r.json())
       .then(d => {
         if (d.equity) {
@@ -771,7 +775,7 @@ function ExpandPanel({ h, onClose }: {
             }))
           );
         }
-        if (d.bh_equity) {
+        if (d.bh_equity && !isCash) {
           setBhCurve(
             (d.bh_equity as { date: string; v: number }[]).map(p => ({
               ms: new Date(p.date + "T00:00:00").getTime(),
@@ -840,9 +844,9 @@ function ExpandPanel({ h, onClose }: {
           <div style={{ marginLeft: "auto", display: "flex", gap: 14, fontSize: 10, color: "var(--text-secondary)" }}>
             <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
               <svg width="14" height="6"><line x1="0" y1="3" x2="14" y2="3" stroke="#1D9E75" strokeWidth="2"/></svg>
-              Quantin
+              {isCash ? "BIL (T-Bill)" : "Quantin"}
             </span>
-            {h.ticker !== "BIL" && (
+            {!isCash && (
               <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
                 <svg width="14" height="6"><line x1="0" y1="3" x2="14" y2="3" stroke="#7090AA" strokeWidth="1.5" strokeDasharray="4 3"/></svg>
                 Buy &amp; Hold
