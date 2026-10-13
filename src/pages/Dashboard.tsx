@@ -816,8 +816,8 @@ function ExpandPanel({ h, onClose }: {
   const pct  = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
   const confLabel = h.confidence != null ? `${Math.round(h.confidence * 100)}%` : "—";
 
-  const posLabel = pos.charAt(0).toUpperCase() + pos.slice(1);
-  const posColor = pos === "long" ? "#1D9E75" : "var(--text-tertiary)";
+  const posLabel = pos === "cash" ? "BIL" : pos.charAt(0).toUpperCase() + pos.slice(1);
+  const posColor = pos === "long" ? "#1D9E75" : "#7090AA";
   const stats = h.ticker === "BIL" ? [
     { label: "Since entry",  val: perf != null ? pct(perf) : "—", c: perf != null && perf > 0 ? "#1D9E75" : perf != null && perf < 0 ? "#B5621A" : undefined },
     { label: "Role",         val: "Idle cash proxy",               c: undefined, small: true },
@@ -899,8 +899,8 @@ function HoldingsGrid({ holdings }: {
         <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 14, fontWeight: 700, letterSpacing: "0.05em", marginBottom: 2 }}>{h.ticker}</div>
         <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginBottom: 10, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{TICKER_NAMES[h.ticker]?.name ?? ""}</div>
         <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
-          <div style={{ width: 5, height: 5, borderRadius: "50%", background: pos === "long" ? "#1D9E75" : "var(--text-tertiary)" }} />
-          <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: pos === "long" ? "#1D9E75" : "var(--text-tertiary)" }}>{pos}</span>
+          <div style={{ width: 5, height: 5, borderRadius: "50%", background: pos === "long" ? "#1D9E75" : "#7090AA" }} />
+          <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: pos === "long" ? "#1D9E75" : "#7090AA" }}>{pos === "cash" ? "BIL" : pos}</span>
         </div>
         <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 7, color: perf != null && perf > 0 ? "#1D9E75" : perf != null && perf < 0 ? "#B5621A" : "var(--text-tertiary)" }}>
           {perf != null ? `${perf >= 0 ? "+" : ""}${perf.toFixed(1)}%` : "—"}
