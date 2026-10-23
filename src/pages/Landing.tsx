@@ -737,10 +737,10 @@ export function Landing() {
         <section style={{ borderTop: "0.5px solid var(--border-subtle)", background: "var(--bg-tertiary)", padding: "4rem max(2rem, 6%)" }}>
           <div style={{ maxWidth: 560, margin: "0 auto", textAlign: "center" }}>
             <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text-tertiary)", marginBottom: "0.5rem" }}>
-              Ready to execute?
+              Get started
             </p>
             <h2 style={{ fontFamily: "'Playfair Display', serif", fontWeight: 400, fontSize: 28, color: "var(--text-primary)", marginBottom: "2rem", lineHeight: 1.2 }}>
-              Enter your portfolio size.
+              Start investing as a quant.
             </h2>
             <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: "2rem" }}>
               <div style={{ position: "relative" }}>
