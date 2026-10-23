@@ -49,7 +49,6 @@ const ALL_TIME_METRICS = [
   },
 ];
 
-const ALL_TIME_INTERPRETATION = "Since Jan 2020, Quantin has compounded at +17.6%/yr — outperforming the S&P 500 by 5.3pp per year — while limiting its worst drawdown to just −9.5%, compared to −33.7% for the index during the 2020 crash.";
 
 interface SeriesPoint { date: string; model: number; spy: number; }
 interface MetricData  { val: string; label: string; sub: string; valueColor: string; tooltip: string; }
@@ -177,33 +176,6 @@ function buildRangeMetrics(series: SeriesPoint[], year: YearSelection, cStart: s
   ];
 }
 
-function buildInterpretation(series: SeriesPoint[], year: YearSelection, cStart: string, cEnd: string): string {
-  if (year === "all" || !series.length) return ALL_TIME_INTERPRETATION;
-  const pts = filterPts(series, year, cStart, cEnd);
-  if (pts.length < 2) return ALL_TIME_INTERPRETATION;
-  const first = pts[0], last = pts[pts.length - 1];
-  const modelRet = (last.model / first.model - 1) * 100;
-  const spyRet   = (last.spy   / first.spy   - 1) * 100;
-  const alpha     = modelRet - spyRet;
-  let peak = first.model, maxDD = 0;
-  for (const p of pts) {
-    if (p.model > peak) peak = p.model;
-    const dd = (p.model - peak) / peak * 100;
-    if (dd < maxDD) maxDD = dd;
-  }
-  const fmt  = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
-  const fmtA = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}pp`;
-  const ddClause = maxDD < -0.5 ? `, with a maximum drawdown of ${maxDD.toFixed(1)}%` : "";
-  if (year === "1m" || year === "3m" || year === "6m") {
-    const relP = year === "1m" ? "last month" : year === "3m" ? "last 3 months" : "last 6 months";
-    return `Quantin returned ${fmt(modelRet)} over the ${relP} vs ${fmt(spyRet)} for the S&P 500 — ${alpha >= 0 ? "outperforming" : "underperforming"} by ${fmtA(alpha)}${ddClause}.`;
-  }
-  const isPartial = typeof year === "number" && year === new Date().getFullYear();
-  const period = year === "custom"
-    ? `from ${fmtMonth(cStart)} to ${fmtMonth(cEnd)}`
-    : isPartial ? `in ${year} (YTD)` : `in ${year}`;
-  return `Quantin returned ${fmt(modelRet)} ${period} vs ${fmt(spyRet)} for the S&P 500 — ${alpha >= 0 ? "outperforming" : "underperforming"} by ${fmtA(alpha)}${ddClause}.`;
-}
 
 function MetricCard({ val, label, sub, valueColor, tooltip }: MetricData) {
   const [show, setShow] = useState(false);
@@ -405,26 +377,6 @@ export function Landing() {
         tooltip: `Quantin's annualized return has exceeded the S&P 500's by ${Math.abs(alpha).toFixed(1)} percentage points per year since Jan 2020.`,
       },
     ];
-  }, [chartSeries, selectedYear, effectiveStart, effectiveEnd]);
-
-  const activeInterpretation = useMemo(() => {
-    if (selectedYear === "all") {
-      const pts = chartSeries.filter(p => p.date >= ALL_START);
-      if (!pts.length) return ALL_TIME_INTERPRETATION;
-      const first = pts[0], last = pts[pts.length - 1];
-      const years = (new Date(last.date).getTime() - new Date(first.date).getTime()) / (365.25 * 86400000);
-      const cagr  = ((last.model / first.model) ** (1 / years) - 1) * 100;
-      const spyCagr = ((last.spy / first.spy)   ** (1 / years) - 1) * 100;
-      const alpha = cagr - spyCagr;
-      let peak = first.model, maxDD = 0;
-      for (const p of pts) {
-        if (p.model > peak) peak = p.model;
-        const dd = (p.model - peak) / peak * 100;
-        if (dd < maxDD) maxDD = dd;
-      }
-      return `Since Jan 2020, Quantin has compounded at +${cagr.toFixed(1)}%/yr — outperforming the S&P 500 by ${alpha.toFixed(1)}pp per year — while limiting its worst drawdown to just ${maxDD.toFixed(1)}%, compared to −33.7% for the index during the 2020 crash.`;
-    }
-    return buildInterpretation(chartSeries, selectedYear, effectiveStart, effectiveEnd);
   }, [chartSeries, selectedYear, effectiveStart, effectiveEnd]);
 
   const legendNote = useMemo(() => {
