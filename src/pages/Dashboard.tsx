@@ -106,6 +106,7 @@ const TICKER_GEO: Record<string, string> = {
   AVUS:"United States", CAT:"United States",  SPHQ:"United States",
   RSP:"United States",
   AMD:"United States", PANW:"United States", STX:"United States",
+  HPE:"United States", MET:"United States",  PSX:"United States", QUAL:"United States",
 };
 
 const TICKER_IND: Record<string, string> = {
@@ -146,6 +147,8 @@ const TICKER_IND: Record<string, string> = {
   AVUS:"US Equity ETF",           CAT:"Heavy Machinery",       SPHQ:"US Quality ETF",
   RSP:"US Equity ETF (Equal Wt)",
   AMD:"AI / GPU Chips",           PANW:"Cybersecurity",        STX:"Data Storage",
+  HPE:"Enterprise IT",            MET:"Insurance",             PSX:"Energy Refining",
+  QUAL:"US Quality Factor ETF",
 };
 
 const GEO_COLORS: Record<string, string> = {
