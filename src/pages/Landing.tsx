@@ -264,8 +264,8 @@ export function Landing() {
   const navigate = useNavigate();
   const { label: regimeLabel, colors: regimeColors } = useRegime();
   const [authState, setAuthState]   = useState<AuthState>("loading");
-  const [brokerIntent, setBrokerIntent] = useState(false);
   const [chartSeries, setChartSeries] = useState<SeriesPoint[]>([]);
+  const [longHoldings, setLongHoldings] = useState<string[]>([]);
   const [_wfStats, setWfStats] = useState<{ cagr: number; sharpe: number; max_dd: number; spy_cagr: number; alfa_cagr: number } | null>(null);
   const [selectedYear, setSelectedYear] = useState<YearSelection>("all");
   const [customStart, setCustomStart] = useState<string>("");
@@ -301,6 +301,13 @@ export function Landing() {
           spy_cagr: v.spy_cagr,
           alfa_cagr: v.alfa_cagr,
         });
+        if (Array.isArray(d.portfolio)) {
+          setLongHoldings(
+            d.portfolio
+              .filter((h: { ticker: string; position?: string }) => (h.position ?? "long") === "long" && h.ticker !== "BIL")
+              .map((h: { ticker: string }) => h.ticker)
+          );
+        }
       })
       .catch(() => {});
   }, []);
@@ -623,76 +630,76 @@ export function Landing() {
 
         </main>
 
-        {/* How it works */}
+        {/* Today's positions */}
         <section style={{ borderTop: "0.5px solid var(--border-subtle)", background: "var(--bg-primary)", padding: "4rem max(2rem, 6%)" }}>
           <div style={{ maxWidth: 900, margin: "0 auto" }}>
-            <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text-tertiary)", marginBottom: "0.5rem" }}>
-              How it works
-            </p>
-            <h2 style={{ fontFamily: "'Playfair Display', serif", fontWeight: 400, fontSize: 28, color: "var(--text-primary)", marginBottom: "3rem", lineHeight: 1.3 }}>
-              Institutional discipline.<br />Simple execution.
-            </h2>
-            <div className="hiw-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 40 }}>
-              {[
-                {
-                  n: "01",
-                  title: "Algorithm runs every 6 weeks",
-                  body: "Walk-forward model. No lookahead bias. Zero discretion.",
-                },
-                {
-                  n: "02",
-                  title: "15 positions. LONG or CASH.",
-                  body: "No ambiguity. No interpretation. Just signals.",
-                },
-                {
-                  n: "03",
-                  title: "Execute in minutes",
-                  body: "Enter your size. Get exact dollar amounts per position.",
-                },
-              ].map(({ n, title, body }) => (
-                <div key={n} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  <span style={{ fontFamily: "monospace", fontSize: 11, color: "var(--text-tertiary)", letterSpacing: "0.05em" }}>{n}</span>
-                  <h3 style={{ fontSize: 15, fontWeight: 500, color: "var(--text-primary)", margin: 0, lineHeight: 1.4 }}>{title}</h3>
-                  <p style={{ fontSize: 13, lineHeight: 1.65, color: "var(--text-secondary)", margin: 0 }}>{body}</p>
-                </div>
-              ))}
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "2.5rem", flexWrap: "wrap", gap: 12 }}>
+              <div>
+                <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text-tertiary)", marginBottom: "0.4rem" }}>
+                  Today's signals
+                </p>
+                <h2 style={{ fontFamily: "'Playfair Display', serif", fontWeight: 400, fontSize: 28, color: "var(--text-primary)", margin: 0, lineHeight: 1.2 }}>
+                  {longHoldings.length > 0 ? `${longHoldings.length} positions in play.` : "Loading signals…"}
+                </h2>
+              </div>
+              <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>Updated every 6 weeks · Walk-forward</span>
+            </div>
+
+            {longHoldings.length > 0 && (
+              <div style={{
+                display: "flex", flexWrap: "wrap", gap: 10, marginBottom: "3rem",
+              }}>
+                {longHoldings.map(ticker => (
+                  <div key={ticker} style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    background: "rgba(5,150,105,0.06)",
+                    border: "0.5px solid rgba(5,150,105,0.25)",
+                    borderRadius: 8, padding: "14px 20px",
+                  }}>
+                    <span style={{ fontSize: 17, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "0.01em", fontVariantNumeric: "tabular-nums" }}>
+                      {ticker}
+                    </span>
+                    <span style={{
+                      fontSize: 10, fontWeight: 600, letterSpacing: "0.08em",
+                      textTransform: "uppercase", color: "#059669",
+                      background: "rgba(5,150,105,0.12)", borderRadius: 4, padding: "2px 7px",
+                    }}>
+                      LONG
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {longHoldings.length === 0 && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: "3rem" }}>
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <div key={i} style={{
+                    width: 130, height: 52, borderRadius: 8,
+                    background: "var(--bg-tertiary)", border: "0.5px solid var(--border-subtle)",
+                    animation: "pulse 1.5s ease-in-out infinite",
+                  }} />
+                ))}
+              </div>
+            )}
+
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <Button size="lg" onClick={() => { track("click_view_portfolio", { source: "signals_preview" }); navigate("/portfolio"); }}>
+                View portfolio →
+              </Button>
+              <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
+                See exact dollar amounts for your portfolio size
+              </span>
             </div>
           </div>
         </section>
 
-        {/* Connect your broker */}
-        <section style={{ borderTop: "0.5px solid var(--border-subtle)", background: "var(--bg-tertiary)", padding: "4.5rem max(2rem, 6%)" }}>
-          <div style={{ maxWidth: 560, margin: "0 auto", textAlign: "center" }}>
-            <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text-tertiary)", marginBottom: "0.5rem" }}>
-              Broker integration
-            </p>
-            <h2 style={{ fontFamily: "'Playfair Display', serif", fontWeight: 400, fontSize: 28, color: "var(--text-primary)", marginBottom: "1rem", lineHeight: 1.3 }}>
-              Ready to execute?
-            </h2>
-            <p style={{ fontSize: 14, color: "var(--text-tertiary)", marginBottom: "2.5rem", lineHeight: 1.5 }}>
-              Exact amounts. One click. No platform switching.
-            </p>
-            <div className="broker-logos" style={{ display: "flex", justifyContent: "center", gap: 32, marginBottom: "2.5rem", flexWrap: "wrap", alignItems: "center" }}>
-              {["Interactive Brokers", "Schwab", "Fidelity", "TD Ameritrade"].map(b => (
-                <span key={b} style={{ fontSize: 12, fontWeight: 500, color: "var(--text-tertiary)", letterSpacing: "0.02em", opacity: 0.55 }}>{b}</span>
-              ))}
-            </div>
-            <Button size="lg" onClick={() => {
-              track("click_connect_broker", { source: "landing" });
-              setBrokerIntent(true);
-            }}>
-              Connect your broker
-            </Button>
-            {brokerIntent && (
-              <p style={{ fontSize: 13, color: "#059669", marginTop: "1rem", lineHeight: 1.5 }}>
-                ✓ Noted. We'll reach out as soon as broker integration is live.
-              </p>
-            )}
-            <p style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: "1.5rem", lineHeight: 1.6 }}>
-              Broker integration coming soon · Today: manual execution with exact amounts shown
-            </p>
-          </div>
-        </section>
+        <style>{`
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+          }
+        `}</style>
 
         {/* Mission line */}
         <div style={{ borderTop: "0.5px solid var(--border-subtle)", padding: "1.25rem max(2rem, 6%)", textAlign: "center" }}>
