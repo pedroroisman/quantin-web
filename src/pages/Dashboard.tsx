@@ -1143,6 +1143,10 @@ function AllocationPanel({
             setRawInput(v);
             try { localStorage.setItem("quantin_portfolio_size", v); } catch {}
           }}
+          onBlur={e => {
+            const v = Number(e.target.value.replace(/,/g, ""));
+            if (v > 0) track("allocation_panel_value_entered", { value: v });
+          }}
           style={{ flex: 1, background: "none", border: "none", outline: "none", fontFamily: "ui-monospace, monospace", fontSize: 22, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums", minWidth: 0 }}
         />
         {portfolioSize > 0 && (

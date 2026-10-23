@@ -760,6 +760,7 @@ export function Landing() {
                   placeholder="your@email.com"
                   value={brokerEmail}
                   onChange={e => setBrokerEmail(e.target.value)}
+                  onBlur={() => { if (!brokerEmail) track("broker_waitlist_abandoned", { source: "landing" }); }}
                   autoFocus
                   style={{
                     padding: "0 16px", height: 46, width: 220,
