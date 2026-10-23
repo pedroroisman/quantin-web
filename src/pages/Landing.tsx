@@ -15,6 +15,24 @@ import { track } from "../lib/analytics";
 // All-time view starts from Jan 2020
 const ALL_START = "2020-01-01";
 
+const LANDING_TICKER_META: Record<string, { name: string; sector: string; geo: string; industry: string }> = {
+  AMAT: { name: "Applied Materials",          sector: "Technology",   geo: "US",            industry: "Semiconductor Equip." },
+  AVLV: { name: "Avantis US Large Cap Value", sector: "ETF",          geo: "US",            industry: "US Value Factor" },
+  DFLV: { name: "Dimensional US Large Value", sector: "ETF",          geo: "US",            industry: "US Value Factor" },
+  FNDB: { name: "Schwab Fundamental US",      sector: "ETF",          geo: "US",            industry: "US Dividend" },
+  HPE:  { name: "Hewlett Packard Enterprise", sector: "Technology",   geo: "US",            industry: "Enterprise IT" },
+  KLAC: { name: "KLA Corporation",            sector: "Technology",   geo: "US",            industry: "Semiconductor Equip." },
+  LRCX: { name: "Lam Research",               sector: "Technology",   geo: "US",            industry: "Semiconductor Equip." },
+  MET:  { name: "MetLife",                    sector: "Financials",   geo: "US",            industry: "Insurance" },
+  MGV:  { name: "Vanguard Mega Cap Value",    sector: "ETF",          geo: "US",            industry: "US Mega Cap" },
+  MU:   { name: "Micron Technology",          sector: "Technology",   geo: "US",            industry: "Memory Chips" },
+  PANW: { name: "Palo Alto Networks",         sector: "Technology",   geo: "US",            industry: "Cybersecurity" },
+  PSX:  { name: "Phillips 66",                sector: "Energy",       geo: "US",            industry: "Energy Refining" },
+  QUAL: { name: "iShares MSCI USA Quality",   sector: "ETF",          geo: "US",            industry: "US Quality Factor" },
+  SOXX: { name: "iShares Semiconductor ETF",  sector: "ETF",          geo: "US",            industry: "Semiconductors" },
+  TSM:  { name: "Taiwan Semiconductor",       sector: "Technology",   geo: "Taiwan",        industry: "Semiconductor Mfg." },
+};
+
 // Fallback — shown while API loads (normalized to Jan 2020 = $10,000)
 const FALLBACK_CHART_DATA = [
   { period: "Jan '20", quantin: 10000, sp500: 10000  },
@@ -265,7 +283,9 @@ export function Landing() {
   const { label: regimeLabel, colors: regimeColors } = useRegime();
   const [authState, setAuthState]   = useState<AuthState>("loading");
   const [chartSeries, setChartSeries] = useState<SeriesPoint[]>([]);
-  const [longHoldings, setLongHoldings] = useState<string[]>([]);
+  const [allHoldings, setAllHoldings] = useState<{ticker: string; position: string}[]>([]);
+  const [brokerIntent, setBrokerIntent] = useState(false);
+  const [portfolioInput, setPortfolioInput] = useState("");
   const [_wfStats, setWfStats] = useState<{ cagr: number; sharpe: number; max_dd: number; spy_cagr: number; alfa_cagr: number } | null>(null);
   const [selectedYear, setSelectedYear] = useState<YearSelection>("all");
   const [customStart, setCustomStart] = useState<string>("");
@@ -302,10 +322,13 @@ export function Landing() {
           alfa_cagr: v.alfa_cagr,
         });
         if (Array.isArray(d.portfolio)) {
-          setLongHoldings(
+          setAllHoldings(
             d.portfolio
-              .filter((h: { ticker: string; position?: string }) => (h.position ?? "long") === "long" && h.ticker !== "BIL")
-              .map((h: { ticker: string }) => h.ticker)
+              .filter((h: { ticker: string; position?: string }) => h.ticker !== "BIL")
+              .map((h: { ticker: string; position?: string }) => ({
+                ticker: h.ticker,
+                position: h.position ?? "long",
+              }))
           );
         }
       })
@@ -632,73 +655,136 @@ export function Landing() {
 
         {/* Today's positions */}
         <section style={{ borderTop: "0.5px solid var(--border-subtle)", background: "var(--bg-primary)", padding: "4rem max(2rem, 6%)" }}>
-          <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          <div style={{ maxWidth: 1100, margin: "0 auto" }}>
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "2.5rem", flexWrap: "wrap", gap: 12 }}>
               <div>
                 <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text-tertiary)", marginBottom: "0.4rem" }}>
-                  Today's signals
+                  Current portfolio
                 </p>
                 <h2 style={{ fontFamily: "'Playfair Display', serif", fontWeight: 400, fontSize: 28, color: "var(--text-primary)", margin: 0, lineHeight: 1.2 }}>
-                  {longHoldings.length > 0 ? `${longHoldings.length} positions in play.` : "Loading signals…"}
+                  {allHoldings.length > 0 ? "15 positions in play." : "Loading signals…"}
                 </h2>
               </div>
-              <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>Updated every 6 weeks · Walk-forward</span>
+              <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>Updated every 6 weeks · Walk-forward · No lookahead</span>
             </div>
 
-            {longHoldings.length > 0 && (
-              <div style={{
-                display: "flex", flexWrap: "wrap", gap: 10, marginBottom: "3rem",
-              }}>
-                {longHoldings.map(ticker => (
-                  <div key={ticker} style={{
-                    display: "flex", alignItems: "center", gap: 10,
-                    background: "rgba(5,150,105,0.06)",
-                    border: "0.5px solid rgba(5,150,105,0.25)",
-                    borderRadius: 8, padding: "14px 20px",
-                  }}>
-                    <span style={{ fontSize: 17, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "0.01em", fontVariantNumeric: "tabular-nums" }}>
-                      {ticker}
-                    </span>
-                    <span style={{
-                      fontSize: 10, fontWeight: 600, letterSpacing: "0.08em",
-                      textTransform: "uppercase", color: "#059669",
-                      background: "rgba(5,150,105,0.12)", borderRadius: 4, padding: "2px 7px",
+            {allHoldings.length > 0 ? (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }} className="signals-grid">
+                {allHoldings.map(({ ticker, position }) => {
+                  const isLong = position === "long";
+                  const meta = LANDING_TICKER_META[ticker];
+                  return (
+                    <div key={ticker} style={{
+                      borderRadius: 10,
+                      border: isLong ? "0.5px solid rgba(5,150,105,0.3)" : "0.5px solid var(--border-subtle)",
+                      background: isLong ? "rgba(5,150,105,0.05)" : "var(--bg-tertiary)",
+                      padding: "16px 18px",
+                      display: "flex", flexDirection: "column", gap: 10,
                     }}>
-                      LONG
-                    </span>
-                  </div>
-                ))}
+                      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+                        <span style={{ fontSize: 20, fontWeight: 650, color: "var(--text-primary)", letterSpacing: "0.01em", lineHeight: 1 }}>
+                          {ticker}
+                        </span>
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
+                          textTransform: "uppercase", flexShrink: 0, marginTop: 2,
+                          color: isLong ? "#059669" : "var(--text-tertiary)",
+                          background: isLong ? "rgba(5,150,105,0.12)" : "var(--bg-primary)",
+                          border: isLong ? "none" : "0.5px solid var(--border-subtle)",
+                          borderRadius: 4, padding: "2px 7px",
+                        }}>
+                          {isLong ? "Long" : "Cash"}
+                        </span>
+                      </div>
+                      {meta && (
+                        <>
+                          <span style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.3 }}>
+                            {meta.name}
+                          </span>
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                            {[meta.sector, meta.geo, meta.industry].filter(Boolean).map(tag => (
+                              <span key={tag} style={{
+                                fontSize: 10, color: "var(--text-tertiary)",
+                                background: "var(--bg-primary)",
+                                border: "0.5px solid var(--border-subtle)",
+                                borderRadius: 4, padding: "2px 7px",
+                                letterSpacing: "0.02em",
+                              }}>{tag}</span>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            )}
-
-            {longHoldings.length === 0 && (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: "3rem" }}>
-                {Array.from({ length: 9 }).map((_, i) => (
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }} className="signals-grid">
+                {Array.from({ length: 15 }).map((_, i) => (
                   <div key={i} style={{
-                    width: 130, height: 52, borderRadius: 8,
+                    height: 100, borderRadius: 10,
                     background: "var(--bg-tertiary)", border: "0.5px solid var(--border-subtle)",
                     animation: "pulse 1.5s ease-in-out infinite",
+                    animationDelay: `${i * 0.06}s`,
                   }} />
                 ))}
               </div>
             )}
+          </div>
+        </section>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              <Button size="lg" onClick={() => { track("click_view_portfolio", { source: "signals_preview" }); navigate("/portfolio"); }}>
-                View portfolio →
+        {/* Portfolio size + broker CTA */}
+        <section style={{ borderTop: "0.5px solid var(--border-subtle)", background: "var(--bg-tertiary)", padding: "4rem max(2rem, 6%)" }}>
+          <div style={{ maxWidth: 560, margin: "0 auto", textAlign: "center" }}>
+            <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text-tertiary)", marginBottom: "0.5rem" }}>
+              Ready to execute?
+            </p>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontWeight: 400, fontSize: 28, color: "var(--text-primary)", marginBottom: "2rem", lineHeight: 1.2 }}>
+              Enter your portfolio size.
+            </h2>
+            <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: "2rem" }}>
+              <div style={{ position: "relative" }}>
+                <span style={{
+                  position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)",
+                  fontSize: 15, color: "var(--text-tertiary)", pointerEvents: "none",
+                }}>$</span>
+                <input
+                  type="text"
+                  placeholder="10,000"
+                  value={portfolioInput}
+                  onChange={e => setPortfolioInput(e.target.value)}
+                  style={{
+                    paddingLeft: 28, paddingRight: 16, height: 46, width: 180,
+                    fontSize: 15, fontFamily: "inherit",
+                    background: "var(--bg-primary)",
+                    border: "0.5px solid var(--border-default)",
+                    borderRadius: 8, color: "var(--text-primary)",
+                    outline: "none",
+                  }}
+                />
+              </div>
+              <Button size="lg" onClick={() => {
+                track("click_connect_broker", { source: "landing", amount: portfolioInput });
+                setBrokerIntent(true);
+              }}>
+                Connect your broker
               </Button>
-              <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
-                See exact dollar amounts for your portfolio size
-              </span>
             </div>
+            {brokerIntent && (
+              <p style={{ fontSize: 13, color: "#059669", marginBottom: "1.5rem" }}>
+                ✓ We'll reach out as soon as broker integration is live.
+              </p>
+            )}
+            <p style={{ fontSize: 11, color: "var(--text-tertiary)", lineHeight: 1.6 }}>
+              Interactive Brokers · Schwab · Fidelity · TD Ameritrade — coming soon
+            </p>
           </div>
         </section>
 
         <style>{`
-          @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-          }
+          @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+          @media (max-width: 700px) { .signals-grid { grid-template-columns: repeat(2, 1fr) !important; } }
+          @media (max-width: 480px) { .signals-grid { grid-template-columns: 1fr !important; } }
         `}</style>
 
         {/* Mission line */}
