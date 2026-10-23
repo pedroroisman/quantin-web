@@ -1093,6 +1093,115 @@ function LastMovementsPanel() {
   );
 }
 
+// ── AllocationPanel ───────────────────────────────────────────────────────────
+function AllocationPanel({
+  holdings,
+  prices,
+}: {
+  holdings: PortfolioHolding[];
+  prices: Record<string, number>;
+}) {
+  const [rawInput, setRawInput] = useState(() => {
+    try { return localStorage.getItem("quantin_portfolio_size") || ""; }
+    catch { return ""; }
+  });
+
+  const portfolioSize = parseFloat(rawInput.replace(/,/g, "")) || 0;
+  const TOTAL_SLOTS   = 15;
+  const slotSize      = portfolioSize > 0 ? portfolioSize / TOTAL_SLOTS : 0;
+  const active        = holdings.filter(h => (h.position ?? "long") === "long");
+  const cashSlots     = TOTAL_SLOTS - active.length;
+  const bilAmount     = cashSlots * slotSize;
+
+  const fmtUSD = (n: number) =>
+    n === 0 ? "—" : n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${n.toFixed(0)}`;
+
+  const sharesStr = (amount: number, ticker: string) => {
+    const price = prices[ticker];
+    if (!price || amount === 0) return "—";
+    const sh = Math.floor(amount / price);
+    return sh > 0 ? `≈ ${sh.toLocaleString()} sh` : "< 1 sh";
+  };
+
+  return (
+    <div style={{ marginBottom: "2rem" }}>
+      {/* Size input */}
+      <div style={{ background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", borderRadius: "var(--radius-lg)", padding: "0.9rem 1.25rem", marginBottom: "1rem", display: "flex", alignItems: "center", gap: 10 }}>
+        <span style={{ fontFamily: outfit, fontSize: 10, textTransform: "uppercase" as const, letterSpacing: "0.1em", color: "var(--text-tertiary)", whiteSpace: "nowrap" as const }}>Portfolio size</span>
+        <span style={{ fontFamily: outfit, fontSize: 22, fontWeight: 300, color: "var(--text-tertiary)", lineHeight: 1 }}>$</span>
+        <input
+          type="text"
+          inputMode="numeric"
+          value={rawInput}
+          placeholder="100,000"
+          onChange={e => {
+            const v = e.target.value.replace(/[^0-9,]/g, "");
+            setRawInput(v);
+            try { localStorage.setItem("quantin_portfolio_size", v); } catch {}
+          }}
+          style={{ flex: 1, background: "none", border: "none", outline: "none", fontFamily: "ui-monospace, monospace", fontSize: 22, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums", minWidth: 0 }}
+        />
+        {portfolioSize > 0 && (
+          <div style={{ display: "flex", gap: 20, flexShrink: 0 }}>
+            <div style={{ textAlign: "center" as const }}>
+              <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 15, fontWeight: 700, color: "#1D9E75", letterSpacing: "-0.01em" }}>{active.length}</div>
+              <div style={{ fontSize: 9, textTransform: "uppercase" as const, letterSpacing: "0.08em", color: "var(--text-tertiary)" }}>active</div>
+            </div>
+            <div style={{ textAlign: "center" as const }}>
+              <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 15, fontWeight: 700, color: "#7090AA", letterSpacing: "-0.01em" }}>{cashSlots}</div>
+              <div style={{ fontSize: 9, textTransform: "uppercase" as const, letterSpacing: "0.08em", color: "var(--text-tertiary)" }}>in BIL</div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {portfolioSize > 0 && (
+        <div className="alloc-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          {/* ACTIVE */}
+          <div style={{ background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", borderRadius: "var(--radius-lg)", overflow: "hidden" }}>
+            <div style={{ padding: "9px 14px", borderBottom: "0.5px solid var(--border-subtle)", display: "flex", alignItems: "center", gap: 7 }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#1D9E75", flexShrink: 0 }} />
+              <span style={{ fontFamily: outfit, fontSize: 10, textTransform: "uppercase" as const, letterSpacing: "0.1em", color: "#1D9E75", fontWeight: 600 }}>
+                Active — {active.length} pos · {fmtUSD(slotSize)} each
+              </span>
+            </div>
+            {active.length === 0
+              ? <div style={{ padding: "16px 14px", color: "var(--text-tertiary)", fontSize: 12, textAlign: "center" as const }}>All in BIL today</div>
+              : active.map(h => (
+                <div key={h.ticker} style={{ display: "grid", gridTemplateColumns: "52px 1fr auto", alignItems: "center", padding: "8px 14px", borderBottom: "0.5px solid var(--border-subtle)" }}>
+                  <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 12, fontWeight: 700, letterSpacing: "0.04em" }}>{h.ticker}</span>
+                  <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em", fontVariantNumeric: "tabular-nums", color: "var(--text-primary)" }}>{fmtUSD(slotSize)}</span>
+                  <span style={{ fontFamily: outfit, fontSize: 11, color: "var(--text-tertiary)" }}>{sharesStr(slotSize, h.ticker)}</span>
+                </div>
+              ))
+            }
+          </div>
+
+          {/* REST */}
+          <div style={{ background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", borderRadius: "var(--radius-lg)", overflow: "hidden" }}>
+            <div style={{ padding: "9px 14px", borderBottom: "0.5px solid var(--border-subtle)", display: "flex", alignItems: "center", gap: 7 }}>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#7090AA", flexShrink: 0 }} />
+              <span style={{ fontFamily: outfit, fontSize: 10, textTransform: "uppercase" as const, letterSpacing: "0.1em", color: "#7090AA", fontWeight: 600 }}>
+                Rest — {cashSlots} slots · {fmtUSD(bilAmount)} total
+              </span>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "52px 1fr auto", alignItems: "center", padding: "8px 14px", borderBottom: "0.5px solid var(--border-subtle)" }}>
+              <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 12, fontWeight: 700, letterSpacing: "0.04em", color: "#7090AA" }}>BIL</span>
+              <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em", fontVariantNumeric: "tabular-nums", color: "var(--text-primary)" }}>{fmtUSD(bilAmount)}</span>
+              <span style={{ fontFamily: outfit, fontSize: 11, color: "var(--text-tertiary)" }}>{sharesStr(bilAmount, "BIL")}</span>
+            </div>
+            <div style={{ padding: "10px 14px" }}>
+              <p style={{ fontFamily: outfit, fontSize: 10, color: "var(--text-tertiary)", margin: 0, lineHeight: 1.55 }}>
+                SPDR 1-3 Month T-Bill. Idle capital earns the risk-free rate until the strategy goes long.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 export function Dashboard() {
   const navigate = useNavigate();
@@ -1106,6 +1215,7 @@ export function Dashboard() {
   const [cancelEndsOn, setCancelEndsOn] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"composition" | "performance" | "movements">("composition");
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [priceMap, setPriceMap] = useState<Record<string, number>>({});
 
   useEffect(() => { track("dashboard_viewed"); }, []);
 
@@ -1116,6 +1226,7 @@ export function Dashboard() {
     // Load public data immediately — no auth required
     fetch(`${apiUrl}/api/portfolio_optimizer`).then(r => r.json()).then(d => { if (mounted) setPortfolio(d); }).catch(() => {});
     fetch(`${apiUrl}/api/portfolio_optimizer/chart`).then(r => r.json()).then(d => { if (mounted) setChartData(d); }).catch(() => {});
+    fetch(`${apiUrl}/api/portfolio_prices`).then(r => r.json()).then(d => { if (mounted && d.ok) setPriceMap(d.prices || {}); }).catch(() => {});
 
     // Check auth in background for alerts personalization
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -1228,6 +1339,7 @@ export function Dashboard() {
           .holdings-grid   { grid-template-columns: repeat(2, 1fr) !important; }
           .expand-panel    { grid-template-columns: 1fr !important; }
           .expand-chart    { border-right: none !important; border-bottom: 0.5px solid var(--border-subtle) !important; }
+          .alloc-grid      { grid-template-columns: 1fr !important; }
         }
       `}</style>
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "2.5rem 2rem 6rem" }}>
@@ -1261,6 +1373,14 @@ export function Dashboard() {
               : "As of —"}
           </span>
         </div>
+
+        {/* Allocation panel */}
+        {portfolio && (
+          <AllocationPanel
+            holdings={portfolio.portfolio}
+            prices={priceMap}
+          />
+        )}
 
         {/* Portfolio showcase — always visible */}
         <p style={{ fontFamily: outfit, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--accent)", marginBottom: "0.75rem" }}>
