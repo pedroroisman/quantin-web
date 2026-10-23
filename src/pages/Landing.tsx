@@ -771,10 +771,15 @@ export function Landing() {
                     outline: "none",
                   }}
                 />
-                <Button size="lg" onClick={() => {
+                <Button size="lg" onClick={async () => {
                   if (!brokerEmail) return;
                   track("broker_waitlist_signup", { email: brokerEmail, source: "landing" });
                   setBrokerStep("done");
+                  await fetch("/api/broker-waitlist", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: brokerEmail }),
+                  }).catch(() => {});
                 }}>
                   Notify me
                 </Button>
