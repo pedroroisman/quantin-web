@@ -284,8 +284,8 @@ export function Landing() {
   const [authState, setAuthState]   = useState<AuthState>("loading");
   const [chartSeries, setChartSeries] = useState<SeriesPoint[]>([]);
   const [allHoldings, setAllHoldings] = useState<{ticker: string; position: string}[]>([]);
-  const [brokerIntent, setBrokerIntent] = useState(false);
-  const [portfolioInput, setPortfolioInput] = useState("");
+  const [brokerStep, setBrokerStep] = useState<"idle" | "form" | "done">("idle");
+  const [brokerEmail, setBrokerEmail] = useState("");
   const [_wfStats, setWfStats] = useState<{ cagr: number; sharpe: number; max_dd: number; spy_cagr: number; alfa_cagr: number } | null>(null);
   const [selectedYear, setSelectedYear] = useState<YearSelection>("all");
   const [customStart, setCustomStart] = useState<string>("");
@@ -742,39 +742,50 @@ export function Landing() {
             <h2 style={{ fontFamily: "'Playfair Display', serif", fontWeight: 400, fontSize: 28, color: "var(--text-primary)", marginBottom: "2rem", lineHeight: 1.2 }}>
               Start investing as a quant.
             </h2>
-            <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: "2rem" }}>
-              <div style={{ position: "relative" }}>
-                <span style={{
-                  position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)",
-                  fontSize: 15, color: "var(--text-tertiary)", pointerEvents: "none",
-                }}>$</span>
+            {brokerStep === "idle" && (
+              <div style={{ marginBottom: "2rem" }}>
+                <Button size="lg" onClick={() => {
+                  track("click_connect_broker", { source: "landing" });
+                  setBrokerStep("form");
+                }}>
+                  Connect your broker
+                </Button>
+              </div>
+            )}
+
+            {brokerStep === "form" && (
+              <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: "2rem", flexWrap: "wrap" }}>
                 <input
-                  type="text"
-                  placeholder="10,000"
-                  value={portfolioInput}
-                  onChange={e => setPortfolioInput(e.target.value)}
+                  type="email"
+                  placeholder="your@email.com"
+                  value={brokerEmail}
+                  onChange={e => setBrokerEmail(e.target.value)}
+                  autoFocus
                   style={{
-                    paddingLeft: 28, paddingRight: 16, height: 46, width: 180,
-                    fontSize: 15, fontFamily: "inherit",
+                    padding: "0 16px", height: 46, width: 220,
+                    fontSize: 14, fontFamily: "inherit",
                     background: "var(--bg-primary)",
                     border: "0.5px solid var(--border-default)",
                     borderRadius: 8, color: "var(--text-primary)",
                     outline: "none",
                   }}
                 />
+                <Button size="lg" onClick={() => {
+                  if (!brokerEmail) return;
+                  track("broker_waitlist_signup", { email: brokerEmail, source: "landing" });
+                  setBrokerStep("done");
+                }}>
+                  Notify me
+                </Button>
               </div>
-              <Button size="lg" onClick={() => {
-                track("click_connect_broker", { source: "landing", amount: portfolioInput });
-                setBrokerIntent(true);
-              }}>
-                Connect your broker
-              </Button>
-            </div>
-            {brokerIntent && (
-              <p style={{ fontSize: 13, color: "#059669", marginBottom: "1.5rem" }}>
-                ✓ We'll reach out as soon as broker integration is live.
+            )}
+
+            {brokerStep === "done" && (
+              <p style={{ fontSize: 15, color: "#059669", marginBottom: "2rem", lineHeight: 1.5 }}>
+                ✓ You're on the list. We'll reach out as soon as broker integration is live.
               </p>
             )}
+
             <p style={{ fontSize: 11, color: "var(--text-tertiary)", lineHeight: 1.6 }}>
               Interactive Brokers · Schwab · Fidelity · TD Ameritrade — coming soon
             </p>
