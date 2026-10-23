@@ -106,6 +106,7 @@ const TICKER_GEO: Record<string, string> = {
   AVUS:"United States", CAT:"United States",  SPHQ:"United States",
   RSP:"United States",
   AMD:"United States", PANW:"United States", STX:"United States",
+  HPE:"United States", MET:"United States",  PSX:"United States", QUAL:"United States",
 };
 
 const TICKER_IND: Record<string, string> = {
@@ -146,6 +147,8 @@ const TICKER_IND: Record<string, string> = {
   AVUS:"US Equity ETF",           CAT:"Heavy Machinery",       SPHQ:"US Quality ETF",
   RSP:"US Equity ETF (Equal Wt)",
   AMD:"AI / GPU Chips",           PANW:"Cybersecurity",        STX:"Data Storage",
+  HPE:"Enterprise IT",            MET:"Insurance",             PSX:"Energy Refining",
+  QUAL:"US Quality Factor ETF",
 };
 
 const GEO_COLORS: Record<string, string> = {
@@ -1127,7 +1130,7 @@ function AllocationPanel({
     <div style={{ marginBottom: "2rem" }}>
       {/* Size input */}
       <div style={{ background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", borderRadius: "var(--radius-lg)", padding: "0.9rem 1.25rem", marginBottom: "1rem", display: "flex", alignItems: "center", gap: 10 }}>
-        <span style={{ fontFamily: outfit, fontSize: 10, textTransform: "uppercase" as const, letterSpacing: "0.1em", color: "var(--text-tertiary)", whiteSpace: "nowrap" as const }}>Portfolio size</span>
+        <span style={{ fontFamily: outfit, fontSize: 11, color: "var(--text-secondary)", whiteSpace: "nowrap" as const }}>Enter your total value to see how it's allocated</span>
         <span style={{ fontFamily: outfit, fontSize: 22, fontWeight: 300, color: "var(--text-tertiary)", lineHeight: 1 }}>$</span>
         <input
           type="text"
