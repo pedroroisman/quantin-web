@@ -292,6 +292,7 @@ export function Landing() {
   const navigate = useNavigate();
   const { label: regimeLabel, colors: regimeColors } = useRegime();
   const [authState, setAuthState]   = useState<AuthState>("loading");
+  const [brokerIntent, setBrokerIntent] = useState(false);
   const [chartSeries, setChartSeries] = useState<SeriesPoint[]>([]);
   const [_wfStats, setWfStats] = useState<{ cagr: number; sharpe: number; max_dd: number; spy_cagr: number; alfa_cagr: number } | null>(null);
   const [selectedYear, setSelectedYear] = useState<YearSelection>("all");
@@ -463,6 +464,8 @@ export function Landing() {
           .footer-strip { gap: 1rem !important; }
           .chart-legend { flex-direction: column !important; gap: 8px !important; }
           .chart-legend-note { margin-left: 0 !important; }
+          .hiw-grid { grid-template-columns: 1fr !important; }
+          .broker-logos { gap: 16px !important; }
         }
       `}</style>
 
@@ -535,23 +538,16 @@ export function Landing() {
                 fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em",
                 color: "var(--text-tertiary)", marginBottom: "0.3rem",
               }}>
-                Quantitative portfolio
+                For individual investors
               </p>
 
               <h1 className="hero-headline" style={{
                 fontFamily: "'Playfair Display', serif", fontWeight: 400,
-                fontSize: 36, marginBottom: "0.75rem",
+                fontSize: 36, marginBottom: "2.5rem",
                 color: "var(--text-primary)", lineHeight: 1.2,
               }}>
-                Systematic alpha.<br />No quant team required.
+                The market can be modeled.<br />We proved it.
               </h1>
-
-              <p style={{
-                fontSize: 16, lineHeight: 1.65, maxWidth: 520,
-                color: "var(--text-secondary)", marginBottom: "2.5rem",
-              }}>
-                Quantin is a quantitative portfolio engine that gives wealth managers and advisors the edge of a quant team without the cost or complexity.
-              </p>
 
               {/* Metrics */}
               <div className="metric-grid" style={{
@@ -649,36 +645,23 @@ export function Landing() {
                 </span>
               </div>
 
-              {/* Interpretation */}
-              <p style={{
-                fontSize: 13, lineHeight: 1.6, color: "var(--text-secondary)",
-                marginBottom: "1.5rem", fontStyle: "italic",
-              }}>
-                {activeInterpretation}
-              </p>
-
               {/* CTA */}
               <div className="cta-row" style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", marginBottom: "0.9rem" }}>
                 <Button size="lg" onClick={() => {
                   track("click_view_portfolio", { source: "hero_cta" });
                   navigate("/portfolio");
                 }}>
-                  View the portfolio →
+                  See today's portfolio →
                 </Button>
                 <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
-                  Free · Alerts from $25/mo
+                  Free · No credit card required
                 </span>
               </div>
 
               {/* Footer strip */}
               <div className="footer-strip" style={{ paddingTop: "1.25rem", borderTop: "0.5px solid var(--border-subtle)", display: "flex", gap: "2rem", flexWrap: "wrap" }}>
-                {[
-                  ["15 positions", "active today"],
-                  ["Email + push", "on every change"],
-                ].map(([strong, rest]) => (
-                  <span key={strong} style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
-                    <span style={{ color: "var(--text-secondary)" }}>{strong}</span> {rest}
-                  </span>
+                {["15 positions · 6-week rebalance · Walk-forward · No lookahead bias"].map(text => (
+                  <span key={text} style={{ fontSize: 11, color: "var(--text-tertiary)", letterSpacing: "0.01em" }}>{text}</span>
                 ))}
               </div>
 
@@ -688,10 +671,81 @@ export function Landing() {
 
         </main>
 
+        {/* How it works */}
+        <section style={{ borderTop: "0.5px solid var(--border-subtle)", background: "var(--bg-primary)", padding: "4rem max(2rem, 6%)" }}>
+          <div style={{ maxWidth: 900, margin: "0 auto" }}>
+            <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text-tertiary)", marginBottom: "0.5rem" }}>
+              How it works
+            </p>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontWeight: 400, fontSize: 28, color: "var(--text-primary)", marginBottom: "3rem", lineHeight: 1.3 }}>
+              Institutional discipline.<br />Simple execution.
+            </h2>
+            <div className="hiw-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 40 }}>
+              {[
+                {
+                  n: "01",
+                  title: "Algorithm runs every 6 weeks",
+                  body: "Walk-forward model. No lookahead bias. Zero discretion.",
+                },
+                {
+                  n: "02",
+                  title: "15 positions. LONG or CASH.",
+                  body: "No ambiguity. No interpretation. Just signals.",
+                },
+                {
+                  n: "03",
+                  title: "Execute in minutes",
+                  body: "Enter your size. Get exact dollar amounts per position.",
+                },
+              ].map(({ n, title, body }) => (
+                <div key={n} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <span style={{ fontFamily: "monospace", fontSize: 11, color: "var(--text-tertiary)", letterSpacing: "0.05em" }}>{n}</span>
+                  <h3 style={{ fontSize: 15, fontWeight: 500, color: "var(--text-primary)", margin: 0, lineHeight: 1.4 }}>{title}</h3>
+                  <p style={{ fontSize: 13, lineHeight: 1.65, color: "var(--text-secondary)", margin: 0 }}>{body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Connect your broker */}
+        <section style={{ borderTop: "0.5px solid var(--border-subtle)", background: "var(--bg-tertiary)", padding: "4.5rem max(2rem, 6%)" }}>
+          <div style={{ maxWidth: 560, margin: "0 auto", textAlign: "center" }}>
+            <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text-tertiary)", marginBottom: "0.5rem" }}>
+              Broker integration
+            </p>
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontWeight: 400, fontSize: 28, color: "var(--text-primary)", marginBottom: "1rem", lineHeight: 1.3 }}>
+              Ready to execute?
+            </h2>
+            <p style={{ fontSize: 14, color: "var(--text-tertiary)", marginBottom: "2.5rem", lineHeight: 1.5 }}>
+              Exact amounts. One click. No platform switching.
+            </p>
+            <div className="broker-logos" style={{ display: "flex", justifyContent: "center", gap: 32, marginBottom: "2.5rem", flexWrap: "wrap", alignItems: "center" }}>
+              {["Interactive Brokers", "Schwab", "Fidelity", "TD Ameritrade"].map(b => (
+                <span key={b} style={{ fontSize: 12, fontWeight: 500, color: "var(--text-tertiary)", letterSpacing: "0.02em", opacity: 0.55 }}>{b}</span>
+              ))}
+            </div>
+            <Button size="lg" onClick={() => {
+              track("click_connect_broker", { source: "landing" });
+              setBrokerIntent(true);
+            }}>
+              Connect your broker
+            </Button>
+            {brokerIntent && (
+              <p style={{ fontSize: 13, color: "#059669", marginTop: "1rem", lineHeight: 1.5 }}>
+                ✓ Noted. We'll reach out as soon as broker integration is live.
+              </p>
+            )}
+            <p style={{ fontSize: 11, color: "var(--text-tertiary)", marginTop: "1.5rem", lineHeight: 1.6 }}>
+              Broker integration coming soon · Today: manual execution with exact amounts shown
+            </p>
+          </div>
+        </section>
+
         {/* Mission line */}
         <div style={{ borderTop: "0.5px solid var(--border-subtle)", padding: "1.25rem max(2rem, 6%)", textAlign: "center" }}>
           <p style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 300, fontSize: 13, color: "var(--text-tertiary)", letterSpacing: "0.04em", margin: 0 }}>
-            Bringing systematic investing to every advisory practice.
+            Systematic investing for the individual investor.
           </p>
         </div>
 
