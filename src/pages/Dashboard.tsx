@@ -1377,14 +1377,6 @@ export function Dashboard() {
           </span>
         </div>
 
-        {/* Allocation panel */}
-        {portfolio && (
-          <AllocationPanel
-            holdings={portfolio.portfolio}
-            prices={priceMap}
-          />
-        )}
-
         {/* Portfolio showcase — always visible */}
         <p style={{ fontFamily: outfit, fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--accent)", marginBottom: "0.75rem" }}>
           Holdings · {portfolio?.portfolio.length ?? "—"} positions · Equal weight
@@ -1402,6 +1394,14 @@ export function Dashboard() {
           <div style={{ height: 240, background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", borderRadius: "var(--radius-lg)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-tertiary)", fontSize: 13, marginBottom: "2rem" }}>
             Loading portfolio…
           </div>
+        )}
+
+        {/* Allocation panel */}
+        {portfolio && (
+          <AllocationPanel
+            holdings={portfolio.portfolio}
+            prices={priceMap}
+          />
         )}
 
         {/* Tab selector */}
