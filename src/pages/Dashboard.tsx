@@ -1129,8 +1129,9 @@ function AllocationPanel({
   return (
     <div style={{ marginBottom: "2rem" }}>
       {/* Size input */}
-      <div style={{ background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", borderRadius: "var(--radius-lg)", padding: "0.9rem 1.25rem", marginBottom: "1rem", display: "flex", alignItems: "center", gap: 10 }}>
-        <span style={{ fontFamily: outfit, fontSize: 11, color: "var(--text-secondary)", whiteSpace: "nowrap" as const }}>Enter your total value to see how it's allocated</span>
+      <div style={{ background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", borderRadius: "var(--radius-lg)", padding: "0.9rem 1.25rem", marginBottom: "1rem" }}>
+        <span style={{ display: "block", fontFamily: outfit, fontSize: 11, color: "var(--text-secondary)", marginBottom: "0.5rem" }}>Enter your total value to see how it's allocated</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <span style={{ fontFamily: outfit, fontSize: 22, fontWeight: 300, color: "var(--text-tertiary)", lineHeight: 1 }}>$</span>
         <input
           type="text"
@@ -1156,6 +1157,7 @@ function AllocationPanel({
             </div>
           </div>
         )}
+        </div>
       </div>
 
       {portfolioSize > 0 && (
