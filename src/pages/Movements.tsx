@@ -70,14 +70,14 @@ function DirectionChip({ from, to }: { from: "cash" | "buy"; to: "cash" | "buy" 
       fontWeight: 500,
     }}>
       <span style={{ color: "var(--text-tertiary)", fontSize: 11 }}>
-        {from === "cash" ? "CASH" : "BUY"}
+        {from === "cash" ? "BIL" : "BUY"}
       </span>
       <span style={{ color: "var(--text-tertiary)" }}>→</span>
       <span style={{
         fontWeight: 700,
         color: isEntry ? "var(--accent)" : "var(--danger-text)",
       }}>
-        {to === "cash" ? "CASH" : "BUY"}
+        {to === "cash" ? "BIL" : "BUY"}
       </span>
     </span>
   );
