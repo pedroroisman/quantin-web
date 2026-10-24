@@ -461,6 +461,7 @@ export function Landing() {
           position: "sticky", top: 0, zIndex: 10,
         }}>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <Button variant="ghost" size="sm" onClick={() => { track("click_about", { source: "nav" }); navigate("/about"); }}>About</Button>
             {authState === "none" && (
               <Button variant="ghost" size="sm" onClick={() => { track("click_signin", { source: "nav" }); navigate("/signin"); }}>Sign in</Button>
             )}

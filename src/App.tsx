@@ -11,6 +11,8 @@ import { SignIn }        from "./pages/SignIn";
 import { AuthCallback }  from "./pages/AuthCallback";
 import { UserProfile }  from "./pages/UserProfile";
 import { Movements }    from "./pages/Movements";
+import { About }        from "./pages/About";
+import { JoinTeam }     from "./pages/JoinTeam";
 import { PrivateRoute }  from "./components/PrivateRoute";
 
 export default function App() {
@@ -26,6 +28,8 @@ export default function App() {
         <Route path="/smart-selector" element={<PrivateRoute><SmartSelector /></PrivateRoute>} />
         <Route path="/user"           element={<PrivateRoute><UserProfile /></PrivateRoute>} />
         <Route path="/movements"      element={<PrivateRoute><Movements /></PrivateRoute>} />
+        <Route path="/about"          element={<About />} />
+        <Route path="/about/join"     element={<JoinTeam />} />
       </Routes>
       <Analytics />
     </BrowserRouter>
