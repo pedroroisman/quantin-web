@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Button } from "../components/Button";
+import { Button } from "../components/ui/Button";
 import { track } from "../lib/analytics";
 
 const outfit = "'Outfit', sans-serif";
@@ -79,13 +79,28 @@ export function About() {
           <div style={{ display: "flex", gap: "1.5rem", alignItems: "flex-start", marginBottom: "2.5rem" }}>
             <div style={{
               width: 52, height: 52, borderRadius: "50%", flexShrink: 0,
-              background: "var(--bg-secondary)", border: "0.5px solid var(--border-subtle)",
+              background: "#1B2A3E", border: "0.5px solid var(--border-subtle)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontFamily: playfair, fontSize: 20, color: "var(--text-secondary)",
-            }}>P</div>
+              fontFamily: outfit, fontSize: 14, fontWeight: 600, color: "#fff", letterSpacing: "0.05em",
+            }}>PR</div>
             <div>
-              <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)", marginBottom: 4 }}>Pedro Roisman</div>
-              <div style={{ fontSize: 12, color: "var(--accent)", marginBottom: "0.75rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>Co-founder · Scientist & CEO</div>
+              <p style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--text-tertiary)", margin: "0 0 4px" }}>Author & Founder</p>
+              <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)", marginBottom: "0.75rem" }}>Pedro Roisman Ferreira</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: "1rem" }}>
+                {[
+                  "MSc Candidate Business & Technology · ITBA",
+                  "Geoengineering · AGH Kraków",
+                  "Data Science · DH",
+                  "Founder · Martha (AR · US · CA · PR · ES · CL · UY)",
+                  "Author · Quantin Engine",
+                ].map(tag => (
+                  <span key={tag} style={{
+                    fontSize: 11, color: "var(--text-secondary)",
+                    background: "var(--bg-secondary)", border: "0.5px solid var(--border-subtle)",
+                    borderRadius: 6, padding: "3px 10px",
+                  }}>{tag}</span>
+                ))}
+              </div>
               <p style={{ fontSize: 15, lineHeight: 1.7, color: "var(--text-secondary)", margin: 0 }}>
                 Builds and maintains the quantitative model — the walk-forward optimizer, signal selection, and portfolio construction. Also leads product, investor relations, and broker partnerships.
               </p>
