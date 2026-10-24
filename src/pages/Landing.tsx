@@ -793,7 +793,7 @@ export function Landing() {
             )}
 
             <p style={{ fontSize: 11, color: "var(--text-tertiary)", lineHeight: 1.6 }}>
-              Interactive Brokers · Schwab · Fidelity · TD Ameritrade — coming soon
+              Broker integration — coming soon
             </p>
           </div>
         </section>
