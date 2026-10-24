@@ -525,10 +525,10 @@ export function Landing() {
 
               <h1 className="hero-headline" style={{
                 fontFamily: "'Playfair Display', serif", fontWeight: 400,
-                fontSize: 36, marginBottom: "2.5rem",
-                color: "var(--text-primary)", lineHeight: 1.2,
+                fontSize: 28, marginBottom: "2.5rem",
+                color: "var(--text-secondary)", lineHeight: 1.2,
               }}>
-                The market can be modeled.<br />We proved it.
+                Modeling the market.
               </h1>
 
               {/* Metrics */}
