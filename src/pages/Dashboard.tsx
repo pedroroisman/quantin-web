@@ -80,6 +80,11 @@ const TICKER_NAMES: Record<string, { name: string; sector: string }> = {
   PSX:  { name: "Phillips 66",               sector: "Energy"      },
   QUAL: { name: "iShares MSCI USA Quality",  sector: "ETF"         },
   BIL:  { name: "SPDR 1-3 Month T-Bill ETF", sector: "Cash"        },
+  NTAP: { name: "NetApp",                    sector: "Technology"  },
+  CHD:  { name: "Church & Dwight",           sector: "Consumer"    },
+  FTEC: { name: "Fidelity MSCI IT ETF",      sector: "ETF"         },
+  VGT:  { name: "Vanguard IT ETF",           sector: "ETF"         },
+  APA:  { name: "APA Corporation",           sector: "Energy"      },
 };
 
 const TICKER_GEO: Record<string, string> = {
@@ -107,6 +112,8 @@ const TICKER_GEO: Record<string, string> = {
   RSP:"United States",
   AMD:"United States", PANW:"United States", STX:"United States",
   HPE:"United States", MET:"United States",  PSX:"United States", QUAL:"United States",
+  NTAP:"United States", CHD:"United States", FTEC:"United States",
+  VGT:"United States",  APA:"United States",
 };
 
 const TICKER_IND: Record<string, string> = {
@@ -149,6 +156,8 @@ const TICKER_IND: Record<string, string> = {
   AMD:"AI / GPU Chips",           PANW:"Cybersecurity",        STX:"Data Storage",
   HPE:"Enterprise IT",            MET:"Insurance",             PSX:"Energy Refining",
   QUAL:"US Quality Factor ETF",
+  NTAP:"Data Storage",           CHD:"Consumer Goods",
+  FTEC:"US Tech ETF",            VGT:"US Tech ETF",           APA:"Energy (E&P)",
 };
 
 const GEO_COLORS: Record<string, string> = {
