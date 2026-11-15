@@ -13,6 +13,7 @@ import { UserProfile }  from "./pages/UserProfile";
 import { Movements }    from "./pages/Movements";
 import { About }        from "./pages/About";
 import { JoinTeam }     from "./pages/JoinTeam";
+import { Whitepaper }   from "./pages/Whitepaper";
 import { PrivateRoute }  from "./components/PrivateRoute";
 
 export default function App() {
@@ -30,6 +31,7 @@ export default function App() {
         <Route path="/movements"      element={<PrivateRoute><Movements /></PrivateRoute>} />
         <Route path="/about"          element={<About />} />
         <Route path="/about/join"     element={<JoinTeam />} />
+        <Route path="/whitepaper"     element={<Whitepaper />} />
       </Routes>
       <Analytics />
     </BrowserRouter>

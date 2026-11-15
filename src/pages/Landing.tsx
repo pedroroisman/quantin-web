@@ -529,7 +529,7 @@ export function Landing() {
                 fontSize: 28, marginBottom: "2.5rem",
                 color: "var(--text-secondary)", lineHeight: 1.2,
               }}>
-                Modeling the market.
+                Systematic stock selection for individual investors.
               </h1>
 
               {/* Metrics */}

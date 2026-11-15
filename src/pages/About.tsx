@@ -1,9 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/Button";
+import { QuantinLogo } from "../components/QuantinLogo";
 import { track } from "../lib/analytics";
 
 const outfit = "'Outfit', sans-serif";
-const playfair = "'Playfair Display', serif";
 
 export function About() {
   const navigate = useNavigate();
@@ -18,14 +18,10 @@ export function About() {
         background: "var(--bg-primary)", borderBottom: "0.5px solid var(--border-subtle)",
         position: "sticky", top: 0, zIndex: 10,
       }}>
-        <span
-          style={{ fontFamily: playfair, fontSize: 18, fontWeight: 400, cursor: "pointer", color: "var(--text-primary)" }}
-          onClick={() => navigate("/")}
-        >
-          Quantin
+        <span style={{ cursor: "pointer" }} onClick={() => navigate("/")}>
+          <QuantinLogo iconSize={20} fontWeight={400} />
         </span>
         <div style={{ display: "flex", gap: 12 }}>
-          <Button variant="ghost" size="sm" onClick={() => navigate("/about/join")}>Join the team</Button>
           <Button variant="primary" size="sm" onClick={() => navigate("/portfolio")}>View Portfolio</Button>
         </div>
       </nav>
@@ -35,7 +31,7 @@ export function About() {
         {/* 1 — Mission */}
         <section style={{ marginBottom: "5rem" }}>
           <p style={{ fontFamily: outfit, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: "1rem" }}>Mission</p>
-          <h1 style={{ fontFamily: playfair, fontWeight: 400, fontSize: 36, lineHeight: 1.2, color: "var(--text-primary)", margin: 0 }}>
+          <h1 style={{ fontFamily: "'Playfair Display', serif", fontWeight: 400, fontSize: 36, lineHeight: 1.2, color: "var(--text-primary)", margin: 0 }}>
             Systematic investing<br />for the individual investor.
           </h1>
         </section>
@@ -56,9 +52,9 @@ export function About() {
           <p style={{ fontFamily: outfit, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--text-tertiary)", marginBottom: "1.5rem" }}>Track record</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.5rem" }}>
             {[
-              { value: "+28.1%", label: "Annual return" },
-              { value: "1.84",   label: "Sharpe ratio" },
-              { value: "+12.9pp", label: "vs S&P 500" },
+              { value: "+22.9%", label: "Annual return (CAGR)" },
+              { value: "1.69",   label: "Sharpe ratio" },
+              { value: "+8.8pp", label: "vs S&P 500" },
             ].map(({ value, label }) => (
               <div key={label} style={{ background: "var(--bg-secondary)", border: "0.5px solid var(--border-subtle)", borderRadius: 12, padding: "1.25rem 1.5rem" }}>
                 <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 26, fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.02em", marginBottom: 4 }}>{value}</div>
@@ -67,7 +63,15 @@ export function About() {
             ))}
           </div>
           <p style={{ fontSize: 12, color: "var(--text-tertiary)", marginTop: "1rem", lineHeight: 1.6 }}>
-            Walk-forward backtest · US equities · No lookahead bias · Past performance does not guarantee future results.
+            Walk-forward · 53 rebalance periods · Feb 2018 – Nov 2026 · Gross of fees · Past performance does not guarantee future results.
+          </p>
+          <p style={{ fontSize: 13, color: "var(--text-tertiary)", marginTop: "0.75rem" }}>
+            <span
+              onClick={() => { track("click_whitepaper", { source: "about" }); navigate("/whitepaper"); }}
+              style={{ color: "var(--accent)", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
+            >
+              Read the full performance paper →
+            </span>
           </p>
         </section>
 
@@ -107,19 +111,6 @@ export function About() {
             </div>
           </div>
 
-          {/* Building */}
-          <div style={{ background: "var(--bg-secondary)", border: "0.5px dashed var(--border-subtle)", borderRadius: 12, padding: "1.25rem 1.5rem" }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", marginBottom: "0.5rem" }}>Building the science team</div>
-            <p style={{ fontSize: 14, lineHeight: 1.7, color: "var(--text-secondary)", margin: "0 0 1rem" }}>
-              We're assembling a small team of quantitative scientists and engineers — people who think in models, not opinions.
-            </p>
-            <span
-              onClick={() => { track("click_join_team", { source: "about" }); navigate("/about/join"); }}
-              style={{ fontSize: 13, color: "var(--accent)", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
-            >
-              See open positions →
-            </span>
-          </div>
         </section>
 
         {/* 5 — Contact */}
